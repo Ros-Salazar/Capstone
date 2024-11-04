@@ -1,0 +1,171 @@
+/* Reset basic styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  /* Basic Styling */
+  body {
+    font-family: Arial, sans-serif;
+    color: #333;
+  }
+  
+  /* Navbar */
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1em 2em;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .navbar .logo {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #0073e6;
+  }
+  
+  .navbar nav ul {
+    display: flex;
+    gap: 1.5em;
+  }
+  
+  .navbar .login-btn {
+    padding: 0.5em 1.5em;
+    background-color: #0073e6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  /* Project Overview */
+  .project-overview {
+    padding: 3em 2em;
+    background-color: #f5faff;
+    text-align: center;
+  }
+  
+  .project-header h1 {
+    font-size: 2.5em;
+    color: #0073e6;
+  }
+  
+  .project-header p {
+    font-size: 1.2em;
+    color: #555;
+    margin-bottom: 1em;
+  }
+  
+  .cta-btn {
+    padding: 0.8em 2em;
+    background-color: #0073e6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1em;
+    cursor: pointer;
+  }
+  
+  /* Tasks Section */
+  .tasks {
+    padding: 3em 2em;
+    text-align: center;
+  }
+  
+  .tasks h2 {
+    font-size: 2em;
+    margin-bottom: 1.5em;
+  }
+  
+  .task-cards {
+    display: flex;
+    gap: 1em;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .task-card {
+    background-color: #fff;
+    padding: 1.5em;
+    width: 30%;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .task-card h3 {
+    color: #0073e6;
+    margin-bottom: 0.5em;
+  }
+  
+  .task-card span {
+    font-weight: bold;
+    color: #555;
+  }
+  
+  .add-task-btn {
+    margin-top: 1em;
+    padding: 0.8em 2em;
+    background-color: #0073e6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1em;
+    cursor: pointer;
+  }
+  
+  /* Team Section */
+  .team {
+    padding: 3em 2em;
+    text-align: center;
+  }
+  
+  .team h2 {
+    font-size: 2em;
+    margin-bottom: 1.5em;
+  }
+  
+  .team-cards {
+    display: flex;
+    gap: 1em;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .team-card {
+    background-color: #fff;
+    padding: 1.5em;
+    width: 20%;
+    text-align: center;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .team-card img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    margin-bottom: 0.5em;
+  }
+  
+  .team-card h3 {
+    color: #0073e6;
+    margin-bottom: 0.2em;
+  }
+  
+  .team-card p {
+    color: #555;
+    font-size: 0.9em;
+  }
+  
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 2em;
+    background-color: #f1f1f1;
+    font-size: 0.9em;
+    color: #555;
+  }
+  

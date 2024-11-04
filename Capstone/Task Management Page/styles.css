@@ -1,0 +1,115 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    list-style: none;
+    font-family: 'Poppins', sans-serif;
+}
+
+.header{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    overflow: hidden;
+    background-color: #077d03;
+    padding: 10px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header .logo img{
+    height: 60px;
+    border-radius: 30px;
+    width:auto;
+    margin-right: 20px;
+}
+
+.header-right{
+    display: flex;
+    align-items: center;
+    gap: 40px;
+}
+
+.header-right a{
+    color: white;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 10px 0;
+}
+
+.header-right a:hover{
+    text-decoration: underline;
+}
+
+.header a{
+    float: left;
+    color: white;
+    text-align: center;
+    padding: 12px;
+    text-decoration: none;
+    font-size: 18px;
+    line-height: 30px;
+    border-radius: 4px;
+}
+
+body {
+    background-color: white;
+    padding-top: 130px;
+    padding-left: 20px;
+}
+
+h1{
+    margin-bottom: 2rem;
+}
+
+input,button {
+    font-family: inherit;
+    padding: 10px 20px;
+    border-radius: 5px;
+    background-color: #f1f1f1;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 1rem;
+    &:hover {
+        background-color: #e4dfdf;
+    }
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.project-item {
+    max-width: 260px;
+    height: 25px;
+    margin: 5px 0;
+    background-color: #51d84e;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    padding-left: 10px;
+    padding-top: 3px;
+    animation: animateIn 0.2s ease;
+}
+
+@keyframes animateIn {
+    0%{
+        opacity: 0;
+        transform: translateX(-100px);
+    }
+    100%{
+        opacity: 0;
+        transform: translateX(0px);
+    }
+}
+
+.completed {
+    text-decoration: line-through;
+    background-color: #51d84e;
+}
