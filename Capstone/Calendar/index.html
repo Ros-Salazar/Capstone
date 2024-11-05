@@ -1,0 +1,64 @@
+<!-- 
+ Hindi pa siya fully functional, try mo calendar katulad ng monday.com
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Calendar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="calendar-container">
+  <div class="header">
+    <button class="new-task-btn">New Task</button>
+    <button class="add-widget-btn">+ Add Widget</button>
+  </div>
+
+  <div class="calendar">
+    <div class="calendar-header">
+      <button id="prevMonth" class="nav-btn">&lt;</button>
+      <span id="monthYear"></span>
+      <button id="nextMonth" class="nav-btn">&gt;</button>
+      <select class="view-select">
+        <option>Month</option>
+        <option>Week</option>
+      </select>
+    </div>
+
+    <div class="calendar-grid">
+      <!-- Day headers -->
+      <div class="day-header">Mon</div>
+      <div class="day-header">Tue</div>
+      <div class="day-header">Wed</div>
+      <div class="day-header">Thu</div>
+      <div class="day-header">Fri</div>
+      <div class="day-header">Sat</div>
+      <div class="day-header">Sun</div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for Adding/Editing Tasks -->
+<div id="taskModal" class="modal">
+  <div class="modal-content">
+    <span id="closeModal" class="close">&times;</span>
+    <h2 id="modalTitle">Add Task</h2>
+    <label for="taskTitle">Task Title:</label>
+    <input type="text" id="taskTitle" placeholder="Enter task title">
+    <label for="taskStatus">Status:</label>
+    <select id="taskStatus">
+      <option value="done">Done</option>
+      <option value="working">Working on it</option>
+      <option value="stuck">Stuck</option>
+    </select>
+    <button id="saveTaskBtn">Save Task</button>
+  </div>
+</div>
+
+<script src="scripts.js"></script>
+</body>
+</html>
