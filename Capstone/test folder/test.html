@@ -6,6 +6,15 @@
   <title>Project Details</title>
   <link rel="stylesheet" href="styles.css">
 </head>
+<div class="header">
+  <a href="#default" class="logo">
+      <img src="img/341835580_3377258052532133_4186880548703356922_n.jpg" alt="CEO">
+  </a>
+  <div class="header-right">
+      <a href="#dashboard">Dashboard</a>
+      <a class="active" href="#projects">Projects</a>
+  </div>
+</div>
 <body>
   <!-- Navigation -->
   <header class="navbar">
@@ -30,28 +39,46 @@
     </div>
   </section>
 
-  <!-- Tasks Section -->
-  <section class="tasks">
-    <h2>Tasks</h2>
-    <div class="task-cards">
-      <div class="task-card">
-        <h3>Task 1</h3>
-        <p>Description of Task 1</p>
-        <span>Status: In Progress</span>
-      </div>
-      <div class="task-card">
-        <h3>Task 2</h3>
-        <p>Description of Task 2</p>
-        <span>Status: Completed</span>
-      </div>
-      <div class="task-card">
-        <h3>Task 3</h3>
-        <p>Description of Task 3</p>
-        <span>Status: Not Started</span>
-      </div>
-    </div>
-    <button class="add-task-btn">Add Task</button>
-  </section>
+<!-- Tasks Section with Table -->
+<section class="tasks">
+  <h2>Tasks</h2>
+  <table class="tasks-table">
+    <thead>
+      <tr>
+        <th>Task Name</th>
+        <th>Description</th>
+        <th>Status</th>
+        <th>Due Date</th>
+        <th>Assigned To</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Task 1</td>
+        <td>Description of Task 1</td>
+        <td>In Progress</td>
+        <td>2024-12-01</td>
+        <td>Member 1</td>
+      </tr>
+      <tr>
+        <td>Task 2</td>
+        <td>Description of Task 2</td>
+        <td>Completed</td>
+        <td>2024-11-20</td>
+        <td>Member 2</td>
+      </tr>
+      <tr>
+        <td>Task 3</td>
+        <td>Description of Task 3</td>
+        <td>Not Started</td>
+        <td>2024-12-10</td>
+        <td>Member 3</td>
+      </tr>
+    </tbody>
+  </table>
+  <button class="add-task-btn">Add Task</button>
+</section>
+
 
   <!-- Team Section -->
   <section class="team">

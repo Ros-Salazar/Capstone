@@ -24,7 +24,7 @@
   .navbar .logo {
     font-size: 1.5em;
     font-weight: bold;
-    color: #0073e6;
+    color: #077d03;
   }
   
   .navbar nav ul {
@@ -34,7 +34,7 @@
   
   .navbar .login-btn {
     padding: 0.5em 1.5em;
-    background-color: #0073e6;
+    background-color: #077d03;
     color: white;
     border: none;
     border-radius: 4px;
@@ -50,7 +50,7 @@
   
   .project-header h1 {
     font-size: 2.5em;
-    color: #0073e6;
+    color: #077d03;
   }
   
   .project-header p {
@@ -61,7 +61,7 @@
   
   .cta-btn {
     padding: 0.8em 2em;
-    background-color: #0073e6;
+    background-color: #077d03;
     color: white;
     border: none;
     border-radius: 4px;
@@ -70,51 +70,46 @@
   }
   
   /* Tasks Section */
-  .tasks {
-    padding: 3em 2em;
-    text-align: center;
-  }
-  
-  .tasks h2 {
-    font-size: 2em;
-    margin-bottom: 1.5em;
-  }
-  
-  .task-cards {
-    display: flex;
-    gap: 1em;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  
-  .task-card {
-    background-color: #fff;
-    padding: 1.5em;
-    width: 30%;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-  
-  .task-card h3 {
-    color: #0073e6;
-    margin-bottom: 0.5em;
-  }
-  
-  .task-card span {
-    font-weight: bold;
-    color: #555;
-  }
-  
-  .add-task-btn {
-    margin-top: 1em;
-    padding: 0.8em 2em;
-    background-color: #0073e6;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 1em;
-    cursor: pointer;
-  }
+ /* Tasks Table */
+.tasks-table {
+  width: 90%;
+  margin: 1em auto;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 1em;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.tasks-table th, .tasks-table td {
+  padding: 1em;
+  border: 1px solid #ddd;
+}
+
+.tasks-table th {
+  background-color: #f5faff;
+  color: #077d03;
+  font-weight: bold;
+}
+
+.tasks-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.tasks-table tr:hover {
+  background-color: #f1faff;
+}
+
+.add-task-btn {
+  margin-top: 1em;
+  padding: 0.8em 2em;
+  background-color: #077d03;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1em;
+  cursor: pointer;
+}
+
   
   /* Team Section */
   .team {
@@ -151,7 +146,7 @@
   }
   
   .team-card h3 {
-    color: #0073e6;
+    color: #077d03;
     margin-bottom: 0.2em;
   }
   
@@ -168,4 +163,55 @@
     font-size: 0.9em;
     color: #555;
   }
-  
+
+/* header template */
+.header{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  overflow: hidden;
+  background-color: #077d03;
+  padding: 10px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header .logo img{
+  height: 60px;
+  border-radius: 30px;
+  width:auto;
+  margin-right: 20px;
+}
+
+.header-right{
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+.header-right a{
+  color: white;
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: bold;
+  padding: 10px 0;
+  margin-right: 20px;
+}
+
+.header-right a:hover{
+  text-decoration: underline;
+}
+
+.header a{
+  float: left;
+  color: white;
+  text-align: center;
+  padding: 12px;
+  text-decoration: none;
+  font-size: 18px;
+  line-height: 30px;
+  border-radius: 4px;
+}
