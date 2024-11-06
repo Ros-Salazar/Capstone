@@ -42,10 +42,13 @@ window.addEventListener('click', (event) => {
 // Handle project creation
 projectForm.addEventListener('submit', (event) => {
     event.preventDefault();
-
+    
     // Get form values
     const projectName = document.getElementById('project-name').value;
     const location = document.getElementById('location').value;
+
+    // Save the project name in localStorage
+    localStorage.setItem('selectedProjectName', projectName);
 
     // Create project box
     const projectBox = document.createElement('div');
@@ -55,7 +58,6 @@ projectForm.addEventListener('submit', (event) => {
     // Progress bar
     const progressBar = document.createElement('div');
     progressBar.classList.add('progress-bar');
-
     projectBox.innerHTML = `
         <h3>${projectName}</h3>
         <p>${location}</p>
@@ -91,9 +93,14 @@ projectForm.addEventListener('submit', (event) => {
     // Make project box clickable to open details
     projectBox.addEventListener('click', (e) => {
         if (!e.target.classList.contains('edit-icon')) { // Avoid triggering if edit icon is clicked
-            projectDetailModal.style.display = 'flex';
+            // Navigate to the project details HTML file
+            window.location.href = "../ProjectTemplate/ProjectTemplate.html";
         }
     });
+    projectContainer.appendChild(projectBox);
+    noProjectsText.style.display = 'none';
+    popupWindow.style.display = 'none';
+    projectForm.reset();
 
     // Edit button functionality: open the edit popup with current project info
     editIcon.addEventListener('click', (e) => {
@@ -185,3 +192,10 @@ function getDragAfterElement(container, y) {
         }
     }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
+
+function updateProgressBar(projectBox, completion) {
+    const progressBar = projectBox.querySelector('.progress-bar');
+    progressBar.style.width = `${completion}%`;
+    projectBox.querySelector('.completion-text').textContent = `${completion}% COMPLETED`;
+}
+

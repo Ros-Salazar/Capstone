@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Details</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="header">
+    <a href="#default" class="logo">
+      <img src="img/341835580_3377258052532133_4186880548703356922_n.jpg" alt="CEO">
+    </a>
+    <div class="header-right">
+      <a href="#dashboard">Dashboard</a>
+      <a class="active" href="#projects">Projects</a>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <header class="navbar">
+    <div class="logo">ProjectTool</div>
+    <nav>
+      <ul>
+        <li><a href="#">Dashboard</a></li>
+        <li><a href="#">Projects</a></li>
+        <li><a href="#">Teams</a></li>
+        <li><a href="#">Settings</a></li>
+      </ul>
+    </nav>
+    <button class="login-btn">Logout</button>
+  </header>
+
+  <!-- Project Overview Section -->
+  <section class="project-overview">
+    <div class="project-header">
+      <h1 id="projectName">Project Name</h1>
+      <p>Project description goes here. This is a brief overview of the project objectives and goals.</p>
+      <button class="cta-btn">Edit Project</button>
+    </div>
+  </section>
+
+  <!-- Key Persons Section -->
+  <section class="key-persons">
+    <h2>Key Persons</h2>
+    <button class="add-key-person-btn">Add Key Person</button>
+    <div id="keyPersonsTableContainer"></div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>&copy; 2024 ProjectTool. All rights reserved.</p>
+  </footer>
+
+<script src="script.js"></script>
+</body>
+</html>
