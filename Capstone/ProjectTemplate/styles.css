@@ -196,3 +196,103 @@
   line-height: 30px;
   border-radius: 4px;
 }
+/* Style for the Task Table Section */
+.task-table-section {
+  margin: 2em auto;
+  width: 90%;
+}
+
+/* General Table Styling */
+.tasks-table {
+  width: 100%;
+  border-collapse: collapse;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-top: 1em;
+  text-align: left;
+  font-size: 1em;
+}
+
+/* Table Header Styling */
+.tasks-table th {
+  background-color: #077d03; /* Use the green color from your style */
+  color: #ffffff;
+  padding: 1em;
+  font-weight: bold;
+}
+
+/* Table Row and Cell Styling */
+.tasks-table td {
+  padding: 0.8em;
+  border: 1px solid #ddd;
+}
+
+/* Alternating Row Colors */
+.tasks-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.tasks-table tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+/* Hover Effect */
+.tasks-table tr:hover {
+  background-color: #f1faff;
+}
+
+/* Editable Cell Styling */
+.tasks-table td[contenteditable="true"] {
+  outline: none;
+  transition: background-color 0.3s;
+}
+
+.tasks-table td[contenteditable="true"]:focus {
+  background-color: #e8f5e9; /* Light green background when focused */
+}
+
+/* Status Cell Color */
+.tasks-table .status-cell {
+  font-weight: bold;
+}
+
+/* Status Colors */
+.tasks-table .status-cell[data-status="done"] {
+  color: green;
+}
+
+.tasks-table .status-cell[data-status="pending"] {
+  color: yellow;
+}
+
+.tasks-table .status-cell[data-status="to-do"] {
+  color: purple;
+}
+
+/* Document Upload Styling */
+.document-cell {
+  cursor: pointer;
+  color: #077d03;
+  font-weight: bold;
+  text-align: center;
+}
+
+.document-cell:hover {
+  text-decoration: underline;
+}
+
+/* Button Styling */
+#addTaskBtn {
+  margin: 1em auto;
+  padding: 0.8em 1.5em;
+  background-color: #077d03;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1em;
+  cursor: pointer;
+  display: block;
+}
+
+#addTaskBtn:hover {
+  background-color: #066702;
+}
