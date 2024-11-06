@@ -132,9 +132,10 @@ document.addEventListener('DOMContentLoaded', () => {
           statusCell.appendChild(statusDropdown);
 
           statusDropdown.addEventListener('change', () => {
-              const selectedStatus = statusDropdown.value;
-              statusCell.style.color = getStatusColor(selectedStatus);
-              statusCell.textContent = selectedStatus;
+            const selectedStatus = statusDropdown.value;
+            statusCell.style.color = ''; // Reset inline style
+            statusCell.textContent = selectedStatus;
+            statusCell.setAttribute('data-status', selectedStatus.toLowerCase());
           });
       });
 
