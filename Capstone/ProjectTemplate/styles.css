@@ -44,21 +44,57 @@
   /* Project Overview */
   .project-overview {
     padding: 3em 2em;
-    background-color: #f5faff;
-    text-align: center;
+    margin-top: 2em;
+    background-color: #f1f1f1;
+    text-align: left;
+  }
+  .plus-btn {
+    width: 40px;
+    height: 40px;
+    background-color: #077d03;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 1.5em;
+    line-height: 0.9em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   
-  .project-header h1 {
-    font-size: 2.5em;
-    color: #077d03;
+  .project-header h1.editable{
+    margin-bottom: 0.5em
   }
-  
-  .project-header p {
+  .project-header p.editable {
+    margin-top: 0.5em;
+    margin-bottom: 1.5em;
     font-size: 1.2em;
     color: #555;
-    margin-bottom: 1em;
+    cursor: pointer;
   }
-  
+
+  .project-header h1.editable:hover,
+  .project-header p.editable:hover {
+    background-color: #f1faff;
+    border-bottom: 1px dashed #077d03;
+  }
+  .button-container {
+    margin-top: 1em;
+    display: flex;
+    gap: 1em;
+  }
+  .main-table-btn,
+  .create-btn {
+  padding: 0.8em 2em;
+  background-color: #077d03;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1em;
+  cursor: pointer;
+}
+
   .cta-btn {
     padding: 0.8em 2em;
     background-color: #077d03;
@@ -68,56 +104,15 @@
     font-size: 1em;
     cursor: pointer;
   }
-  
-  /* Tasks Section */
- /* Tasks Table */
-.tasks-table {
-  width: 90%;
-  margin: 1em auto;
-  border-collapse: collapse;
-  text-align: left;
-  font-size: 1em;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.tasks-table th, .tasks-table td {
-  padding: 1em;
-  border: 1px solid #ddd;
-}
-
-.tasks-table th {
-  background-color: #f5faff;
-  color: #077d03;
-  font-weight: bold;
-}
-
-.tasks-table tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
-
-.tasks-table tr:hover {
-  background-color: #f1faff;
-}
-
-.add-task-btn {
-  margin-top: 1em;
-  padding: 0.8em 2em;
-  background-color: #077d03;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1em;
-  cursor: pointer;
-}
-
-  
-  /* Key Persons Section */
-.key-persons {
+  * Project Detail Section */
+.project-detail {
   padding: 2em;
-  text-align: center;
+  text-align: left;
 }
 
-.add-key-person-btn {
+/* Button to add new items */
+.add-item-btn {
+  margin-top: 1em;
   padding: 0.8em 2em;
   background-color: #077d03;
   color: white;
@@ -125,38 +120,22 @@
   border-radius: 4px;
   font-size: 1em;
   cursor: pointer;
+}
+
+/* Style for the new item columns */
+.item-column {
   margin-top: 1em;
-}
-
-.key-persons table {
-  width: 100%;
-  margin-top: 1.5em;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.key-persons th, .key-persons td {
   padding: 1em;
+  background-color: #f5faff;
   border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
-.key-persons th {
-  background-color: #f5faff;
+.item-column h3 {
+  font-size: 1.5em;
   color: #077d03;
 }
 
-.key-persons td {
-  background-color: #f9f9f9;
-}
-
-.key-persons tr:nth-child(even) td {
-  background-color: #f9f9f9;
-}
-
-.key-persons tr:hover td {
-  background-color: #f1faff;
-}
-  
   /* Footer */
   .footer {
     text-align: center;

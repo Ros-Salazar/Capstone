@@ -34,17 +34,22 @@
   <!-- Project Overview Section -->
   <section class="project-overview">
     <div class="project-header">
-      <h1 id="projectName">Project Name</h1>
-      <p>Project description goes here. This is a brief overview of the project objectives and goals.</p>
-      <button class="cta-btn">Edit Project</button>
+      <h1 id="projectName" class="editable">Project Name</h1>
+      <p id="projectDescription" class="editable">Project description goes here. This is a brief overview of the project objectives and goals.</p>
+      
+      <!-- New Buttons -->
+      <div class="button-container">
+        <button class="main-table-btn">Main Table</button>
+        <button class="create-btn">+</button>
+      </div>
     </div>
   </section>
 
-  <!-- Key Persons Section -->
-  <section class="key-persons">
-    <h2>Key Persons</h2>
-    <button class="add-key-person-btn">Add Key Person</button>
-    <div id="keyPersonsTableContainer"></div>
+    <!-- Project Detail Section -->
+  <section class="project-detail">
+    <h2 id="groupName">Name of Group</h2>
+    <button class="add-item-btn">Add Item</button>
+    <div id="projectDetailContainer"></div>
   </section>
 
   <!-- Footer -->
