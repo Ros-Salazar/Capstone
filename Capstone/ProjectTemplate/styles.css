@@ -296,3 +296,9 @@
 #addTaskBtn:hover {
   background-color: #066702;
 }
+
+/* Highlight editable cells when focused */
+.editable-cell[contenteditable="true"] {
+  background-color: #e8f5e9; /* Light green background when editing */
+  outline: none;
+}
