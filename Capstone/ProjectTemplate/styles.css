@@ -1,91 +1,95 @@
 /* Reset basic styles */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  
-  /* Basic Styling */
-  body {
-    font-family: Arial, sans-serif;
-    color: #333;
-  }
-  
-  /* Navbar */
-  .navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1em 2em;
-    background-color: #fff;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-  
-  .navbar .logo {
-    font-size: 1.5em;
-    font-weight: bold;
-    color: #077d03;
-  }
-  
-  .navbar nav ul {
-    display: flex;
-    gap: 1.5em;
-  }
-  
-  .navbar .login-btn {
-    padding: 0.5em 1.5em;
-    background-color: #077d03;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  /* Project Overview */
-  .project-overview {
-    padding: 3em 2em;
-    margin-top: 2em;
-    background-color: #f1f1f1;
-    text-align: left;
-  }
-  .plus-btn {
-    width: 40px;
-    height: 40px;
-    background-color: #077d03;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    font-size: 1.5em;
-    line-height: 0.9em;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .project-header h1.editable{
-    margin-bottom: 0.5em
-  }
-  .project-header p.editable {
-    margin-top: 0.5em;
-    margin-bottom: 1.5em;
-    font-size: 1.2em;
-    color: #555;
-    cursor: pointer;
-  }
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-  .project-header h1.editable:hover,
-  .project-header p.editable:hover {
-    background-color: #f1faff;
-    border-bottom: 1px dashed #077d03;
-  }
-  .button-container {
-    margin-top: 1em;
-    display: flex;
-    gap: 1em;
-  }
-  .main-table-btn,
-  .create-btn {
+/* Basic Styling */
+body {
+  font-family: Arial, sans-serif;
+  color: #333;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1em 2em;
+  background-color: #fff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.navbar .logo {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #077d03;
+}
+
+.navbar nav ul {
+  display: flex;
+  gap: 1.5em;
+}
+
+.navbar .login-btn {
+  padding: 0.5em 1.5em;
+  background-color: #077d03;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Project Overview */
+.project-overview {
+  padding: 3em 2em;
+  margin-top: 2em;
+  background-color: #f1f1f1;
+  text-align: left;
+}
+
+.plus-btn {
+  width: 40px;
+  height: 40px;
+  background-color: #077d03;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 1.5em;
+  line-height: 0.9em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.project-header h1.editable {
+  margin-bottom: 0.5em;
+}
+
+.project-header p.editable {
+  margin-top: 0.5em;
+  margin-bottom: 1.5em;
+  font-size: 1.2em;
+  color: #555;
+  cursor: pointer;
+}
+
+.project-header h1.editable:hover,
+.project-header p.editable:hover {
+  background-color: #f1faff;
+  border-bottom: 1px dashed #077d03;
+}
+
+.button-container {
+  margin-top: 1em;
+  display: flex;
+  gap: 1em;
+}
+
+.main-table-btn,
+.create-btn {
   padding: 0.8em 2em;
   background-color: #077d03;
   color: white;
@@ -95,16 +99,17 @@
   cursor: pointer;
 }
 
-  .cta-btn {
-    padding: 0.8em 2em;
-    background-color: #077d03;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 1em;
-    cursor: pointer;
-  }
-  * Project Detail Section */
+.cta-btn {
+  padding: 0.8em 2em;
+  background-color: #077d03;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1em;
+  cursor: pointer;
+}
+
+/* Project Detail Section */
 .project-detail {
   padding: 2em;
   text-align: left;
@@ -136,17 +141,17 @@
   color: #077d03;
 }
 
-  /* Footer */
-  .footer {
-    text-align: center;
-    padding: 2em;
-    background-color: #f1f1f1;
-    font-size: 0.9em;
-    color: #555;
-  }
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 2em;
+  background-color: #f1f1f1;
+  font-size: 0.9em;
+  color: #555;
+}
 
-/* header template */
-.header{
+/* Header template */
+.header {
   position: fixed;
   top: 0;
   left: 0;
@@ -160,20 +165,20 @@
   justify-content: space-between;
 }
 
-.header .logo img{
+.header .logo img {
   height: 60px;
   border-radius: 30px;
-  width:auto;
+  width: auto;
   margin-right: 20px;
 }
 
-.header-right{
+.header-right {
   display: flex;
   align-items: center;
   gap: 40px;
 }
 
-.header-right a{
+.header-right a {
   color: white;
   text-decoration: none;
   font-size: 18px;
@@ -182,11 +187,11 @@
   margin-right: 20px;
 }
 
-.header-right a:hover{
+.header-right a:hover {
   text-decoration: underline;
 }
 
-.header a{
+.header a {
   float: left;
   color: white;
   text-align: center;
@@ -196,7 +201,8 @@
   line-height: 30px;
   border-radius: 4px;
 }
-/* Style for the Task Table Section */
+
+/* Task Table Section */
 .task-table-section {
   margin: 2em auto;
   width: 90%;
@@ -214,7 +220,7 @@
 
 /* Table Header Styling */
 .tasks-table th {
-  background-color: #077d03; /* Use the green color from your style */
+  background-color: #077d03;
   color: #ffffff;
   padding: 1em;
   font-weight: bold;
@@ -247,7 +253,7 @@
 }
 
 .tasks-table td[contenteditable="true"]:focus {
-  background-color: #e8f5e9; /* Light green background when focused */
+  background-color: #e8f5e9;
 }
 
 /* Status Cell Color */
@@ -299,6 +305,13 @@
 
 /* Highlight editable cells when focused */
 .editable-cell[contenteditable="true"] {
-  background-color: #e8f5e9; /* Light green background when editing */
+  background-color: #e8f5e9;
   outline: none;
+}
+
+/* New Project/Task Column Styling */
+.tasks-table .project-task-cell {
+  font-style: italic;
+  color: #333;
+  font-weight: 500;
 }
