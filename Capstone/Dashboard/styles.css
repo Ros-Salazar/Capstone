@@ -187,3 +187,39 @@ body {
     line-height: 30px;
     border-radius: 4px;
 }
+
+/* Group option Dropdown options color */
+.urgent-option {
+    color: red;
+}
+
+.ongoing-option {
+    color: yellow;
+}
+
+.new-option {
+    color: green;
+}
+
+/* Style for each project item based on group */
+.project.urgent {
+    background-color: red;
+    color: white; /* Optional: for better text visibility */
+}
+
+.project.ongoing {
+    background-color: yellow;
+    color: black; /* Optional: for better text visibility */
+}
+
+.project.new {
+    background-color: green;
+    color: white; /* Optional: for better text visibility */
+}
+
+/* General project styling */
+.project {
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 5px;
+}
