@@ -36,33 +36,37 @@
     <div class="project-header">
       <h1 id="projectName" class="editable">Project Name</h1>
       <p id="projectDescription" class="editable">Project description goes here. This is a brief overview of the project objectives and goals.</p>
-      
-      <!-- New Buttons -->
-      <div class="button-container">
-        <button class="main-table-btn">Main Table</button>
-        <!-- Button to Add Task with the '+' sign -->
-        <button class="plus-btn" id="addTaskBtn">+</button>
+      <div class="task-table-wrapper">
+        <div class="button-table-wrapper">
 
-        <!-- Table to display added tasks -->
-        <section class="task-table-section">
-          <table id="taskTable" class="tasks-table">
-            <thead>
-              <tr>
-                <th>Project/Task</th>
-                <th>Person in Charge</th>
-                <th>Date Assigned</th>
-                <th>End Date</th>
-                <th>Status</th>
-                <th>Source of Fund</th>
-                <th>Document</th>
-                <th>Budget</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Rows will be added here by JavaScript -->
-            </tbody>
-          </table>
-        </section>
+        <!-- Buttons -->
+          <div class="button-container">
+            <button class="main-table-btn">Main Table</button>
+            <!-- Button to Add Task with the '+' sign -->
+            <button class="plus-btn" id="addTaskBtn">+</button>
+          </div>
+        </div>
+          <!-- Table to display added tasks -->
+          <div class="task-table-section">
+            <table id="taskTable" class="tasks-table">
+              <thead>
+                <tr>
+                  <th>Project/Task</th>
+                  <th>Person in Charge</th>
+                  <th>Date Assigned</th>
+                  <th>End Date</th>
+                  <th>Status</th>
+                  <th>Source of Fund</th>
+                  <th>Document</th>
+                  <th>Budget</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Rows will be added here by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </section>

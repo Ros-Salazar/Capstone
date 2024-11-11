@@ -35,25 +35,18 @@ projectForm.addEventListener('submit', (event) => {
     const projectBox = document.createElement('div');
     projectBox.classList.add('project-box', group); // Add group class for styling
 
+    // Add group indicator with a small colored element
+    const groupIndicator = document.createElement('div');
+    groupIndicator.classList.add('group-indicator', group); // Add group class for indicator styling
+
     projectBox.innerHTML = `
         <h3>${projectName}</h3>
         <p>${location}</p>
         <p class="completion-text">0% COMPLETED</p>
         <i class="fas fa-pencil-alt edit-icon"></i>
     `;
-
-    // Style based on group selection
-    switch(group) {
-        case 'urgent':
-            projectBox.style.backgroundColor = 'red';
-            break;
-        case 'ongoing':
-            projectBox.style.backgroundColor = 'yellow';
-            break;
-        case 'new':
-            projectBox.style.backgroundColor = 'green';
-            break;
-    }
+    
+    projectBox.insertBefore(groupIndicator, projectBox.firstChild); // Insert the indicator at the top
 
     // Add project box to the container
     projectContainer.appendChild(projectBox);
