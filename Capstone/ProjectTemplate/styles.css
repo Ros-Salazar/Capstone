@@ -324,6 +324,10 @@ body {
   background-color: #e8f5e9;
   outline: none;
 }
+.editable-cell:hover {
+  background-color: #e0f7fa;
+  cursor: text;
+}
 
 /* New Project/Task Column Styling */
 .tasks-table .project-task-cell {
