@@ -3,10 +3,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskTable = document.getElementById('taskTable').querySelector('tbody');
     const mainTableBtn = document.querySelector('.main-table-btn');
     const projectDetailContainer = document.getElementById('projectDetailContainer');
+    const calendarBtn = document.querySelector('.calendar-btn');
+    const calendarModal = document.getElementById('calendarModal');
+    const closeModalBtn = document.querySelector('.close-btn');
+    const calendarGrid = document.getElementById('calendarGrid');
 
     // Function to add a new task row
     addTaskBtn.addEventListener('click', () => {
-        // Collect task details with prompts
         const taskDetails = ["Project/Task", "Person in Charge", "Date Assigned", "End Date", "Status", "Source of Fund", "Budget"];
         const [projectTask, personInCharge, dateAssigned, endDate, status, sourceOfFund, budget] = taskDetails.map(detail => prompt(`Enter ${detail}:`));
 
@@ -37,56 +40,66 @@ document.addEventListener('DOMContentLoaded', () => {
                 cell.contentEditable = false;
             });
         });
-
-        // Status cell dropdown
-        const statusCell = row.querySelector('.status-cell');
-        statusCell.addEventListener('dblclick', () => {
-            const options = ['Done', 'Pending', 'To-Do'];
-            const select = document.createElement('select');
-            options.forEach(option => {
-                const optionElement = document.createElement('option');
-                optionElement.value = option;
-                optionElement.text = option;
-                optionElement.selected = option === statusCell.innerText;
-                select.appendChild(optionElement);
-            });
-            statusCell.innerHTML = '';
-            statusCell.appendChild(select);
-            select.addEventListener('change', () => {
-                statusCell.innerHTML = select.value;
-                statusCell.style.color = getStatusColor(select.value);
-            });
-        });
-
-        // File upload
-        const documentCell = row.querySelector('.document-cell');
-        const fileInput = documentCell.querySelector('.file-input');
-        const fileNameDisplay = documentCell.querySelector('.file-name');
-        documentCell.addEventListener('click', () => {
-            fileInput.click();
-        });
-        fileInput.addEventListener('change', () => {
-            fileNameDisplay.textContent = fileInput.files[0] ? fileInput.files[0].name : 'Upload Document';
-        });
     }
 
-    function getStatusColor(status) {
-        switch (status.toLowerCase()) {
-            case 'done': return 'green';
-            case 'pending': return 'yellow';
-            case 'to-do': return 'purple';
-            default: return 'black';
-        }
-    }
-    taskTable.querySelectorAll('tr').forEach(row => initializeRowInteractions(row));
-  
-    // Main Table button functionality
-    mainTableBtn.addEventListener('click', () => {
-        projectDetailContainer.innerHTML = ''; // Clear existing content
-        const clonedTable = taskTable.closest('.task-table-section').cloneNode(true);
-        projectDetailContainer.appendChild(clonedTable); // Show table in detail container
-        clonedTable.style.border = '2px solid #077d03';
-        clonedTable.style.boxShadow = '0 0 10px rgba(7, 125, 3, 0.5)';
-        clonedTable.style.marginTop = '1em';
+    // Calendar button functionality
+    calendarBtn.addEventListener('click', () => {
+        populateCalendar();
+        calendarModal.style.display = 'flex';
     });
+
+    // Close modal
+    closeModalBtn.addEventListener('click', () => {
+        calendarModal.style.display = 'none';
+    });
+
+    // Populate Calendar
+    function populateCalendar() {
+        calendarGrid.innerHTML = ''; // Clear previous cells
+
+        const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        daysOfWeek.forEach(day => {
+            const dayHeader = document.createElement('div');
+            dayHeader.className = 'calendar-day';
+            dayHeader.textContent = day;
+            calendarGrid.appendChild(dayHeader);
+        });
+
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        
+        const firstDayOfMonth = new Date(year, month, 1).getDay(); // Day index of the first day of the month
+        const daysInMonth = new Date(year, month + 1, 0).getDate(); // Total days in the month
+
+        // Empty cells for days before the start of the month
+        for (let i = 0; i < firstDayOfMonth; i++) {
+            const emptyCell = document.createElement('div');
+            emptyCell.className = 'calendar-date empty';
+            calendarGrid.appendChild(emptyCell);
+        }
+
+        // Populate days of the month
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dayCell = document.createElement('div');
+            dayCell.className = 'calendar-date';
+            dayCell.innerHTML = `<span class="date-number">${day}</span>`;
+            calendarGrid.appendChild(dayCell);
+        }
+
+        // Add tasks to calendar
+        taskTable.querySelectorAll('tr').forEach(row => {
+            const task = row.cells[0].textContent;
+            const startDate = new Date(row.cells[2].textContent);
+            const endDate = new Date(row.cells[3].textContent);
+
+            for (let day = startDate.getDate(); day <= endDate.getDate(); day++) {
+                const dayCell = calendarGrid.children[day - 1];
+                const taskLabel = document.createElement('div');
+                taskLabel.className = 'task';
+                taskLabel.textContent = task;
+                dayCell.appendChild(taskLabel);
+            }
+        });
+    }
 });
