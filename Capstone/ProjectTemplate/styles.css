@@ -74,8 +74,13 @@ body {
 /* Dynamic Table Styling */
 .group-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   margin-top: 20px;
+  border: none;
+  border-radius: 35px; /* Round the table corners */
+  overflow: hidden;
+  background-color: white;
 }
 
 .group-table th {
@@ -83,6 +88,15 @@ body {
   color: white;
   text-align: left;
   padding: 10px;
+  border: none;
+}
+
+.group-table th:first-child {
+  border-top-left-radius: 15px; /* Rounds top-left corner */
+}
+
+.group-table th:last-child {
+  border-top-right-radius: 15px; /* Rounds top-right corner */
 }
 
 .group-table th:hover {
@@ -92,9 +106,16 @@ body {
 .group-table td {
   text-align: left;
   padding: 10px;
-  border: 1px solid #ddd;
+  border: none;
 }
 
+.group-table tr:last-child td:first-child {
+  border-bottom-left-radius: 15px; /* Rounds bottom-left corner */
+}
+
+.group-table tr:last-child td:last-child {
+  border-bottom-right-radius: 15px; /* Rounds bottom-right corner */
+}
 
 .group-table td:focus {
   outline: 2px solid #077d03;
@@ -150,6 +171,7 @@ body {
   background-color: #077d03;
   color: white;
   border: none;
+  border-radius: 5px;
   padding: 10px 20px;
   font-size: 14px;
   cursor: pointer;
@@ -181,6 +203,8 @@ body {
   border: none;
   cursor: pointer;
   font-size: 18px;
+  color: white;
+  margin-left: 200px;
 }
 .dropdown-menu .dropdown-item {
   padding: 10px 15px;
@@ -240,6 +264,7 @@ body {
   align-items: flex-start; /* Aligns buttons to the left */
   margin: 1.5em auto;
   width: 90%;
+  border-radius: 10px;
 }
 
 
