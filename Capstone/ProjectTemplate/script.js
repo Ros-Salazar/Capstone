@@ -1,105 +1,198 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const addTaskBtn = document.getElementById('addTaskBtn');
-    const taskTable = document.getElementById('taskTable').querySelector('tbody');
-    const mainTableBtn = document.querySelector('.main-table-btn');
-    const projectDetailContainer = document.getElementById('projectDetailContainer');
-    const calendarBtn = document.querySelector('.calendar-btn');
-    const calendarModal = document.getElementById('calendarModal');
-    const closeModalBtn = document.querySelector('.close-btn');
-    const calendarGrid = document.getElementById('calendarGrid');
+document.getElementById('addGroupBtn').addEventListener('click', function () {
+    const table = document.createElement('table');
+    table.className = 'group-table';
 
-    // Function to add a new task row
-    addTaskBtn.addEventListener('click', () => {
-        const taskDetails = ["Project/Task", "Person in Charge", "Date Assigned", "End Date", "Status", "Source of Fund", "Budget"];
-        const [projectTask, personInCharge, dateAssigned, endDate, status, sourceOfFund, budget] = taskDetails.map(detail => prompt(`Enter ${detail}:`));
+    // Header Row
+    const headerRow = document.createElement('tr');
 
-        const newRow = document.createElement('tr');
-        newRow.innerHTML = `
-          <td class="editable-cell">${projectTask || "N/A"}</td>
-          <td class="editable-cell">${personInCharge || "N/A"}</td>
-          <td class="editable-cell">${dateAssigned || "N/A"}</td>
-          <td class="editable-cell">${endDate || "N/A"}</td>
-          <td class="status-cell">${status || "To-Do"}</td>
-          <td class="editable-cell">${sourceOfFund || "N/A"}</td>
-          <td class="document-cell"><span class="file-name">Upload Document</span><input type="file" class="file-input" style="display: none;"></td>
-          <td class="editable-cell">${budget || "N/A"}</td>
-        `;
-        taskTable.appendChild(newRow);
-        initializeRowInteractions(newRow);
-    });
+    // Editable Group Header
+    const groupHeader = document.createElement('th');
+    groupHeader.textContent = 'New Group';
+    groupHeader.contentEditable = true;
+    headerRow.appendChild(groupHeader);
 
-    // Initialize interactivity for each row
-    function initializeRowInteractions(row) {
-        // Editable cells
-        row.querySelectorAll('.editable-cell').forEach(cell => {
-            cell.addEventListener('dblclick', () => {
-                cell.contentEditable = true;
-                cell.focus();
+    // Add Dropdown Header
+    const plusHeader = document.createElement('th');
+    plusHeader.className = 'plus-header';
+    plusHeader.textContent = '+';
+    const dropdownMenu = document.createElement('div');
+    dropdownMenu.className = 'dropdown-menu';
+    dropdownMenu.style.display = 'none';
+
+    ['Text', 'Numbers', 'Status', 'Key Persons', 'Timeline'].forEach(option => {
+        const dropdownItem = document.createElement('div');
+        dropdownItem.textContent = option;
+        dropdownItem.className = 'dropdown-item';
+
+        dropdownItem.addEventListener('click', function () {
+            const newHeader = document.createElement('th');
+            newHeader.textContent = option;
+            newHeader.contentEditable = true;
+            headerRow.insertBefore(newHeader, plusHeader);
+
+            // Add dropdown to this new header
+            addHeaderDropdown(newHeader);
+
+            Array.from(table.rows).forEach(row => {
+                if (row !== headerRow) {
+                    const newCell = document.createElement('td');
+                    newCell.contentEditable = true;
+
+                    if (option === 'Numbers') {
+                        const input = document.createElement('input');
+                        input.type = 'number';
+                        input.style.width = '100%';
+                        newCell.appendChild(input);
+                    } else if (option === 'Status') {
+                        const select = document.createElement('select');
+                        ['To-do', 'In Progress', 'Done'].forEach(status => {
+                            const opt = document.createElement('option');
+                            opt.value = status;
+                            opt.textContent = status;
+                            select.appendChild(opt);
+                        });
+                        newCell.appendChild(select);
+                    } else if (option === 'Key Persons') {
+                        const input = document.createElement('input');
+                        input.type = 'email';
+                        input.style.width = '100%';
+                        newCell.appendChild(input);
+                    } else if (option === 'Timeline') {
+                        const input = document.createElement('input');
+                        input.type = 'date';
+                        input.style.width = '100%';
+                        newCell.appendChild(input);
+                    }
+
+                    row.insertBefore(newCell, row.cells[row.cells.length - 1]);
+                }
             });
-            cell.addEventListener('blur', () => {
-                cell.contentEditable = false;
-            });
-        });
-    }
 
-    // Calendar button functionality
-    calendarBtn.addEventListener('click', () => {
-        populateCalendar();
-        calendarModal.style.display = 'flex';
-    });
-
-    // Close modal
-    closeModalBtn.addEventListener('click', () => {
-        calendarModal.style.display = 'none';
-    });
-
-    // Populate Calendar
-    function populateCalendar() {
-        calendarGrid.innerHTML = ''; // Clear previous cells
-
-        const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-        daysOfWeek.forEach(day => {
-            const dayHeader = document.createElement('div');
-            dayHeader.className = 'calendar-day';
-            dayHeader.textContent = day;
-            calendarGrid.appendChild(dayHeader);
+            dropdownMenu.style.display = 'none';
         });
 
-        const currentDate = new Date();
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-        
-        const firstDayOfMonth = new Date(year, month, 1).getDay(); // Day index of the first day of the month
-        const daysInMonth = new Date(year, month + 1, 0).getDate(); // Total days in the month
+        dropdownMenu.appendChild(dropdownItem);
+    });
 
-        // Empty cells for days before the start of the month
-        for (let i = 0; i < firstDayOfMonth; i++) {
-            const emptyCell = document.createElement('div');
-            emptyCell.className = 'calendar-date empty';
-            calendarGrid.appendChild(emptyCell);
+    plusHeader.appendChild(dropdownMenu);
+    plusHeader.addEventListener('click', function () {
+        dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
+    });
+    headerRow.appendChild(plusHeader);
+    table.appendChild(headerRow);
+
+    // Add Dropdown to All Headers Except First and Plus
+    headerRow.childNodes.forEach((header, index) => {
+        if (index !== 0 && header !== plusHeader) {
+            addHeaderDropdown(header);
         }
+    });
 
-        // Populate days of the month
-        for (let day = 1; day <= daysInMonth; day++) {
-            const dayCell = document.createElement('div');
-            dayCell.className = 'calendar-date';
-            dayCell.innerHTML = `<span class="date-number">${day}</span>`;
-            calendarGrid.appendChild(dayCell);
-        }
+    // Add Row Button
+    const addRowBtn = document.createElement('button');
+    addRowBtn.className = 'add-item-btn';
+    addRowBtn.textContent = 'Add Item';
+    addRowBtn.addEventListener('click', function () {
+        const row = document.createElement('tr');
+        Array.from(headerRow.cells).forEach((_, i) => {
+            const newCell = document.createElement('td');
+            newCell.contentEditable = i !== headerRow.cells.length - 1;
 
-        // Add tasks to calendar
-        taskTable.querySelectorAll('tr').forEach(row => {
-            const task = row.cells[0].textContent;
-            const startDate = new Date(row.cells[2].textContent);
-            const endDate = new Date(row.cells[3].textContent);
-
-            for (let day = startDate.getDate(); day <= endDate.getDate(); day++) {
-                const dayCell = calendarGrid.children[day - 1];
-                const taskLabel = document.createElement('div');
-                taskLabel.className = 'task';
-                taskLabel.textContent = task;
-                dayCell.appendChild(taskLabel);
+            // Add dropdown only to the first column of each row
+            if (i === 0) {
+                addCellDropdown(newCell, row);
             }
+
+            row.appendChild(newCell);
         });
-    }
+        table.appendChild(row);
+    });
+
+    // Append Table and Button to the Container
+    const container = document.querySelector('.group-container');
+    container.appendChild(table);
+    container.appendChild(addRowBtn);
 });
+
+// Function to Add Dropdown for Row Actions
+function addCellDropdown(cell, row) {
+    const dropdownBtn = document.createElement('button');
+    dropdownBtn.textContent = '⋮';
+    dropdownBtn.className = 'dropdown-btn';
+
+    const dropdownMenu = document.createElement('div');
+    dropdownMenu.className = 'dropdown-menu';
+    dropdownMenu.style.display = 'none';
+
+    // Dropdown actions
+    const deleteOption = document.createElement('div');
+    deleteOption.textContent = 'Delete Row';
+    deleteOption.className = 'dropdown-item';
+    deleteOption.addEventListener('click', function () {
+        row.remove();
+    });
+
+    const renameOption = document.createElement('div');
+    renameOption.textContent = 'Rename';
+    renameOption.className = 'dropdown-item';
+    renameOption.addEventListener('click', function () {
+        const newName = prompt('Enter new name:', cell.textContent);
+        if (newName) {
+            cell.textContent = newName;
+        }
+    });
+
+    const duplicateOption = document.createElement('div');
+    duplicateOption.textContent = 'Duplicate Row';
+    duplicateOption.className = 'dropdown-item';
+    duplicateOption.addEventListener('click', function () {
+        const newRow = row.cloneNode(true);
+        row.parentNode.insertBefore(newRow, row.nextSibling);
+
+        // Ensure dropdown is initialized in the duplicated row
+        const firstCell = newRow.cells[0];
+        addCellDropdown(firstCell, newRow);
+    });
+
+    dropdownMenu.appendChild(deleteOption);
+    dropdownMenu.appendChild(renameOption);
+    dropdownMenu.appendChild(duplicateOption);
+
+    dropdownBtn.addEventListener('click', function () {
+        dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
+    });
+
+    cell.appendChild(dropdownBtn);
+    cell.appendChild(dropdownMenu);
+}
+
+// Function to Add Dropdown for Header Actions
+function addHeaderDropdown(header) {
+    const dropdownBtn = document.createElement('button');
+    dropdownBtn.textContent = '⋮';
+    dropdownBtn.className = 'dropdown-btn';
+
+    const dropdownMenu = document.createElement('div');
+    dropdownMenu.className = 'dropdown-menu';
+    dropdownMenu.style.display = 'none';
+
+    // Dropdown actions
+    const deleteOption = document.createElement('div');
+    deleteOption.textContent = 'Delete Column';
+    deleteOption.className = 'dropdown-item';
+    deleteOption.addEventListener('click', function () {
+        const colIndex = Array.from(header.parentNode.children).indexOf(header);
+        Array.from(header.parentNode.parentNode.rows).forEach(row => {
+            row.deleteCell(colIndex);
+        });
+    });
+
+    dropdownMenu.appendChild(deleteOption);
+
+    dropdownBtn.addEventListener('click', function () {
+        dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
+    });
+
+    header.appendChild(dropdownBtn);
+    header.appendChild(dropdownMenu);
+}

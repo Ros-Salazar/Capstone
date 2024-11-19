@@ -49,13 +49,153 @@ body {
   text-align: left;
 }
 
-/* Container for both buttons and table */
-.button-table-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 1em;
+/* Group Section */
+.group-section {
+  margin: 20px 0;
+  padding: 20px;
+  background-color: #f9f9f9;
 }
+
+.add-group-btn {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #077d03;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.add-group-btn:hover {
+  background-color: #065c02;
+}
+
+/* Dynamic Table Styling */
+.group-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.group-table th {
+  background-color: #065c02;
+  color: white;
+  text-align: left;
+  padding: 10px;
+}
+
+.group-table th:hover {
+  background-color: #065c02;
+}
+
+.group-table td {
+  text-align: left;
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+
+
+.group-table td:focus {
+  outline: 2px solid #077d03;
+}
+
+.settings-btn {
+  padding: 8px;
+  background-color: #0b5ed7;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+
+/* Table Row Styling */
+.group-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.group-table tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+/* Dropdown "+" Alignment */
+.plus-header {
+  text-align: center;
+  position: relative;
+  cursor: pointer;
+}
+
+
+
+/* Styling for group containers */
+.group-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.group-container .group-card {
+  flex: 1 1 calc(33.33% - 15px);
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #fff;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+/* Button to add new items */
+.add-item-btn {
+  background-color: #077d03;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+
+.add-item-btn:hover {
+  background-color: #065c02;
+}
+
+/* Dropdown Styles */
+.dropdown-menu {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  display: none;
+  z-index: 1000;
+}
+.dropdown-item {
+  padding: 5px;
+  cursor: pointer;
+}
+
+.dropdown-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+}
+.dropdown-menu .dropdown-item {
+  padding: 10px 15px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+}
+
+.dropdown-menu .dropdown-item:hover {
+  background-color: #f1f1f1;
+}
+
+
+
+
 
 .calendar-btn {
   padding: 0.8em 1.5em;
@@ -128,18 +268,6 @@ body {
 .project-detail {
   padding: 2em;
   text-align: left;
-}
-
-/* Button to add new items */
-.add-item-btn {
-  margin-top: 1em;
-  padding: 0.8em 2em;
-  background-color: #077d03;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1em;
-  cursor: pointer;
 }
 
 /* Style for the new item columns */
@@ -215,208 +343,4 @@ body {
   font-size: 18px;
   line-height: 30px;
   border-radius: 4px;
-}
-
-/* Task Table Section */
-.task-table-section {
-  width: 100%;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-/* General Table Styling */
-.tasks-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-  font-size: 1em;
-  margin-top: 0; /* Remove extra space at the top of the table */
-}
-
-/* Table Header Styling */
-.tasks-table th {
-  background-color: #077d03;
-  color: #ffffff;
-  padding: 1em;
-  font-weight: bold;
-}
-
-/* Table Row and Cell Styling */
-.tasks-table td {
-  padding: 0.8em;
-  border: 1px solid #ddd;
-}
-
-/* Alternating Row Colors */
-.tasks-table tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
-
-.tasks-table tr:nth-child(odd) {
-  background-color: #ffffff;
-}
-
-/* Hover Effect */
-.tasks-table tr:hover {
-  background-color: #f1faff;
-}
-
-/* Editable Cell Styling */
-.tasks-table td[contenteditable="true"] {
-  outline: none;
-  transition: background-color 0.3s;
-}
-
-.tasks-table td[contenteditable="true"]:focus {
-  background-color: #e8f5e9;
-}
-
-/* Status Cell Color */
-.tasks-table .status-cell {
-  font-weight: bold;
-}
-
-/* Status Colors */
-.tasks-table .status-cell[data-status="done"] {
-  color: green;
-}
-
-.tasks-table .status-cell[data-status="pending"] {
-  color: yellow;
-}
-
-.tasks-table .status-cell[data-status="to-do"] {
-  color: purple;
-}
-
-/* Document Upload Styling */
-.document-cell {
-  cursor: pointer;
-  color: #077d03;
-  font-weight: bold;
-  text-align: center;
-}
-
-.document-cell:hover {
-  text-decoration: underline;
-}
-
-/* Button Styling */
-#addTaskBtn {
-  margin: 1em auto;
-  padding: 0.8em 1.5em;
-  background-color: #077d03;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1em;
-  cursor: pointer;
-  display: block;
-}
-
-#addTaskBtn:hover {
-  background-color: #066702;
-}
-
-/* Highlight editable cells when focused */
-.editable-cell[contenteditable="true"] {
-  background-color: #e8f5e9;
-  outline: none;
-}
-.editable-cell:hover {
-  background-color: #e0f7fa;
-  cursor: text;
-}
-
-/* New Project/Task Column Styling */
-.tasks-table .project-task-cell {
-  font-style: italic;
-  color: #333;
-  font-weight: 500;
-}
-
-/* Calendar Modal */
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  justify-content: center;
-  align-items: center;
-}
-
-.modal-content {
-  background-color: white;
-  padding: 20px;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 800px;
-  position: relative;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-.close-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  cursor: pointer;
-  font-size: 1.5em;
-  color: #333;
-}
-
-.calendar-container {
-  text-align: center;
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 1px;
-  background-color: #ddd;
-  margin-top: 1em;
-  border-radius: 5px;
-  overflow: hidden;
-}
-
-.calendar-day {
-  background-color: #f4f4f4;
-  padding: 10px 0;
-  font-weight: bold;
-  color: #333;
-}
-
-.calendar-date {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  background-color: white;
-  min-height: 100px;
-  padding: 10px;
-  border: 1px solid #ddd;
-  position: relative;
-}
-
-.calendar-date .date-number {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  font-size: 0.9em;
-  color: #777;
-}
-
-.calendar-date .task {
-  margin-top: 10px;
-  background-color: #077d03;
-  color: white;
-  padding: 5px;
-  border-radius: 3px;
-  font-size: 0.8em;
-  text-align: center;
-  width: 100%;
-  box-sizing: border-box;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }

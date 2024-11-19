@@ -26,8 +26,6 @@
       <ul>
         <li><a href="#">Dashboard</a></li>
         <li><a href="#">Projects</a></li>
-        <li><a href="#">Teams</a></li>
-        <li><a href="#">Settings</a></li>
       </ul>
     </nav>
     <button class="login-btn">Logout</button>
@@ -39,65 +37,33 @@
       <h1 id="projectName" class="editable">Project Name</h1>
       <p id="projectDescription" class="editable">Project description goes here. This is a brief overview of the project objectives and goals.</p>
       
-      
       <div class="task-table-wrapper">
         <div class="button-table-wrapper">
         <!-- Buttons -->
           <div class="button-container">
             <button class="main-table-btn">Main Table</button>
-            <!-- Button to Add Task with the '+' sign -->
-            <button class="plus-btn" id="addTaskBtn">+</button>
-            
             <button class="calendar-btn" id="calendarBtn">Calendar</button>
+          </div>
 
-          </div>
         </div>
-        
-          <!-- Table to display added tasks -->
-          <div class="task-table-section">
-            <table id="taskTable" class="tasks-table">
-              <thead>
-                <tr>
-                  <th>Project/Task</th>
-                  <th>Person in Charge</th>
-                  <th>Date Assigned</th>
-                  <th>End Date</th>
-                  <th>Status</th>
-                  <th>Source of Fund</th>
-                  <th>Document</th>
-                  <th>Budget</th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- Rows will be added here by JavaScript -->
-              </tbody>
-            </table>
-          </div>
         </div>
       </div>
-    </div>
-    <div id="calendarModal" class="modal">
-      <div class="modal-content">
-        <span class="close-btn">&times;</span>
-        <h2>Task Calendar</h2>
-        <div class="calendar-grid" id="calendarGrid">
-          <!-- Calendar cells will be generated here -->
-        </div>
-      </div>
-    </div>
   </section>
 
-    <!-- Project Detail Section -->
-  
-
-  <section class="project-detail">
-    <button class="add-item-btn">Add Item</button>
-    <div id="projectDetailContainer"></div>
-  </section>
+<!-- Main Table Details-->
+<section class="group-section">
+  <!-- Group Container -->
+  <div class="group-container">
+  </div>
+  <!-- Add New Group Button -->
+  <div class="add-group-container">
+    <button id="addGroupBtn" class="add-group-btn">Add New Group</button>
+  </div>
+</section>
 
   <!-- Footer -->
   <footer class="footer">
-    <p>&copy; 2024 ProjectTool. All rights reserved.</p>
+    <p>&copy; 2024 City Engineering Office. All rights reserved.</p>
   </footer>
 
 <script src="script.js"></script>
