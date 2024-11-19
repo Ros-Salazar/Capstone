@@ -146,6 +146,7 @@ document.getElementById('addGroupBtn').addEventListener('click', function () {
     const container = document.querySelector('.group-container');
     container.appendChild(table);
     container.appendChild(addRowBtn);
+    
 });
 
 // Function to Add Dropdown for Row Actions
@@ -204,3 +205,5 @@ function addHeaderDropdown(header) {
     header.appendChild(dropdownBtn);
     header.appendChild(dropdownMenu);
 }
+
+
