@@ -37,66 +37,61 @@ document.getElementById('addGroupBtn').addEventListener('click', function () {
                 dueDateHeader.contentEditable = true;
                 headerRow.insertBefore(dueDateHeader, plusHeader);
 
-                // Add dropdowns to both new headers
                 addHeaderDropdown(startDateHeader);
                 addHeaderDropdown(dueDateHeader);
 
-                // Add cells to all existing rows for the new columns
-                Array.from(table.rows).forEach(row => {
-                    if (row !== headerRow) {
-                        const startDateCell = document.createElement('td');
-                        const startDateInput = document.createElement('input');
-                        startDateInput.type = 'date';
-                        startDateInput.style.width = '100%';
-                        startDateCell.appendChild(startDateInput);
-                        row.insertBefore(startDateCell, row.cells[row.cells.length - 1]);
+                // Add cells to the existing row
+                const existingRows = Array.from(table.rows).filter(row => row !== headerRow);
+                existingRows.forEach(row => {
+                    const startDateCell = document.createElement('td');
+                    const startDateInput = document.createElement('input');
+                    startDateInput.type = 'date';
+                    startDateInput.style.width = '100%';
+                    startDateCell.appendChild(startDateInput);
+                    row.insertBefore(startDateCell, row.cells[row.cells.length - 1]);
 
-                        const dueDateCell = document.createElement('td');
-                        const dueDateInput = document.createElement('input');
-                        dueDateInput.type = 'date';
-                        dueDateInput.style.width = '100%';
-                        dueDateCell.appendChild(dueDateInput);
-                        row.insertBefore(dueDateCell, row.cells[row.cells.length - 1]);
-                    }
+                    const dueDateCell = document.createElement('td');
+                    const dueDateInput = document.createElement('input');
+                    dueDateInput.type = 'date';
+                    dueDateInput.style.width = '100%';
+                    dueDateCell.appendChild(dueDateInput);
+                    row.insertBefore(dueDateCell, row.cells[row.cells.length - 1]);
                 });
             } else {
-                // Add a single column for other options
                 const newHeader = document.createElement('th');
                 newHeader.textContent = option;
                 newHeader.contentEditable = true;
                 headerRow.insertBefore(newHeader, plusHeader);
 
-                // Add dropdown to this new header
                 addHeaderDropdown(newHeader);
 
-                Array.from(table.rows).forEach(row => {
-                    if (row !== headerRow) {
-                        const newCell = document.createElement('td');
-                        newCell.contentEditable = true;
+                const existingRows = Array.from(table.rows).filter(row => row !== headerRow);
+                existingRows.forEach(row => {
+                    const newCell = document.createElement('td');
+                    newCell.contentEditable = true;
 
-                        if (option === 'Numbers') {
-                            const input = document.createElement('input');
-                            input.type = 'number';
-                            input.style.width = '100%';
-                            newCell.appendChild(input);
-                        } else if (option === 'Status') {
-                            const select = document.createElement('select');
-                            ['To-do', 'In Progress', 'Done'].forEach(status => {
-                                const opt = document.createElement('option');
-                                opt.value = status;
-                                opt.textContent = status;
-                                select.appendChild(opt);
-                            });
-                            newCell.appendChild(select);
-                        } else if (option === 'Key Persons') {
-                            const input = document.createElement('input');
-                            input.type = 'email';
-                            input.style.width = '100%';
-                            newCell.appendChild(input);
-                        }
-
-                        row.insertBefore(newCell, row.cells[row.cells.length - 1]);
+                    if (option === 'Numbers') {
+                        const input = document.createElement('input');
+                        input.type = 'number';
+                        input.style.width = '100%';
+                        newCell.appendChild(input);
+                    } else if (option === 'Status') {
+                        const select = document.createElement('select');
+                        ['To-do', 'In Progress', 'Done'].forEach(status => {
+                            const opt = document.createElement('option');
+                            opt.value = status;
+                            opt.textContent = status;
+                            select.appendChild(opt);
+                        });
+                        newCell.appendChild(select);
+                    } else if (option === 'Key Persons') {
+                        const input = document.createElement('input');
+                        input.type = 'email';
+                        input.style.width = '100%';
+                        newCell.appendChild(input);
                     }
+
+                    row.insertBefore(newCell, row.cells[row.cells.length - 1]);
                 });
             }
 
@@ -113,14 +108,22 @@ document.getElementById('addGroupBtn').addEventListener('click', function () {
     headerRow.appendChild(plusHeader);
     table.appendChild(headerRow);
 
-    // Add Dropdown to All Headers Except First and Plus
-    headerRow.childNodes.forEach((header, index) => {
-        if (index !== 0 && header !== plusHeader) {
-            addHeaderDropdown(header);
-        }
-    });
+    // Add a single row by default when the group is created
+    const defaultRow = document.createElement('tr');
+    Array.from(headerRow.cells).forEach((_, i) => {
+        const cell = document.createElement('td');
+        cell.contentEditable = i !== headerRow.cells.length - 1;
 
-    // Add Row Button
+        // Add dropdown only to the first column of the row
+        if (i === 0) {
+            addCellDropdown(cell, defaultRow);
+        }
+
+        defaultRow.appendChild(cell);
+    });
+    table.appendChild(defaultRow);
+
+    // Add "Add Item" Button
     const addRowBtn = document.createElement('button');
     addRowBtn.className = 'add-item-btn';
     addRowBtn.textContent = 'Add Item';
@@ -130,7 +133,6 @@ document.getElementById('addGroupBtn').addEventListener('click', function () {
             const newCell = document.createElement('td');
             newCell.contentEditable = i !== headerRow.cells.length - 1;
 
-            // Add dropdown only to the first column of each row
             if (i === 0) {
                 addCellDropdown(newCell, row);
             }
@@ -156,7 +158,6 @@ function addCellDropdown(cell, row) {
     dropdownMenu.className = 'dropdown-menu';
     dropdownMenu.style.display = 'none';
 
-    // Dropdown actions
     const deleteOption = document.createElement('div');
     deleteOption.textContent = 'Delete Row';
     deleteOption.className = 'dropdown-item';
@@ -184,7 +185,6 @@ function addHeaderDropdown(header) {
     dropdownMenu.className = 'dropdown-menu';
     dropdownMenu.style.display = 'none';
 
-    // Dropdown actions
     const deleteOption = document.createElement('div');
     deleteOption.textContent = 'Delete Column';
     deleteOption.className = 'dropdown-item';
