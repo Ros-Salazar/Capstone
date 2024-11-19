@@ -25,48 +25,80 @@ document.getElementById('addGroupBtn').addEventListener('click', function () {
         dropdownItem.className = 'dropdown-item';
 
         dropdownItem.addEventListener('click', function () {
-            const newHeader = document.createElement('th');
-            newHeader.textContent = option;
-            newHeader.contentEditable = true;
-            headerRow.insertBefore(newHeader, plusHeader);
+            if (option === 'Timeline') {
+                // Add two columns: Start Date and Due Date
+                const startDateHeader = document.createElement('th');
+                startDateHeader.textContent = 'Start Date';
+                startDateHeader.contentEditable = true;
+                headerRow.insertBefore(startDateHeader, plusHeader);
 
-            // Add dropdown to this new header
-            addHeaderDropdown(newHeader);
+                const dueDateHeader = document.createElement('th');
+                dueDateHeader.textContent = 'Due Date';
+                dueDateHeader.contentEditable = true;
+                headerRow.insertBefore(dueDateHeader, plusHeader);
 
-            Array.from(table.rows).forEach(row => {
-                if (row !== headerRow) {
-                    const newCell = document.createElement('td');
-                    newCell.contentEditable = true;
+                // Add dropdowns to both new headers
+                addHeaderDropdown(startDateHeader);
+                addHeaderDropdown(dueDateHeader);
 
-                    if (option === 'Numbers') {
-                        const input = document.createElement('input');
-                        input.type = 'number';
-                        input.style.width = '100%';
-                        newCell.appendChild(input);
-                    } else if (option === 'Status') {
-                        const select = document.createElement('select');
-                        ['To-do', 'In Progress', 'Done'].forEach(status => {
-                            const opt = document.createElement('option');
-                            opt.value = status;
-                            opt.textContent = status;
-                            select.appendChild(opt);
-                        });
-                        newCell.appendChild(select);
-                    } else if (option === 'Key Persons') {
-                        const input = document.createElement('input');
-                        input.type = 'email';
-                        input.style.width = '100%';
-                        newCell.appendChild(input);
-                    } else if (option === 'Timeline') {
-                        const input = document.createElement('input');
-                        input.type = 'date';
-                        input.style.width = '100%';
-                        newCell.appendChild(input);
+                // Add cells to all existing rows for the new columns
+                Array.from(table.rows).forEach(row => {
+                    if (row !== headerRow) {
+                        const startDateCell = document.createElement('td');
+                        const startDateInput = document.createElement('input');
+                        startDateInput.type = 'date';
+                        startDateInput.style.width = '100%';
+                        startDateCell.appendChild(startDateInput);
+                        row.insertBefore(startDateCell, row.cells[row.cells.length - 1]);
+
+                        const dueDateCell = document.createElement('td');
+                        const dueDateInput = document.createElement('input');
+                        dueDateInput.type = 'date';
+                        dueDateInput.style.width = '100%';
+                        dueDateCell.appendChild(dueDateInput);
+                        row.insertBefore(dueDateCell, row.cells[row.cells.length - 1]);
                     }
+                });
+            } else {
+                // Add a single column for other options
+                const newHeader = document.createElement('th');
+                newHeader.textContent = option;
+                newHeader.contentEditable = true;
+                headerRow.insertBefore(newHeader, plusHeader);
 
-                    row.insertBefore(newCell, row.cells[row.cells.length - 1]);
-                }
-            });
+                // Add dropdown to this new header
+                addHeaderDropdown(newHeader);
+
+                Array.from(table.rows).forEach(row => {
+                    if (row !== headerRow) {
+                        const newCell = document.createElement('td');
+                        newCell.contentEditable = true;
+
+                        if (option === 'Numbers') {
+                            const input = document.createElement('input');
+                            input.type = 'number';
+                            input.style.width = '100%';
+                            newCell.appendChild(input);
+                        } else if (option === 'Status') {
+                            const select = document.createElement('select');
+                            ['To-do', 'In Progress', 'Done'].forEach(status => {
+                                const opt = document.createElement('option');
+                                opt.value = status;
+                                opt.textContent = status;
+                                select.appendChild(opt);
+                            });
+                            newCell.appendChild(select);
+                        } else if (option === 'Key Persons') {
+                            const input = document.createElement('input');
+                            input.type = 'email';
+                            input.style.width = '100%';
+                            newCell.appendChild(input);
+                        }
+
+                        row.insertBefore(newCell, row.cells[row.cells.length - 1]);
+                    }
+                });
+            }
 
             dropdownMenu.style.display = 'none';
         });
@@ -132,31 +164,7 @@ function addCellDropdown(cell, row) {
         row.remove();
     });
 
-    const renameOption = document.createElement('div');
-    renameOption.textContent = 'Rename';
-    renameOption.className = 'dropdown-item';
-    renameOption.addEventListener('click', function () {
-        const newName = prompt('Enter new name:', cell.textContent);
-        if (newName) {
-            cell.textContent = newName;
-        }
-    });
-
-    const duplicateOption = document.createElement('div');
-    duplicateOption.textContent = 'Duplicate Row';
-    duplicateOption.className = 'dropdown-item';
-    duplicateOption.addEventListener('click', function () {
-        const newRow = row.cloneNode(true);
-        row.parentNode.insertBefore(newRow, row.nextSibling);
-
-        // Ensure dropdown is initialized in the duplicated row
-        const firstCell = newRow.cells[0];
-        addCellDropdown(firstCell, newRow);
-    });
-
     dropdownMenu.appendChild(deleteOption);
-    dropdownMenu.appendChild(renameOption);
-    dropdownMenu.appendChild(duplicateOption);
 
     dropdownBtn.addEventListener('click', function () {
         dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
