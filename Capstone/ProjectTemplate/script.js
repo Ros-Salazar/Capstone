@@ -1,12 +1,29 @@
 document.getElementById('mainTableBtn').addEventListener('click', function() {
-    document.querySelector('.group-section').style.display = 'block';
-    document.querySelector('.calendar-section').style.display = 'none';
+    document.querySelector('.group-section').classList.add('active-section');
+    document.querySelector('.calendar-section').classList.remove('active-section');
+    setActiveButton('mainTableBtn');
 });
 
 document.getElementById('calendarBtn').addEventListener('click', function() {
-    document.querySelector('.group-section').style.display = 'none';
-    document.querySelector('.calendar-section').style.display = 'block';
+    document.querySelector('.group-section').classList.remove('active-section');
+    document.querySelector('.calendar-section').classList.add('active-section');
+    setActiveButton('calendarBtn');
 });
+
+// Function to set the active button
+function setActiveButton(buttonId) {
+    document.getElementById('mainTableBtn').classList.remove('active');
+    document.getElementById('calendarBtn').classList.remove('active');
+    document.getElementById(buttonId).classList.add('active');
+}
+
+// Set main table as the default active section on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('.group-section').classList.add('active-section');
+    document.querySelector('.calendar-section').classList.remove('active-section');
+    setActiveButton('mainTableBtn');
+});
+
 
 document.getElementById('addGroupBtn').addEventListener('click', function () {
     const table = createTable();

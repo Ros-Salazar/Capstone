@@ -210,6 +210,15 @@ body {
 
 }
 
+.group-section, .calendar-section {
+  display: none; /* Default state is hidden */
+}
+
+.active-section {
+  display: block; /* This class will be used to show sections */
+}
+
+
 .project-header h1.editable:hover,
 .project-header p.editable:hover {
   background-color: #f1faff;
@@ -241,6 +250,11 @@ body {
   border-radius: 4px;
   font-size: 1em;
   cursor: pointer;
+}
+.main-table-btn.active,
+.calendar-btn.active {
+  background-color: #26a828; /* Change to your preferred highlight color */
+  color: #fff; /* Ensure the text is readable */
 }
 
 /* Project Detail Section */
