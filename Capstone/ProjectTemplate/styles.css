@@ -4,13 +4,11 @@
   padding: 0;
   box-sizing: border-box;
 }
-
 /* Basic Styling */
 body {
   font-family: Arial, sans-serif;
   color: #333;
 }
-
 /* Navbar */
 .navbar {
   display: flex;
@@ -20,18 +18,15 @@ body {
   background-color: #fff;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
-
 .navbar .logo {
   font-size: 1.5em;
   font-weight: bold;
   color: #077d03;
 }
-
 .navbar nav ul {
   display: flex;
   gap: 1.5em;
 }
-
 .navbar .login-btn {
   padding: 0.5em 1.5em;
   background-color: #077d03;
@@ -40,7 +35,6 @@ body {
   border-radius: 4px;
   cursor: pointer;
 }
-
 /* Project Overview */
 .project-overview {
   padding: 3em 2em;
@@ -48,14 +42,12 @@ body {
   background-color: #f1f1f1;
   text-align: left;
 }
-
 /* Group Section */
 .group-section {
   margin: 20px 0;
   padding: 20px;
   background-color: #f9f9f9;
 }
-
 .add-group-btn {
   margin-top: 20px;
   padding: 10px 20px;
@@ -66,21 +58,15 @@ body {
   cursor: pointer;
   font-size: 16px;
 }
-
 .add-group-btn:hover {
   background-color: #065c02;
 }
-
 /* Dynamic Table Styling */
 .group-table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse;
   margin-top: 20px;
-  border: none;
-  border-radius: 35px; /* Round the table corners */
-  overflow: hidden;
-  background-color: white;
+  table-layout: fixed;
 }
 
 .group-table th {
@@ -88,39 +74,18 @@ body {
   color: white;
   text-align: left;
   padding: 10px;
-  border: none;
 }
-
-.group-table th:first-child {
-  border-top-left-radius: 15px; /* Rounds top-left corner */
-}
-
-.group-table th:last-child {
-  border-top-right-radius: 15px; /* Rounds top-right corner */
-}
-
 .group-table th:hover {
   background-color: #065c02;
 }
-
 .group-table td {
   text-align: left;
   padding: 10px;
-  border: none;
+  border: 1px solid #ddd;
 }
-
-.group-table tr:last-child td:first-child {
-  border-bottom-left-radius: 15px; /* Rounds bottom-left corner */
-}
-
-.group-table tr:last-child td:last-child {
-  border-bottom-right-radius: 15px; /* Rounds bottom-right corner */
-}
-
 .group-table td:focus {
   outline: 2px solid #077d03;
 }
-
 .settings-btn {
   padding: 8px;
   background-color: #0b5ed7;
@@ -130,33 +95,25 @@ body {
   cursor: pointer;
   font-size: 14px;
 }
-
-
 /* Table Row Styling */
 .group-table tr:nth-child(even) {
   background-color: #f9f9f9;
 }
-
 .group-table tr:nth-child(odd) {
   background-color: #ffffff;
 }
-
 /* Dropdown "+" Alignment */
 .plus-header {
   text-align: center;
   position: relative;
   cursor: pointer;
 }
-
-
-
 /* Styling for group containers */
 .group-container {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
 }
-
 .group-container .group-card {
   flex: 1 1 calc(33.33% - 15px);
   padding: 15px;
@@ -171,18 +128,14 @@ body {
   background-color: #077d03;
   color: white;
   border: none;
-  border-radius: 5px;
   padding: 10px 20px;
   font-size: 14px;
   cursor: pointer;
   margin-top: 10px;
 }
-
-
 .add-item-btn:hover {
   background-color: #065c02;
 }
-
 /* Dropdown Styles */
 .dropdown-menu {
   position: absolute;
@@ -197,13 +150,12 @@ body {
   padding: 5px;
   cursor: pointer;
 }
-
 .dropdown-btn {
   background: none;
   border: none;
   cursor: pointer;
   font-size: 18px;
-  color: white;
+  color: black;
   margin-left: 200px;
 }
 .dropdown-menu .dropdown-item {
@@ -212,15 +164,9 @@ body {
   color: #333;
   cursor: pointer;
 }
-
 .dropdown-menu .dropdown-item:hover {
   background-color: #f1f1f1;
 }
-
-
-
-
-
 .calendar-btn {
   padding: 0.8em 1.5em;
   background-color: #077d03;
@@ -231,11 +177,9 @@ body {
   cursor: pointer;
   text-align: center;
 }
-
 .project-header h1.editable {
   margin-bottom: 0.5em;
 }
-
 .project-header p.editable {
   margin-top: 0.5em;
   margin-bottom: 1.5em;
@@ -243,20 +187,17 @@ body {
   color: #555;
   cursor: pointer;
 }
-
 .project-header h1.editable:hover,
 .project-header p.editable:hover {
   background-color: #f1faff;
   border-bottom: 1px dashed #077d03;
 }
-
 .button-container {
   display: flex;
   align-items: center;
   gap: 0.5em;
   margin-bottom: 0.2em;
 }
-
 /* Position button container in the top left of the table */
 .task-table-wrapper {
   display: flex;
@@ -264,10 +205,7 @@ body {
   align-items: flex-start; /* Aligns buttons to the left */
   margin: 1.5em auto;
   width: 90%;
-  border-radius: 10px;
 }
-
-
 .main-table-btn {
   padding: 0.8em 1.5em;
   background-color: #077d03;
@@ -278,7 +216,6 @@ body {
   cursor: pointer;
   text-align: center;
 }
-
 .cta-btn {
   padding: 0.8em 2em;
   background-color: #077d03;
@@ -288,13 +225,11 @@ body {
   font-size: 1em;
   cursor: pointer;
 }
-
 /* Project Detail Section */
 .project-detail {
   padding: 2em;
   text-align: left;
 }
-
 /* Style for the new item columns */
 .item-column {
   margin-top: 1em;
@@ -303,12 +238,10 @@ body {
   border: 1px solid #ddd;
   border-radius: 4px;
 }
-
 .item-column h3 {
   font-size: 1.5em;
   color: #077d03;
 }
-
 /* Footer */
 .footer {
   text-align: center;
@@ -317,7 +250,6 @@ body {
   font-size: 0.9em;
   color: #555;
 }
-
 /* Header template */
 .header {
   position: fixed;
@@ -332,20 +264,17 @@ body {
   align-items: center;
   justify-content: space-between;
 }
-
 .header .logo img {
   height: 60px;
   border-radius: 30px;
   width: auto;
   margin-right: 20px;
 }
-
 .header-right {
   display: flex;
   align-items: center;
   gap: 40px;
 }
-
 .header-right a {
   color: white;
   text-decoration: none;
@@ -354,11 +283,9 @@ body {
   padding: 10px 0;
   margin-right: 20px;
 }
-
 .header-right a:hover {
   text-decoration: underline;
 }
-
 .header a {
   float: left;
   color: white;
@@ -369,3 +296,4 @@ body {
   line-height: 30px;
   border-radius: 4px;
 }
+
