@@ -5,11 +5,11 @@ document.getElementById('addGroupBtn').addEventListener('click', function () {
     // Header Row
     const headerRow = document.createElement('tr');
 
-    // Fixed Option Button 
-    const optionHeader = document.createElement('th'); 
-    optionHeader.textContent = '⋮'; 
-    optionHeader.className = 'fixed-column'; 
-    headerRow.appendChild
+    // Fixed Option Button
+    const optionHeader = document.createElement('th');
+    optionHeader.textContent = '⋮';
+    optionHeader.className = 'fixed-column';
+    headerRow.appendChild(optionHeader);
 
     // Default Group Header
     const groupHeader = document.createElement('th');
@@ -76,10 +76,12 @@ function createDropdownMenu(options, onSelect) {
 
 // Function to Add a Column
 function addColumn(option, table, headerRow) {
+    const existingHeaders = Array.from(headerRow.cells).map(cell => cell.textContent.trim());
+    if (existingHeaders.includes(option)) return; // Prevent duplicate columns
+
     const newHeader = document.createElement('th');
     newHeader.textContent = option;
     newHeader.contentEditable = true;
-
     headerRow.insertBefore(newHeader, headerRow.lastChild);
 
     // Add appropriate cells to all rows
@@ -89,9 +91,9 @@ function addColumn(option, table, headerRow) {
         const newCell = document.createElement('td');
         if (option === 'Numbers') {
             const input = document.createElement('input');
-            input.type = 'text'; // Allows both numbers and money
+            input.type = 'text';
             input.style.width = '100%';
-            input.placeholder = 'Enter Value'; // Placeholder for clarity
+            input.placeholder = 'Enter Value';
             newCell.appendChild(input);
         } else if (option === 'Status') {
             const select = document.createElement('select');
@@ -122,7 +124,7 @@ function addTimelineColumns(table, headerRow) {
         newHeader.contentEditable = true;
         headerRow.insertBefore(newHeader, headerRow.lastChild);
 
-        // Add date picker cells to all existing rows
+        // Add date picker cells to all rows
         Array.from(table.rows).forEach((row, index) => {
             if (index === 0) return; // Skip header row
 
@@ -130,22 +132,55 @@ function addTimelineColumns(table, headerRow) {
             const dateInput = document.createElement('input');
             dateInput.type = 'date';
             dateInput.style.width = '100%';
-            dateInput.addEventListener('change', function() {
-                formatDate(dateInput);
-            });
-            dateCell.appendChild(dateInput);
 
+            // Display formatted date
+            const dateDisplay = document.createElement('span');
+            dateDisplay.className = 'formatted-date';
+            dateDisplay.style.cursor = 'pointer';
+            dateDisplay.style.display = 'none'; // Initially hidden
+
+            // On date change, update display and hide picker
+            dateInput.addEventListener('change', function () {
+                const date = new Date(dateInput.value);
+                if (!isNaN(date)) {
+                    const options = { month: 'short', day: '2-digit', year: 'numeric' };
+                    dateDisplay.textContent = new Intl.DateTimeFormat('en-US', options).format(date);
+                    dateDisplay.style.display = 'block'; // Show formatted date
+                    dateInput.style.display = 'none';   // Hide the picker
+                }
+            });
+
+            // Allow reopening the picker on clicking the display
+            dateDisplay.addEventListener('click', function () {
+                dateInput.style.display = 'block';   // Show picker
+                dateDisplay.style.display = 'none'; // Hide display
+            });
+
+            // Append input and display to the cell
+            dateCell.appendChild(dateInput);
+            dateCell.appendChild(dateDisplay);
+
+            // Insert the date cell into the row
             row.insertBefore(dateCell, row.lastChild);
         });
     });
 }
 
-function formatDate(input) { 
-    const date = new Date(input.value); 
-    const options = { month: 'short', day: '2-digit' }; 
-    const formattedDate = new Intl.DateTimeFormat('en-US', options).format(date); 
-    input.value = formattedDate; 
+// Function to Update Date Display
+function updateDateDisplay(input, display) {
+    const date = new Date(input.value);
+    if (!isNaN(date)) {
+        const options = { month: 'short', day: '2-digit' };
+        const formattedDate = new Intl.DateTimeFormat('en-US', options).format(date);
+
+        display.textContent = formattedDate; // Show formatted date
+        display.style.display = 'block';    // Ensure it's visible
+    } else {
+        display.textContent = ''; // Clear display if date is invalid
+    }
 }
+
+
 // Function to Add a Row
 function addRow(table, headerRow) {
     const row = document.createElement('tr');
@@ -157,21 +192,25 @@ function addRow(table, headerRow) {
             // First cell: Add row actions
             addCellDropdown(cell, row);
             cell.className = 'fixed-column';
-        } else if (header.textContent === 'New Group'){
-            cell.contentEditable = true;
         } else if (header.textContent === 'Start Date' || header.textContent === 'Due Date') {
             const dateInput = document.createElement('input');
             dateInput.type = 'date';
             dateInput.style.width = '100%';
-            dateInput.addEventListener('change', function(){
-                formatDate(dateInput);
+
+            const dateDisplay = document.createElement('span');
+            dateDisplay.className = 'formatted-date';
+
+            dateInput.addEventListener('change', function () {
+                updateDateDisplay(dateInput, dateDisplay);
             });
+
             cell.appendChild(dateInput);
+            cell.appendChild(dateDisplay);
         } else if (header.textContent === 'Numbers') {
             const input = document.createElement('input');
-            input.type = 'text'; // Allows both numbers and money
+            input.type = 'text';
             input.style.width = '100%';
-            input.placeholder = 'Enter Value'; // Placeholder for clarity
+            input.placeholder = 'Enter Value';
             cell.appendChild(input);
         } else if (header.textContent === 'Status') {
             const select = document.createElement('select');
