@@ -5,6 +5,12 @@ document.getElementById('addGroupBtn').addEventListener('click', function () {
     // Header Row
     const headerRow = document.createElement('tr');
 
+    // Fixed Option Button 
+    const optionHeader = document.createElement('th'); 
+    optionHeader.textContent = '⋮'; 
+    optionHeader.className = 'fixed-column'; 
+    headerRow.appendChild
+
     // Default Group Header
     const groupHeader = document.createElement('th');
     groupHeader.textContent = 'New Group';
@@ -124,6 +130,9 @@ function addTimelineColumns(table, headerRow) {
             const dateInput = document.createElement('input');
             dateInput.type = 'date';
             dateInput.style.width = '100%';
+            dateInput.addEventListener('change', function() {
+                formatDate(dateInput);
+            });
             dateCell.appendChild(dateInput);
 
             row.insertBefore(dateCell, row.lastChild);
@@ -131,6 +140,12 @@ function addTimelineColumns(table, headerRow) {
     });
 }
 
+function formatDate(input) { 
+    const date = new Date(input.value); 
+    const options = { month: 'short', day: '2-digit' }; 
+    const formattedDate = new Intl.DateTimeFormat('en-US', options).format(date); 
+    input.value = formattedDate; 
+}
 // Function to Add a Row
 function addRow(table, headerRow) {
     const row = document.createElement('tr');
@@ -141,10 +156,16 @@ function addRow(table, headerRow) {
         if (index === 0) {
             // First cell: Add row actions
             addCellDropdown(cell, row);
+            cell.className = 'fixed-column';
+        } else if (header.textContent === 'New Group'){
+            cell.contentEditable = true;
         } else if (header.textContent === 'Start Date' || header.textContent === 'Due Date') {
             const dateInput = document.createElement('input');
             dateInput.type = 'date';
             dateInput.style.width = '100%';
+            dateInput.addEventListener('change', function(){
+                formatDate(dateInput);
+            });
             cell.appendChild(dateInput);
         } else if (header.textContent === 'Numbers') {
             const input = document.createElement('input');
