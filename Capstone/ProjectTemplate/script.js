@@ -1,7 +1,16 @@
+document.getElementById('mainTableBtn').addEventListener('click', function() {
+    document.querySelector('.group-section').style.display = 'block';
+    document.querySelector('.calendar-section').style.display = 'none';
+});
+
+document.getElementById('calendarBtn').addEventListener('click', function() {
+    document.querySelector('.group-section').style.display = 'none';
+    document.querySelector('.calendar-section').style.display = 'block';
+});
+
 document.getElementById('addGroupBtn').addEventListener('click', function () {
     const table = createTable();
     const container = document.querySelector('.group-container');
-
     container.appendChild(table);
     container.appendChild(createAddRowButton(table));
 });
@@ -25,7 +34,7 @@ function createHeaderRow(table) {
     headerRow.appendChild(createHeaderCell('New Group', '', true));
 
     const plusHeader = createHeaderCell('+', 'plus-header');
-    const dropdownMenu = createDropdownMenu(['Text', 'Numbers', 'Status', 'Key Persons', 'Timeline'], (option) => {
+    const dropdownMenu = createDropdownMenu(['Text', 'Numbers', 'Status', 'Key Persons', 'Timeline', 'Upload File'], (option) => {
         option === 'Timeline' ? addTimelineColumns(table, headerRow) : addColumn(option, table, headerRow);
         dropdownMenu.style.display = 'none';
     });
@@ -124,6 +133,10 @@ function createCell(headerText) {
         cell.appendChild(createSelect(['To-do', 'In Progress', 'Done']));
     } else if (headerText === 'Key Persons') {
         cell.appendChild(createInput('email'));
+    } else if (headerText === 'Upload File') {
+        const fileInput = createInput('file');
+        fileInput.addEventListener('change', handleFileUpload);
+        cell.appendChild(fileInput);
     } else {
         cell.contentEditable = true;
     }
@@ -206,4 +219,17 @@ function createActionCell(row) {
     cell.appendChild(dropdownBtn);
     cell.appendChild(dropdownMenu);
     return cell;
+}
+
+// Function to Handle File Upload
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            console.log('File content:', e.target.result);
+            // Process the file content or upload it to a server
+        };
+        reader.readAsDataURL(file);
+    }
 }

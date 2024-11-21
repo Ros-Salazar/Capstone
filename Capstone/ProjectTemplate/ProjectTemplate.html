@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Project Details</title>
   <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
   <div class="header">
     <a href="#default" class="logo">
@@ -34,38 +32,39 @@
   <!-- Project Overview Section -->
   <section class="project-overview">
     <div class="project-header">
-      <h1 id="projectName" class="editable">Project Name</h1>
-      <p id="projectDescription" class="editable">Project description goes here. This is a brief overview of the project objectives and goals.</p>
+      <h1 id="projectName" class="editable" contenteditable="true">Project Name</h1>
+      <p id="projectDescription" class="editable" contenteditable="true">Project description goes here. This is a brief overview of the project objectives and goals.</p>
       
       <div class="task-table-wrapper">
         <div class="button-table-wrapper">
-        <!-- Buttons -->
+          <!-- Buttons -->
           <div class="button-container">
-            <button class="main-table-btn">Main Table</button>
-            <button class="calendar-btn" id="calendarBtn">Calendar</button>
+            <button id="mainTableBtn" class="main-table-btn">Main Table</button>
+            <button id="calendarBtn" class="calendar-btn">Calendar</button>
           </div>
-
-        </div>
         </div>
       </div>
+    </div>
   </section>
 
-<!-- Main Table Details-->
-<section class="group-section">
-  <!-- Group Container -->
-  <div class="group-container">
-  </div>
-  <!-- Add New Group Button -->
-  <div class="add-group-container">
-    <button id="addGroupBtn" class="add-group-btn">Add New Group</button>
-  </div>
-</section>
+  <!-- Main Table Section -->
+  <section class="group-section">
+    <div class="group-container"></div>
+    <div class="add-group-container">
+      <button id="addGroupBtn" class="add-group-btn">Add New Group</button>
+    </div>
+  </section>
+
+  <!-- Calendar Section (Initially Hidden) -->
+  <section class="calendar-section" style="display: none;">
+    <p>Calendar Content</p>
+  </section>
 
   <!-- Footer -->
   <footer class="footer">
     <p>&copy; 2024 City Engineering Office. All rights reserved.</p>
   </footer>
 
-<script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

@@ -207,12 +207,21 @@ body {
   font-size: 1.2em;
   color: #555;
   cursor: pointer;
+
 }
 
 .project-header h1.editable:hover,
 .project-header p.editable:hover {
   background-color: #f1faff;
   border-bottom: 1px dashed #077d03;
+}
+.editable {
+
+  padding: 5px;
+}
+.editable:focus {
+  outline: none;
+  border-color: green;
 }
 
 /* Buttons */
