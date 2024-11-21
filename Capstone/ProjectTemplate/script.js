@@ -1,61 +1,61 @@
 document.getElementById('addGroupBtn').addEventListener('click', function () {
+    const table = createTable();
+    const container = document.querySelector('.group-container');
+
+    container.appendChild(table);
+    container.appendChild(createAddRowButton(table));
+});
+
+// Function to Create a Table
+function createTable() {
     const table = document.createElement('table');
     table.className = 'group-table';
 
-    // Header Row
-    const headerRow = document.createElement('tr');
-
-    // Fixed Option Button
-    const optionHeader = document.createElement('th');
-    optionHeader.textContent = '⋮';
-    optionHeader.className = 'fixed-column';
-    headerRow.appendChild(optionHeader);
-
-    // Default Group Header
-    const groupHeader = document.createElement('th');
-    groupHeader.textContent = 'New Group';
-    groupHeader.contentEditable = true;
-    headerRow.appendChild(groupHeader);
-
-    // Add "+" Header for Adding Columns
-    const plusHeader = document.createElement('th');
-    plusHeader.className = 'plus-header';
-    plusHeader.textContent = '+';
-    headerRow.appendChild(plusHeader);
-
-    // Add Dropdown for Column Options
-    const dropdownMenu = createDropdownMenu(['Text', 'Numbers', 'Status', 'Key Persons', 'Timeline'], (option) => {
-        if (option === 'Timeline') {
-            addTimelineColumns(table, headerRow);
-        } else {
-            addColumn(option, table, headerRow);
-        }
-        dropdownMenu.style.display = 'none';
-    });
-    plusHeader.appendChild(dropdownMenu);
-
-    plusHeader.addEventListener('click', function () {
-        dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
-    });
-
+    const headerRow = createHeaderRow(table);
     table.appendChild(headerRow);
 
-    // Add Default Row
-    addRow(table, headerRow);
+    addRow(table, headerRow); // Add Default Row
+    return table;
+}
 
-    // Add "Add Item" Button
+// Function to Create Header Row
+function createHeaderRow(table) {
+    const headerRow = document.createElement('tr');
+    headerRow.appendChild(createHeaderCell('⋮', 'fixed-column'));
+    headerRow.appendChild(createHeaderCell('New Group', '', true));
+
+    const plusHeader = createHeaderCell('+', 'plus-header');
+    const dropdownMenu = createDropdownMenu(['Text', 'Numbers', 'Status', 'Key Persons', 'Timeline'], (option) => {
+        option === 'Timeline' ? addTimelineColumns(table, headerRow) : addColumn(option, table, headerRow);
+        dropdownMenu.style.display = 'none';
+    });
+
+    plusHeader.addEventListener('click', () => {
+        dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
+    });
+    plusHeader.appendChild(dropdownMenu);
+    headerRow.appendChild(plusHeader);
+
+    return headerRow;
+}
+
+// Function to Create Add Row Button
+function createAddRowButton(table) {
     const addRowBtn = document.createElement('button');
     addRowBtn.className = 'add-item-btn';
     addRowBtn.textContent = 'Add Item';
-    addRowBtn.addEventListener('click', function () {
-        addRow(table, headerRow);
-    });
+    addRowBtn.addEventListener('click', () => addRow(table, table.rows[0]));
+    return addRowBtn;
+}
 
-    // Append Table and Button to the Container
-    const container = document.querySelector('.group-container');
-    container.appendChild(table);
-    container.appendChild(addRowBtn);
-});
+// Function to Create Header Cell
+function createHeaderCell(text, className = '', editable = false) {
+    const header = document.createElement('th');
+    header.textContent = text;
+    header.className = className;
+    if (editable) header.contentEditable = true;
+    return header;
+}
 
 // Function to Create Dropdown Menu
 function createDropdownMenu(options, onSelect) {
@@ -76,168 +76,115 @@ function createDropdownMenu(options, onSelect) {
 
 // Function to Add a Column
 function addColumn(option, table, headerRow) {
-    const existingHeaders = Array.from(headerRow.cells).map(cell => cell.textContent.trim());
-    if (existingHeaders.includes(option)) return; // Prevent duplicate columns
+    if (Array.from(headerRow.cells).some(cell => cell.textContent.trim() === option)) return;
 
-    const newHeader = document.createElement('th');
-    newHeader.textContent = option;
-    newHeader.contentEditable = true;
+    const newHeader = createHeaderCell(option, '', true);
     headerRow.insertBefore(newHeader, headerRow.lastChild);
 
-    // Add appropriate cells to all rows
     Array.from(table.rows).forEach((row, index) => {
-        if (index === 0) return; // Skip header row
-
-        const newCell = document.createElement('td');
-        if (option === 'Numbers') {
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.style.width = '100%';
-            input.placeholder = 'Enter Value';
-            newCell.appendChild(input);
-        } else if (option === 'Status') {
-            const select = document.createElement('select');
-            ['To-do', 'In Progress', 'Done'].forEach(status => {
-                const opt = document.createElement('option');
-                opt.value = status;
-                opt.textContent = status;
-                select.appendChild(opt);
-            });
-            newCell.appendChild(select);
-        } else if (option === 'Key Persons') {
-            const input = document.createElement('input');
-            input.type = 'email';
-            input.style.width = '100%';
-            newCell.appendChild(input);
-        } else {
-            newCell.contentEditable = true;
-        }
-        row.insertBefore(newCell, row.lastChild);
+        if (index === 0) return;
+        row.insertBefore(createCell(option), row.lastChild);
     });
 }
 
-// Function to Add Timeline Columns (Start Date and Due Date)
+// Function to Add Timeline Columns
 function addTimelineColumns(table, headerRow) {
     ['Start Date', 'Due Date'].forEach(dateColumn => {
-        const newHeader = document.createElement('th');
-        newHeader.textContent = dateColumn;
-        newHeader.contentEditable = true;
+        const newHeader = createHeaderCell(dateColumn, '', true);
         headerRow.insertBefore(newHeader, headerRow.lastChild);
 
-        // Add date picker cells to all rows
         Array.from(table.rows).forEach((row, index) => {
-            if (index === 0) return; // Skip header row
-
-            const dateCell = document.createElement('td');
-            const dateInput = document.createElement('input');
-            dateInput.type = 'date';
-            dateInput.style.width = '100%';
-
-            // Display formatted date
-            const dateDisplay = document.createElement('span');
-            dateDisplay.className = 'formatted-date';
-            dateDisplay.style.cursor = 'pointer';
-            dateDisplay.style.display = 'none'; // Initially hidden
-
-            // On date change, update display and hide picker
-            dateInput.addEventListener('change', function () {
-                const date = new Date(dateInput.value);
-                if (!isNaN(date)) {
-                    const options = { month: 'short', day: '2-digit', year: 'numeric' };
-                    dateDisplay.textContent = new Intl.DateTimeFormat('en-US', options).format(date);
-                    dateDisplay.style.display = 'block'; // Show formatted date
-                    dateInput.style.display = 'none';   // Hide the picker
-                }
-            });
-
-            // Allow reopening the picker on clicking the display
-            dateDisplay.addEventListener('click', function () {
-                dateInput.style.display = 'block';   // Show picker
-                dateDisplay.style.display = 'none'; // Hide display
-            });
-
-            // Append input and display to the cell
-            dateCell.appendChild(dateInput);
-            dateCell.appendChild(dateDisplay);
-
-            // Insert the date cell into the row
-            row.insertBefore(dateCell, row.lastChild);
+            if (index === 0) return;
+            row.insertBefore(createDateCell(), row.lastChild);
         });
     });
 }
-
-// Function to Update Date Display
-function updateDateDisplay(input, display) {
-    const date = new Date(input.value);
-    if (!isNaN(date)) {
-        const options = { month: 'short', day: '2-digit' };
-        const formattedDate = new Intl.DateTimeFormat('en-US', options).format(date);
-
-        display.textContent = formattedDate; // Show formatted date
-        display.style.display = 'block';    // Ensure it's visible
-    } else {
-        display.textContent = ''; // Clear display if date is invalid
-    }
-}
-
 
 // Function to Add a Row
 function addRow(table, headerRow) {
     const row = document.createElement('tr');
 
     Array.from(headerRow.cells).forEach((header, index) => {
-        const cell = document.createElement('td');
-
-        if (index === 0) {
-            // First cell: Add row actions
-            addCellDropdown(cell, row);
-            cell.className = 'fixed-column';
-        } else if (header.textContent === 'Start Date' || header.textContent === 'Due Date') {
-            const dateInput = document.createElement('input');
-            dateInput.type = 'date';
-            dateInput.style.width = '100%';
-
-            const dateDisplay = document.createElement('span');
-            dateDisplay.className = 'formatted-date';
-
-            dateInput.addEventListener('change', function () {
-                updateDateDisplay(dateInput, dateDisplay);
-            });
-
-            cell.appendChild(dateInput);
-            cell.appendChild(dateDisplay);
-        } else if (header.textContent === 'Numbers') {
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.style.width = '100%';
-            input.placeholder = 'Enter Value';
-            cell.appendChild(input);
-        } else if (header.textContent === 'Status') {
-            const select = document.createElement('select');
-            ['To-do', 'In Progress', 'Done'].forEach(status => {
-                const opt = document.createElement('option');
-                opt.value = status;
-                opt.textContent = status;
-                select.appendChild(opt);
-            });
-            cell.appendChild(select);
-        } else if (header.textContent === 'Key Persons') {
-            const input = document.createElement('input');
-            input.type = 'email';
-            input.style.width = '100%';
-            cell.appendChild(input);
-        } else {
-            cell.contentEditable = true;
-        }
-
+        const cell = index === 0 ? createActionCell(row) : createCell(header.textContent);
         row.appendChild(cell);
     });
 
     table.appendChild(row);
 }
 
-// Function to Add Dropdown for Row Actions
-function addCellDropdown(cell, row) {
+// Function to Create Cell
+function createCell(headerText) {
+    const cell = document.createElement('td');
+
+    if (headerText === 'Start Date' || headerText === 'Due Date') {
+        return createDateCell();
+    } else if (headerText === 'Numbers') {
+        cell.appendChild(createInput('text', 'Enter Value'));
+    } else if (headerText === 'Status') {
+        cell.appendChild(createSelect(['To-do', 'In Progress', 'Done']));
+    } else if (headerText === 'Key Persons') {
+        cell.appendChild(createInput('email'));
+    } else {
+        cell.contentEditable = true;
+    }
+
+    return cell;
+}
+
+// Function to Create Date Cell
+function createDateCell() {
+    const cell = document.createElement('td');
+    const dateInput = createInput('date');
+    const dateDisplay = document.createElement('span');
+    dateDisplay.className = 'formatted-date';
+    dateDisplay.style.cursor = 'pointer';
+    dateDisplay.style.display = 'none';
+
+    dateInput.addEventListener('change', () => {
+        const date = new Date(dateInput.value);
+        if (!isNaN(date)) {
+            dateDisplay.textContent = date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+            dateInput.style.display = 'none';
+            dateDisplay.style.display = 'block';
+        }
+    });
+
+    dateDisplay.addEventListener('click', () => {
+        dateInput.style.display = 'block';
+        dateDisplay.style.display = 'none';
+    });
+
+    cell.appendChild(dateInput);
+    cell.appendChild(dateDisplay);
+    return cell;
+}
+
+// Function to Create Input
+function createInput(type, placeholder = '') {
+    const input = document.createElement('input');
+    input.type = type;
+    input.style.width = '100%';
+    if (placeholder) input.placeholder = placeholder;
+    return input;
+}
+
+// Function to Create Select
+function createSelect(options) {
+    const select = document.createElement('select');
+    options.forEach(option => {
+        const opt = document.createElement('option');
+        opt.value = option;
+        opt.textContent = option;
+        select.appendChild(opt);
+    });
+    return select;
+}
+
+// Function to Create Action Cell
+function createActionCell(row) {
+    const cell = document.createElement('td');
+    cell.className = 'fixed-column';
+
     const dropdownBtn = document.createElement('button');
     dropdownBtn.textContent = '⋮';
     dropdownBtn.className = 'dropdown-btn';
@@ -251,12 +198,12 @@ function addCellDropdown(cell, row) {
     deleteOption.className = 'dropdown-item';
     deleteOption.addEventListener('click', () => row.remove());
 
-    dropdownMenu.appendChild(deleteOption);
-
     dropdownBtn.addEventListener('click', () => {
         dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
     });
 
+    dropdownMenu.appendChild(deleteOption);
     cell.appendChild(dropdownBtn);
     cell.appendChild(dropdownMenu);
+    return cell;
 }

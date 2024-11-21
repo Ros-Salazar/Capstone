@@ -9,6 +9,7 @@ body {
   font-family: Arial, sans-serif;
   color: #333;
 }
+
 /* Navbar */
 .navbar {
   display: flex;
@@ -18,15 +19,18 @@ body {
   background-color: #fff;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
+
 .navbar .logo {
   font-size: 1.5em;
   font-weight: bold;
   color: #077d03;
 }
+
 .navbar nav ul {
   display: flex;
   gap: 1.5em;
 }
+
 .navbar .login-btn {
   padding: 0.5em 1.5em;
   background-color: #077d03;
@@ -35,6 +39,7 @@ body {
   border-radius: 4px;
   cursor: pointer;
 }
+
 /* Project Overview */
 .project-overview {
   padding: 3em 2em;
@@ -43,21 +48,24 @@ body {
   text-align: left;
   display: flex;
   flex-direction: column;
-  align-items: flex-start; /* Ensure everything is aligned to the start */
+  align-items: flex-start;
 }
+
 .project-header {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   width: 100%;
 }
+
 /* Group Section */
 .group-section {
   margin: 20px 0;
   padding: 20px;
   background-color: #f9f9f9;
 }
-.add-group-btn {
+
+.add-group-btn, .add-item-btn {
   margin-top: 20px;
   padding: 10px 20px;
   background-color: #077d03;
@@ -67,9 +75,11 @@ body {
   cursor: pointer;
   font-size: 16px;
 }
-.add-group-btn:hover {
+
+.add-group-btn:hover, .add-item-btn:hover {
   background-color: #065c02;
 }
+
 /* Dynamic Table Styling */
 .group-table {
   width: 100%;
@@ -84,17 +94,41 @@ body {
   text-align: left;
   padding: 10px;
 }
-.group-table th:hover {
-  background-color: #065c02;
-}
+
 .group-table td {
   text-align: left;
   padding: 10px;
   border: 1px solid #ddd;
 }
-.group-table td:focus {
-  outline: 2px solid #077d03;
+
+.group-table tr:nth-child(even) {
+  background-color: #f9f9f9;
 }
+
+.group-table tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+.group-table select {
+  border: none;
+  background-color: transparent;
+  outline: none;
+  width: 100%;
+  padding: 8px;
+  font-size: inherit;
+  appearance: none;
+  cursor: pointer;
+}
+
+.group-table select:hover {
+  background-color: #f9f9f9;
+}
+
+.group-table select:focus {
+  border: 1px solid #077d03;
+  background-color: #f1f1f1;
+}
+
 .settings-btn {
   padding: 8px;
   background-color: #0b5ed7;
@@ -104,37 +138,22 @@ body {
   cursor: pointer;
   font-size: 14px;
 }
-/* Table Row Styling */
-.group-table tr:nth-child(even) {
-  background-color: #f9f9f9;
+
+/* Fixed Option Button Styling */
+.fixed-column {
+  position: sticky;
+  left: 0;
+  background-color: white;
+  z-index: 1;
 }
-.group-table tr:nth-child(odd) {
-  background-color: #ffffff;
-}
-/* Fixed Option Button Styling */ 
-.fixed-column { 
-  position: sticky; 
-  left: 0; 
-  background-color: white; 
-  z-index: 1; 
-} 
-.plus-header { 
-  text-align: center; 
-  position: relative; 
-  cursor: pointer; 
-}
-/* Dropdown "+" Alignment */
-.plus-header {
-  text-align: center;
-  position: relative;
-  cursor: pointer;
-}
+
 /* Styling for group containers */
 .group-container {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
 }
+
 .group-container .group-card {
   flex: 1 1 calc(33.33% - 15px);
   padding: 15px;
@@ -144,19 +163,7 @@ body {
   text-align: center;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-/* Button to add new items */
-.add-item-btn {
-  background-color: #077d03;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  font-size: 14px;
-  cursor: pointer;
-  margin-top: 10px;
-}
-.add-item-btn:hover {
-  background-color: #065c02;
-}
+
 /* Dropdown Styles */
 .dropdown-menu {
   position: absolute;
@@ -167,10 +174,14 @@ body {
   display: none;
   z-index: 1000;
 }
+
 .dropdown-item {
-  padding: 5px;
+  padding: 10px 15px;
+  font-size: 14px;
+  color: #333;
   cursor: pointer;
 }
+
 .dropdown-btn {
   background: none;
   border: none;
@@ -179,19 +190,17 @@ body {
   color: black;
   margin-left: 200px;
 }
-.dropdown-menu .dropdown-item {
-  padding: 10px 15px;
-  font-size: 14px;
-  color: #333;
-  cursor: pointer;
-}
-.dropdown-menu .dropdown-item:hover {
+
+.dropdown-item:hover {
   background-color: #f1f1f1;
 }
 
-.project-header h1.editable {
+/* Project Header Editable Elements */
+.project-header h1.editable,
+.project-header p.editable {
   margin-bottom: 0.5em;
 }
+
 .project-header p.editable {
   margin-top: 0.5em;
   margin-bottom: 1.5em;
@@ -199,26 +208,23 @@ body {
   color: #555;
   cursor: pointer;
 }
+
 .project-header h1.editable:hover,
 .project-header p.editable:hover {
   background-color: #f1faff;
   border-bottom: 1px dashed #077d03;
 }
+
+/* Buttons */
 .button-container {
   display: flex;
   gap: 0.5em;
-  margin-top: 1em; /* Adjust margin to fit below the description */
+  margin-top: 1em;
 }
 
-/* Adjust alignment of the task table wrapper */
-.task-table-wrapper {
-  width: 100%; /* Make it take the full width */
-  display: flex;
-  justify-content: flex-start; /* Ensure content is aligned to the start */
-  margin-top: 1em; /* Adjust margin to fit below the buttons */
-}
 .main-table-btn,
-.calendar-btn {
+.calendar-btn,
+.cta-btn {
   padding: 0.8em 1.5em;
   background-color: #077d03;
   color: white;
@@ -228,20 +234,12 @@ body {
   cursor: pointer;
 }
 
-.cta-btn {
-  padding: 0.8em 2em;
-  background-color: #077d03;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1em;
-  cursor: pointer;
-}
 /* Project Detail Section */
 .project-detail {
   padding: 2em;
   text-align: left;
 }
+
 /* Style for the new item columns */
 .item-column {
   margin-top: 1em;
@@ -250,10 +248,12 @@ body {
   border: 1px solid #ddd;
   border-radius: 4px;
 }
+
 .item-column h3 {
   font-size: 1.5em;
   color: #077d03;
 }
+
 /* Footer */
 .footer {
   text-align: center;
@@ -262,7 +262,8 @@ body {
   font-size: 0.9em;
   color: #555;
 }
-/* Header template */
+
+/* Header Template */
 .header {
   position: fixed;
   top: 0;
@@ -276,17 +277,20 @@ body {
   align-items: center;
   justify-content: space-between;
 }
+
 .header .logo img {
   height: 60px;
   border-radius: 30px;
   width: auto;
   margin-right: 20px;
 }
+
 .header-right {
   display: flex;
   align-items: center;
   gap: 40px;
 }
+
 .header-right a {
   color: white;
   text-decoration: none;
@@ -295,9 +299,11 @@ body {
   padding: 10px 0;
   margin-right: 20px;
 }
+
 .header-right a:hover {
   text-decoration: underline;
 }
+
 .header a {
   float: left;
   color: white;
@@ -308,26 +314,11 @@ body {
   line-height: 30px;
   border-radius: 4px;
 }
-/* Remove borders from Numbers input fields */
-input[type="text"][placeholder="Enter Value"] {
-  border: none;
-}
 
-/* Remove borders from Key Persons input fields */
-input[type="email"] {
-  border: none;
-}
-
-/* Optional: Add some padding and background color for better visibility */
-input[type="text"][placeholder="Enter Value"], 
-input[type="email"] {
-  padding: 8px;
-}
-/* Remove borders from date inputs */
+/* Remove borders from input fields */
+input[type="text"][placeholder="Enter Value"],
+input[type="email"],
 input[type="date"] {
   border: none;
-}
-/* Optional: Add some padding and background color for better visibility */
-input[type="date"] {
   padding: 8px;
 }
