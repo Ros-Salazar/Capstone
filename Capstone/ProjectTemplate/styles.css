@@ -4,6 +4,7 @@
   padding: 0;
   box-sizing: border-box;
 }
+
 /* Basic Styling */
 body {
   font-family: Arial, sans-serif;
@@ -65,7 +66,7 @@ body {
   background-color: #f9f9f9;
 }
 
-.add-group-btn, .add-item-btn {
+.add-group-btn, .add-item-btn, .prevMonth, .nextMonth {
   margin-top: 20px;
   padding: 10px 20px;
   background-color: #077d03;
@@ -76,7 +77,7 @@ body {
   font-size: 16px;
 }
 
-.add-group-btn:hover, .add-item-btn:hover {
+.add-group-btn:hover, .add-item-btn:hover, .prevMonth:hover, .nextMonth:hover {
   background-color: #065c02;
 }
 
@@ -344,4 +345,52 @@ input[type="email"],
 input[type="date"] {
   border: none;
   padding: 8px;
+}
+
+/* Calendar Styling */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1em;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.calendar-day {
+  border: 1px solid #ccc;
+  text-align: center;
+  padding: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.calendar-day.pinned {
+  background-color: #077d03;
+  color: white;
+}
+
+.calendar-day:hover {
+  background-color: #f1f1f1;
+  color: black;
+}
+
+/* Updated styles for calendar navigation buttons */
+#prevMonth, #nextMonth {
+  padding: 0.8em 1.5em;
+  background-color: #077d03;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#prevMonth:hover, #nextMonth:hover {
+  background-color: #065c02;
 }

@@ -120,8 +120,13 @@ function addTimelineColumns(table, headerRow) {
         headerRow.insertBefore(newHeader, headerRow.lastChild);
 
         Array.from(table.rows).forEach((row, index) => {
-            if (index === 0) return;
-            row.insertBefore(createDateCell(), row.lastChild);
+            if (index === 0) return; // Skip the header row
+            const dateCell = createDateCell();
+            row.insertBefore(dateCell, row.lastChild);
+
+            // Add synchronization to the calendar
+            const dateInput = dateCell.querySelector('input[type="date"]');
+            dateInput.addEventListener('change', () => syncDateToCalendar(dateInput.value));
         });
     });
 }
@@ -176,6 +181,9 @@ function createDateCell() {
             dateDisplay.textContent = date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
             dateInput.style.display = 'none';
             dateDisplay.style.display = 'block';
+
+            // Synchronize with calendar
+            syncDateToCalendar(dateInput.value);
         }
     });
 
@@ -189,6 +197,14 @@ function createDateCell() {
     return cell;
 }
 
+// Synchronize the selected date to the calendar
+function syncDateToCalendar(date) {
+    if (!date) return;
+    if (!pinnedDates.includes(date)) {
+        pinnedDates.push(date); // Add the date to pinnedDates
+    }
+    renderCalendar(); // Re-render the calendar to reflect the changes
+}
 // Function to Create Input
 function createInput(type, placeholder = '') {
     const input = document.createElement('input');
@@ -250,3 +266,99 @@ function handleFileUpload(event) {
         reader.readAsDataURL(file);
     }
 }
+
+document.getElementById('calendarBtn').addEventListener('click', function () {
+    document.querySelector('.group-section').classList.remove('active-section');
+    document.querySelector('.calendar-section').classList.add('active-section');
+    setActiveButton('calendarBtn');
+    renderCalendar();
+});
+
+// Calendar Variables
+const calendarGrid = document.querySelector('.calendar-grid');
+const monthYearDisplay = document.getElementById('monthYearDisplay');
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
+let pinnedDates = []; // Array to store pinned dates
+
+// Function to Render Calendar
+function renderCalendar() {
+    calendarGrid.innerHTML = ''; // Clear previous calendar
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    // Display current month and year
+    monthYearDisplay.textContent = `${new Date(currentYear, currentMonth).toLocaleString('en-US', { month: 'long' })} ${currentYear}`;
+
+    // Add empty days for the previous month
+    for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.classList.add('calendar-day');
+        calendarGrid.appendChild(emptyCell);
+    }
+
+    // Add days of the current month
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayCell = document.createElement('div');
+        dayCell.textContent = day;
+        dayCell.classList.add('calendar-day');
+        const fullDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        // Check if the date is pinned
+        if (pinnedDates.includes(fullDate)) {
+            dayCell.classList.add('pinned');
+        }
+
+        dayCell.addEventListener('click', () => togglePinDate(fullDate, dayCell));
+        calendarGrid.appendChild(dayCell);
+    }
+}
+
+// Function to Toggle Pin Date
+function togglePinDate(date, dayCell) {
+    if (pinnedDates.includes(date)) {
+        pinnedDates = pinnedDates.filter(d => d !== date);
+        dayCell.classList.remove('pinned');
+    } else {
+        pinnedDates.push(date);
+        dayCell.classList.add('pinned');
+    }
+    renderCalendar();
+}
+
+// Function to Update Table with Pinned Dates
+function updateTableWithPinnedDates() {
+    const tables = document.querySelectorAll('.group-table');
+    tables.forEach(table => {
+        const headerRow = table.rows[0];
+        const dateHeaders = Array.from(headerRow.cells).map(cell => cell.textContent.trim());
+
+        pinnedDates.forEach(date => {
+            if (!dateHeaders.includes(date)) {
+                addColumn(date, table, headerRow);
+            }
+        });
+    });
+}
+
+// Navigation Buttons for Calendar
+document.getElementById('prevMonth').addEventListener('click', () => {
+    currentMonth--;
+    if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+    }
+    renderCalendar();
+});
+
+document.getElementById('nextMonth').addEventListener('click', () => {
+    currentMonth++;
+    if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+    }
+    renderCalendar();
+});
+
+// Initialize Calendar
+document.addEventListener('DOMContentLoaded', renderCalendar);
