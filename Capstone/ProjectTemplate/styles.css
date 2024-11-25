@@ -189,7 +189,7 @@ body {
   cursor: pointer;
   font-size: 18px;
   color: black;
-  margin-left: 200px;
+  margin-left: 0px;
 }
 
 .dropdown-item:hover {
