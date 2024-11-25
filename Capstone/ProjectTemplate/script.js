@@ -54,6 +54,7 @@ function createHeaderRow(table) {
     const dropdownMenu = createDropdownMenu(['Text', 'Numbers', 'Status', 'Key Persons', 'Timeline', 'Upload File'], (option) => {
         option === 'Timeline' ? addTimelineColumns(table, headerRow) : addColumn(option, table, headerRow);
         dropdownMenu.style.display = 'none';
+        dropdownMenu.style.cursor = 'pointer';
     });
 
     plusHeader.addEventListener('click', () => {
