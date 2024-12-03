@@ -96,6 +96,16 @@ body {
   padding: 10px;
 }
 
+.group-table th.fixed-column {
+  width: 30px; /* Match this width with the .fixed-column class */
+  text-align: center;
+}
+
+.group-table td.fixed-column {
+  width: 30px; /* Match this width with the .fixed-column class */
+  text-align: center; /* Center-align the dots */
+}
+
 .group-table td {
   text-align: left;
   padding: 10px;
@@ -146,6 +156,7 @@ body {
   left: 0;
   background-color: white;
   z-index: 1;
+
 }
 
 /* Styling for group containers */
@@ -394,3 +405,4 @@ input[type="date"] {
 #prevMonth:hover, #nextMonth:hover {
   background-color: #065c02;
 }
+

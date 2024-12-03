@@ -363,3 +363,5 @@ document.getElementById('nextMonth').addEventListener('click', () => {
 
 // Initialize Calendar
 document.addEventListener('DOMContentLoaded', renderCalendar);
+
+
