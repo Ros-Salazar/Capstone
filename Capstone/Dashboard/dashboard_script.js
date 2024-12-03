@@ -66,6 +66,22 @@ projectForm.addEventListener('submit', (event) => {
         editPopupWindow.style.display = 'flex';
     });
 
+    // Add click functionality to navigate to ProjectTemplate.html
+    projectBox.addEventListener('click', () => {
+    const projectName = projectBox.querySelector('h3').textContent;
+    const location = projectBox.querySelector('p').textContent;
+
+    // Pass project details as query parameters
+    const queryParams = new URLSearchParams({
+        name: projectName,
+        location: location,
+    }).toString();
+
+    // Navigate to ProjectTemplate.html with query parameters
+    window.location.href = `ProjectTemplate.html?${queryParams}`;
+});
+
+
     enableDragAndDrop(projectBox); // Enable drag-and-drop
 });
 

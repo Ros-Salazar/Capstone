@@ -26,18 +26,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 document.getElementById('addGroupBtn').addEventListener('click', function () {
-    const table = createTable();
-    const container = document.querySelector('.group-container');
-    container.appendChild(table);
-    container.appendChild(createAddRowButton(table));
+    const container = document.querySelector('.group-container'); // Use your named container
+    const groupId = `group-${Date.now()}`; // Generate a unique ID for each group
+    const table = createTable(container, groupId);
+    container.appendChild(table); // Append the table to the container
+    createAddRowButton(table, container, groupId); // Append the Add Item button to the container
 });
 
 // Function to Create a Table
-function createTable() {
+function createTable(container, groupId) {
     const table = document.createElement('table');
     table.className = 'group-table';
+    table.dataset.id = groupId; // Associate the table with the group ID
 
-    const headerRow = createHeaderRow(table);
+    const headerRow = createHeaderRow(table, groupId);
     table.appendChild(headerRow);
 
     addRow(table, headerRow); // Add Default Row
@@ -45,33 +47,83 @@ function createTable() {
 }
 
 // Function to Create Header Row
-function createHeaderRow(table) {
+function createHeaderRow(table, groupId) {
     const headerRow = document.createElement('tr');
-    headerRow.appendChild(createHeaderCell('⋮', 'fixed-column'));
-    headerRow.appendChild(createHeaderCell('New Group', '', true));
 
-    const plusHeader = createHeaderCell('+', 'plus-header');
-    const dropdownMenu = createDropdownMenu(['Text', 'Numbers', 'Status', 'Key Persons', 'Timeline', 'Upload File'], (option) => {
-        option === 'Timeline' ? addTimelineColumns(table, headerRow) : addColumn(option, table, headerRow);
-        dropdownMenu.style.display = 'none';
-        dropdownMenu.style.cursor = 'pointer';
+    // Create a header cell for the dropdown button
+    const fixedColumnHeader = document.createElement('th');
+    fixedColumnHeader.className = 'fixed-column';
+    const dropdownBtn = document.createElement('button');
+    dropdownBtn.textContent = '⋮';
+    dropdownBtn.className = 'dropdown-btn';
+
+    const dropdownMenu = document.createElement('div');
+    dropdownMenu.className = 'dropdown-menu';
+    dropdownMenu.style.display = 'none';
+
+    // Add "Delete Group" Option
+    const deleteGroupOption = document.createElement('div');
+    deleteGroupOption.textContent = 'Delete Group';
+    deleteGroupOption.className = 'dropdown-item';
+    deleteGroupOption.addEventListener('click', () => {
+        const groupContainer = document.querySelector('.group-container'); // Reference the container
+        const addItemButton = document.querySelector(`.add-item-btn[data-id="${groupId}"]`); // Find the associated "Add Item" button
+        if (addItemButton) addItemButton.remove(); // Remove the button
+        groupContainer.removeChild(table); // Remove the table from the container
     });
 
-    plusHeader.addEventListener('click', () => {
+    dropdownBtn.addEventListener('click', () => {
         dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
     });
-    plusHeader.appendChild(dropdownMenu);
+
+    dropdownMenu.appendChild(deleteGroupOption);
+    fixedColumnHeader.appendChild(dropdownBtn);
+    fixedColumnHeader.appendChild(dropdownMenu);
+    headerRow.appendChild(fixedColumnHeader);
+
+    // Add "New Group" header
+    headerRow.appendChild(createHeaderCell('New Group', '', true));
+
+    // Add the "+" header with dropdown for column types
+    const plusHeader = createHeaderCell('+', 'plus-header');
+    plusHeader.style.cursor = 'pointer';
+
+    const columnDropdownMenu = createDropdownMenu(
+        ['Text', 'Numbers', 'Status', 'Key Persons', 'Timeline', 'Upload File'],
+        (option) => {
+            option === 'Timeline'
+                ? addTimelineColumns(table, headerRow)
+                : addColumn(option, table, headerRow);
+            columnDropdownMenu.style.display = 'none';
+        }
+    );
+
+    plusHeader.addEventListener('click', () => {
+        columnDropdownMenu.style.display = columnDropdownMenu.style.display === 'none' ? 'block' : 'none';
+    });
+
+    plusHeader.appendChild(columnDropdownMenu);
     headerRow.appendChild(plusHeader);
 
     return headerRow;
 }
 
+function createActionCell(row) {
+    const cell = document.createElement('td');
+    cell.className = 'fixed-column';
+
+    // No dropdown button here anymore
+    return cell;
+}
+
 // Function to Create Add Row Button
-function createAddRowButton(table) {
+function createAddRowButton(table, container, groupId) {
     const addRowBtn = document.createElement('button');
     addRowBtn.className = 'add-item-btn';
+    addRowBtn.dataset.id = groupId; // Associate the button with the group ID
     addRowBtn.textContent = 'Add Item';
     addRowBtn.addEventListener('click', () => addRow(table, table.rows[0]));
+    container.appendChild(addRowBtn);
     return addRowBtn;
 }
 
@@ -255,6 +307,8 @@ function createActionCell(row) {
     return cell;
 }
 
+
+
 // Function to Handle File Upload
 function handleFileUpload(event) {
     const file = event.target.files[0];
@@ -363,5 +417,4 @@ document.getElementById('nextMonth').addEventListener('click', () => {
 
 // Initialize Calendar
 document.addEventListener('DOMContentLoaded', renderCalendar);
-
 
