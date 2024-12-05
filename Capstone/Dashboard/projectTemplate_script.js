@@ -418,3 +418,55 @@ document.getElementById('nextMonth').addEventListener('click', () => {
 // Initialize Calendar
 document.addEventListener('DOMContentLoaded', renderCalendar);
 
+// Add event listener for the Kanban button
+document.getElementById('kanbanBtn').addEventListener('click', function () {
+    // Hide other sections
+    document.querySelector('.group-section').classList.remove('active-section');
+    document.querySelector('.calendar-section').classList.remove('active-section');
+
+    // Show the Kanban section
+    document.querySelector('.kanban-section').classList.add('active-section');
+    setActiveButton('kanbanBtn');
+
+    renderKanbanBoard(); // Function to render the Kanban board
+});
+
+// Set active section function (update if needed)
+function setActiveButton(buttonId) {
+    document.getElementById('mainTableBtn').classList.remove('active');
+    document.getElementById('calendarBtn').classList.remove('active');
+    document.getElementById('kanbanBtn').classList.remove('active');
+    document.getElementById(buttonId).classList.add('active');
+}
+
+function renderKanbanBoard() {
+    const kanbanBoard = document.getElementById('kanbanBoard');
+    kanbanBoard.innerHTML = ''; // Clear previous content
+
+    const columns = ['To-Do', 'In Progress', 'Done'];
+
+    columns.forEach(column => {
+        const columnDiv = document.createElement('div');
+        columnDiv.className = 'kanban-column';
+        columnDiv.innerHTML = `
+            <div class="kanban-column-header">${column}</div>
+            <div class="kanban-column-body" id="${column.replace(/\s+/g, '')}">
+                <!-- Cards will go here -->
+            </div>
+            <button class="add-card-btn" onclick="addKanbanCard('${column.replace(/\s+/g, '')}')">Add Card</button>
+        `;
+        kanbanBoard.appendChild(columnDiv);
+    });
+}
+
+// Add a Kanban card
+function addKanbanCard(columnId) {
+    const columnBody = document.getElementById(columnId);
+    const cardText = prompt('Enter card text:', '');
+    if (cardText) {
+        const card = document.createElement('div');
+        card.className = 'kanban-card';
+        card.textContent = cardText;
+        columnBody.appendChild(card);
+    }
+}

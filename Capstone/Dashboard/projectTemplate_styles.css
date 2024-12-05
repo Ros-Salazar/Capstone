@@ -255,6 +255,7 @@ body {
 
 .main-table-btn,
 .calendar-btn,
+.kanban-btn,
 .cta-btn {
   padding: 0.8em 1.5em;
   background-color: #077d03;
@@ -265,7 +266,8 @@ body {
   cursor: pointer;
 }
 .main-table-btn.active,
-.calendar-btn.active {
+.calendar-btn.active,
+.kanban-btn {
   background-color: #26a828; /* Change to your preferred highlight color */
   color: #fff; /* Ensure the text is readable */
 }
@@ -407,3 +409,58 @@ input[type="date"] {
   background-color: #065c02;
 }
 
+/* kanban board styling */
+.kanban-board {
+  display: flex;
+  justify-content: space-around;
+  padding: 20px;
+  background-color: #f5f5f5;
+}
+
+.kanban-column {
+  width: 30%;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.kanban-column-header {
+  background-color: #007BFF;
+  color: white;
+  padding: 10px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.kanban-column-body {
+  min-height: 200px;
+  padding: 10px;
+  background-color: #f9f9f9;
+}
+
+.kanban-card {
+  background-color: #fff;
+  margin: 5px 0;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  cursor: grab;
+}
+
+.add-card-btn {
+  width: 100%;
+  padding: 10px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-top: 1px solid #ddd;
+  border-radius: 0 0 5px 5px;
+}
+
+.add-card-btn:hover {
+  background-color: #218838;
+}
