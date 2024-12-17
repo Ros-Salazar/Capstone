@@ -30,14 +30,8 @@
                         <input type="password" id="password" required>
                         <label>Password</label>
                     </div>
-                    <div class="remember-forgot">
-                        <label><input type="checkbox">Remember me</label>
-                        <a href="#">Forgot Password?</a>
-                    </div>
                     <button type="submit">Login</button>
-                    <div class="register-link">
-                        <p>Don't have an account? <a href="#">Register</a></p>
-                    </div>
+
                 </form>
                 <div id="error-message"></div> <!-- Display login errors -->
             </div>
@@ -77,15 +71,13 @@
                 try {
                     const userCredential = await signInWithEmailAndPassword(auth, email, password);
                     const user = userCredential.user;
-
-                    // Handle successful login
                     alert(`Welcome back, ${user.email}`);
-                    window.location.href = "dashboard.html"; // Redirect to dashboard
+                     window.location.href = "dashboard.html"; //yes coz after mo maglogin diretsong dashboard diba
                 } catch (error) {
-                    // Display error message to the user
                     window.alert("Incorrect credentials, please try again.");
                 }
             });
         </script>
     </body>
 </html>
+
