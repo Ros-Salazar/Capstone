@@ -5,9 +5,8 @@
         <meta http-equiv="X-UA-Compatible" content="IE-edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Login Page</title>
-        <link rel="stylesheet" href="asset/login_styles.css">
+        <link rel="stylesheet" href="/public/asset/css/login_styles.css">
 
-        <!-- Ionicons -->
         <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
         <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
     </head>
@@ -24,14 +23,16 @@
                         <label>Email</label>
                     </div>
                     <div class="input-box">
-                        <span class="icon">
-                            <ion-icon name="lock-closed"></ion-icon>
-                        </span>
                         <input type="password" id="password" required>
                         <label>Password</label>
+                        <span class="icon toggle-password" onclick="togglePassword('password')">
+                            <ion-icon name="eye-outline"></ion-icon>
+                        </span>
                     </div>
                     <button type="submit">Login</button>
-
+                    <div class="register-link">
+                        <p>Don't have an account? <a href="register.html">Register</a></p>
+                    </div>
                 </form>
                 <div id="error-message"></div> <!-- Display login errors -->
             </div>
@@ -58,6 +59,20 @@
             const app = initializeApp(firebaseConfig);
             const auth = getAuth(app);
 
+            // Toggle Password Visibility
+            window.togglePassword = (id) => {
+                const input = document.getElementById(id);
+                const icon = input.nextElementSibling.querySelector("ion-icon");
+
+                if (input.type === "password") {
+                    input.type = "text";
+                    icon.name = "eye-off-outline";
+                } else {
+                    input.type = "password";
+                    icon.name = "eye-outline";
+                }
+            };
+
             // Login functionality
             const loginForm = document.getElementById("loginForm");
             const errorMessage = document.getElementById("error-message");
@@ -72,7 +87,7 @@
                     const userCredential = await signInWithEmailAndPassword(auth, email, password);
                     const user = userCredential.user;
                     alert(`Welcome back, ${user.email}`);
-                     window.location.href = "dashboard.html"; //yes coz after mo maglogin diretsong dashboard diba
+                    window.location.href = "dashboard.html";
                 } catch (error) {
                     window.alert("Incorrect credentials, please try again.");
                 }
@@ -80,4 +95,3 @@
         </script>
     </body>
 </html>
-

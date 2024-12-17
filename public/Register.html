@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE-edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Page</title>
+    <link rel="stylesheet" href="/public/asset/css/register_styles.css">
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.17.2/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js"></script>
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</head>
+<body>
+    <section>
+        <div class="login-box">
+            <form id="registerForm">
+                <h2>Register</h2>
+                <div class="input-box">
+                    <input type="text" id="firstName" required>
+                    <label>First Name</label>
+                </div>
+                <div class="input-box">
+                    <input type="text" id="lastName" required>
+                    <label>Last Name</label>
+                </div>
+                <div class="input-box">
+                    <input type="text" id="email-prefix" required>
+                    <label>Email</label>
+                    <span class="email-domain">@ceo.com</span>
+                </div>
+                <div class="input-box">
+                    <input type="password" id="password" required>
+                    <label>Password</label>
+                    <span class="icon toggle-password" onclick="togglePassword('password')">
+                        <ion-icon name="eye-outline"></ion-icon>
+                    </span>
+                </div>
+                <div class="input-box">
+                    <input type="password" id="confirmPassword" required>
+                    <label>Confirm Password</label>
+                    <span class="icon toggle-password" onclick="togglePassword('confirmPassword')">
+                        <ion-icon name="eye-outline"></ion-icon>
+                    </span>
+                </div>
+                <div class="input-box">
+                    <select id="position" required>
+                        <option value="" disabled selected>Choose Position</option>
+                        <option value="manager">Manager</option>
+                        <option value="staff">Staff</option>
+                    </select>
+                </div>
+                <button type="submit">Register</button>
+            </form>
+            <div class="register-link">
+                <p>Already have an account? <a href="index.html">Login</a></p>
+            </div>
+            <div id="register-error"></div>
+        </div>
+    </section>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCOo_r7lBGB_FiuwFIcsc-ecRsd43pDXF0",
+            authDomain: "ceo-projectmanagementweb.firebaseapp.com",
+            projectId: "ceo-projectmanagementweb",
+            storageBucket: "ceo-projectmanagementweb.firebasestorage.app",
+            messagingSenderId: "60010633148",
+            appId: "1:60010633148:web:abaa3776928df2a351fdb9",
+            measurementId: "G-LV0FZJ14W6",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const registerForm = document.getElementById("registerForm");
+        const registerError = document.getElementById("register-error");
+
+        registerForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const firstName = document.getElementById("firstName").value;
+            const lastName = document.getElementById("lastName").value;
+            const emailPrefix = document.getElementById("email-prefix").value.trim();
+            const email = `${emailPrefix}@ceo.com`;
+            const password = document.getElementById("password").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+            const position = document.getElementById("position").value;
+
+            // Check if passwords match
+            if (password !== confirmPassword) {
+                registerError.textContent = "Passwords do not match.";
+                return;
+            }
+
+            // Check for @ceo.com domain
+            if (!email.endsWith("@ceo.com")) {
+                registerError.textContent = "Email must have the domain @ceo.com.";
+                return;
+            }
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // Store user information in Firestore
+                await setDoc(doc(db, "users", user.uid), {
+                    firstName,
+                    lastName,
+                    email,
+                    position,
+                    createdAt: new Date(),
+                });
+
+                alert("Registration successful! You can now log in.");
+                window.location.href = "index.html";
+            } catch (error) {
+                registerError.textContent = error.message;
+            }
+        });
+
+        // Toggle password visibility
+        window.togglePassword = (id) => {
+            const input = document.getElementById(id);
+            const icon = input.nextElementSibling.querySelector("ion-icon");
+
+            if (input.type === "password") {
+                input.type = "text";
+                icon.name = "eye-off-outline";
+            } else {
+                input.type = "password";
+                icon.name = "eye-outline";
+            }
+        };
+    </script>
+</body>
+</html>
