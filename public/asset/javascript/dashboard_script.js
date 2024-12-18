@@ -1,4 +1,21 @@
-// Get the elements
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
+import { getFirestore, getDocs, collection, addDoc, onSnapshot, query, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyCOo_r7lBGB_FiuwFIcsc-ecRsd43pDXF0",
+    authDomain: "ceo-projectmanagementweb.firebaseapp.com",
+    projectId: "ceo-projectmanagementweb",
+    storageBucket: "ceo-projectmanagementweb.appspot.com",
+    messagingSenderId: "60010633148",
+    appId: "1:60010633148:web:abaa3776928df2a351fdb9",
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// DOM Elements
 const newProjectBtn = document.getElementById('newProjectBtn');
 const popupWindow = document.getElementById('popupWindow');
 const closeBtns = document.querySelectorAll('.close-btn');
@@ -7,14 +24,17 @@ const projectContainer = document.getElementById('projectContainer');
 const noProjectsText = document.getElementById('noProjectsText');
 const editPopupWindow = document.getElementById('editPopupWindow');
 const editProjectForm = document.getElementById('editProjectForm');
-let currentProjectBox = null; // Track the project being edited
+const navigationPane = document.getElementById('navigationPane');
+const projectList = document.getElementById('projectList');
+
+let currentProjectBox = null;
 
 // Show popup when 'Add Project' is clicked
 newProjectBtn.addEventListener('click', () => {
     popupWindow.style.display = 'flex';
 });
 
-// Close popup when 'X' is clicked
+// Close popup
 closeBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
         popupWindow.style.display = 'none';
@@ -22,105 +42,120 @@ closeBtns.forEach((btn) => {
     });
 });
 
-// Handle project creation
-projectForm.addEventListener('submit', (event) => {
+// Add Project to Firestore
+projectForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    
-    // Get form values
-    const projectName = document.getElementById('project-name').value;
-    const location = document.getElementById('location').value;
-    const group = document.getElementById('group').value; // Get the selected group
 
-    // Create project box
-    const projectBox = document.createElement('div');
-    projectBox.classList.add('project-box', group); // Add group class for styling
+    const projectName = document.getElementById("project-name").value;
+    const location = document.getElementById("location").value;
+    const group = document.getElementById("group").value;
 
-    // Add group indicator with a small colored element
-    const groupIndicator = document.createElement('div');
-    groupIndicator.classList.add('group-indicator', group); // Add group class for indicator styling
+    try {
+        const docRef = await addDoc(collection(db, "projects"), {
+            name: projectName,
+            location: location,
+            group: group,
+            completion: "0%",
+        });
 
-    projectBox.innerHTML = `
-        <h3>${projectName}</h3>
-        <p>${location}</p>
-        <p class="completion-text">0% COMPLETED</p>
-        <i class="fas fa-pencil-alt edit-icon"></i>
-    `;
-    
-    projectBox.insertBefore(groupIndicator, projectBox.firstChild); // Insert the indicator at the top
+        console.log("Project added with ID:", docRef.id);
 
-    // Add project box to the container
-    projectContainer.appendChild(projectBox);
-    noProjectsText.style.display = 'none';
-
-    // Clear form and close popup
-    projectForm.reset();
-    popupWindow.style.display = 'none';
-
-    // Edit button functionality
-    const editIcon = projectBox.querySelector('.edit-icon');
-    editIcon.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent triggering project details click event
-        currentProjectBox = projectBox;
-        document.getElementById('edit-project-name').value = projectBox.querySelector('h3').textContent;
-        document.getElementById('edit-location').value = projectBox.querySelector('p').textContent;
-        editPopupWindow.style.display = 'flex';
-    });
-
-    // Add click functionality to navigate to ProjectTemplate.html
-    projectBox.addEventListener('click', () => {
-    const projectName = projectBox.querySelector('h3').textContent;
-    const location = projectBox.querySelector('p').textContent;
-
-    // Pass project details as query parameters
-    const queryParams = new URLSearchParams({
-        name: projectName,
-        location: location,
-    }).toString();
-
-    // Navigate to ProjectTemplate.html with query parameters
-    window.location.href = `ProjectTemplate.html?${queryParams}`;
+        projectForm.reset();
+        popupWindow.style.display = 'none';
+    } catch (error) {
+        console.error("Error adding project:", error);
+    }
 });
 
+// Redirect to Project Template
+const openProject = (projectId) => {
+    window.location.href = `projectTemplate.html?projectId=${projectId}`;
+};
 
-    enableDragAndDrop(projectBox); // Enable drag-and-drop
-});
-
-// Handle project editing
-editProjectForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const updatedProjectName = document.getElementById('edit-project-name').value;
-    const updatedLocation = document.getElementById('edit-location').value;
-    currentProjectBox.querySelector('h3').textContent = updatedProjectName;
-    currentProjectBox.querySelector('p').textContent = updatedLocation;
-    editPopupWindow.style.display = 'none';
-    editProjectForm.reset();
-});
-
-// Function to enable drag-and-drop functionality
-function enableDragAndDrop(projectBox) {
-    projectBox.addEventListener('dragstart', () => {
-        projectBox.classList.add('dragging');
+// Populate Navigation Pane
+const fetchProjectsForNav = async () => {
+    const projects = [];
+    const querySnapshot = await getDocs(collection(db, "projects"));
+    querySnapshot.forEach((doc) => {
+        projects.push({ id: doc.id, ...doc.data() });
     });
-    projectBox.addEventListener('dragend', () => {
-        projectBox.classList.remove('dragging');
+    return projects;
+};
+
+const populateNavigationPane = async () => {
+    projectList.innerHTML = ''; // Clear existing items
+    const projects = await fetchProjectsForNav();
+    projects.forEach((project) => {
+        const li = document.createElement('li');
+        li.textContent = project.name;
+        li.className = project.group;
+        li.addEventListener('click', () => openProject(project.id));
+        projectList.appendChild(li);
     });
-    projectContainer.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        const afterElement = getDragAfterElement(projectContainer, e.clientY);
-        if (afterElement == null) {
+};
+
+// Load Projects in Real-Time
+const loadProjects = () => {
+    const q = query(collection(db, "projects"));
+
+    onSnapshot(q, (snapshot) => {
+        projectContainer.innerHTML = ''; // Clear existing projects
+
+        snapshot.forEach((doc) => {
+            const project = doc.data();
+
+            const projectBox = document.createElement("div");
+            projectBox.classList.add("project-box", project.group);
+            projectBox.setAttribute("data-id", doc.id);
+            projectBox.innerHTML = `
+                <h3>${project.name}</h3>
+                <p>${project.location}</p>
+                <p class="completion-text">${project.completion} COMPLETED</p>
+                <i class="fas fa-pencil-alt edit-icon"></i>
+            `;
+
+            // Add click event for redirecting to project template
+            projectBox.addEventListener('click', () => openProject(doc.id));
+
             projectContainer.appendChild(projectBox);
-        } else {
-            projectContainer.insertBefore(projectBox, afterElement);
-        }
-    });
-}
+        });
 
-// Helper function for drag-and-drop
-function getDragAfterElement(container, y) {
-    const draggableElements = [...container.querySelectorAll('.project-box:not(.dragging)')];
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        return offset < 0 && offset > closest.offset ? { offset: offset, element: child } : closest;
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
+        noProjectsText.style.display = projectContainer.children.length ? "none" : "block";
+    });
+};
+
+loadProjects();
+
+// Edit Project in Firestore
+editProjectForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const updatedProjectName = document.getElementById("edit-project-name").value;
+    const updatedLocation = document.getElementById("edit-location").value;
+
+    try {
+        const projectId = currentProjectBox.getAttribute("data-id");
+        const projectDoc = doc(db, "projects", projectId);
+
+        await updateDoc(projectDoc, {
+            name: updatedProjectName,
+            location: updatedLocation,
+        });
+
+        editPopupWindow.style.display = "none";
+        editProjectForm.reset();
+    } catch (error) {
+        console.error("Error updating project:", error);
+    }
+});
+
+// Handle navigation pane toggle
+document.querySelector('.header-right a[href="#projects"]').addEventListener('click', async (e) => {
+    e.preventDefault();
+    if (navigationPane.style.display === 'none' || !navigationPane.style.display) {
+        await populateNavigationPane();
+        navigationPane.style.display = 'block';
+    } else {
+        navigationPane.style.display = 'none';
+    }
+});

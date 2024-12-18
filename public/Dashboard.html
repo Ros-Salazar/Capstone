@@ -4,18 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Management</title>
-    <link rel="stylesheet" href="asset/dashboard_styles.css">
+    <link rel="stylesheet" href="/public/asset/css/dashboard_styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js"></script>
+
 </head>
 <body>
     <!-- Header Template -->
     <div class="header">
-        <a href="#default" class="logo">
+        <a href="/public/Dashboard.html" class="logo">
             <img src="img/341835580_3377258052532133_4186880548703356922_n.jpg" alt="CEO">
         </a>
         <div class="header-right">
             <a href="Dashboard.html">Dashboard</a>
             <a class="active" href="#projects">Projects</a>
+            <a href="Profile.html" class="logo">
+                <img src="img/prof_pic.svg" alt="Profile">
+            </a>
         </div>
     </div>
     
@@ -24,6 +30,12 @@
         <div id="projectContainer" class="project-container"></div>
         <button id="newProjectBtn" class="btn">Add Project</button>
     </div>
+
+    <div class="navigation-pane" id="navigationPane">
+        <h2>Project List</h2>
+        <ul id="projectList"></ul>
+    </div>
+    
 
     <!-- Popup Window for Creating Project -->
     <div id="popupWindow" class="popup">
@@ -64,6 +76,6 @@
             </form>
         </div>
     </div>
-    <script src="asset/dashboard_script.js"></script>
+    <script type = "module" src="/public/asset/javascript/dashboard_script.js"></script>
 </body>
 </html>

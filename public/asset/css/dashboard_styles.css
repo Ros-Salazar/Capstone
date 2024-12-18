@@ -224,3 +224,39 @@ body {
     margin: 10px 0;
     border-radius: 5px;
 }
+
+.navigation-pane {
+    position: fixed;
+    top: 80px; /* Adjust to align below the header */
+    right: 0;
+    width: 300px;
+    height: calc(100% - 80px);
+    background-color: #f8f9fa;
+    border-left: 1px solid #ccc;
+    padding: 20px;
+    overflow-y: auto;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+    display: none; /* Initially hidden */
+}
+
+.navigation-pane h2 {
+    font-size: 20px;
+    margin-bottom: 15px;
+}
+
+.navigation-pane ul {
+    list-style: none;
+    padding: 0;
+}
+
+.navigation-pane ul li {
+    margin-bottom: 10px;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.navigation-pane ul li:hover {
+    background-color: #e9ecef;
+}
