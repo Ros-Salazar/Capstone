@@ -3,118 +3,87 @@ document.getElementById('mainTableBtn').addEventListener('click', function() {
     document.querySelector('.calendar-section').classList.remove('active-section');
     setActiveButton('mainTableBtn');
 });
+
 document.getElementById('calendarBtn').addEventListener('click', function() {
     document.querySelector('.group-section').classList.remove('active-section');
     document.querySelector('.calendar-section').classList.add('active-section');
     setActiveButton('calendarBtn');
 });
+
 // Function to set the active button
 function setActiveButton(buttonId) {
     document.getElementById('mainTableBtn').classList.remove('active');
     document.getElementById('calendarBtn').classList.remove('active');
     document.getElementById(buttonId).classList.add('active');
 }
+
 // Set main table as the default active section on page load
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('.group-section').classList.add('active-section');
     document.querySelector('.calendar-section').classList.remove('active-section');
     setActiveButton('mainTableBtn');
 });
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.dropdown-menu') && !e.target.closest('.dropdown-btn') && !e.target.closest('.plus-header')) {
-        document.querySelectorAll('.dropdown-menu').forEach(menu => menu.style.display = 'none');
-    }
-});
 
 
-document.getElementById('addGroupBtn').addEventListener('click', async function () {
-    console.log('Add New Group button clicked');
-    const container = document.querySelector('.group-container');
-    const groupId = `group-${Date.now()}`;
-    const groupData = { groupId, rows: [] };
-        
-    await saveGroupData(groupData); // Ensure Firestore integration is correct
-        
+document.getElementById('addGroupBtn').addEventListener('click', function () {
+    const container = document.querySelector('.group-container'); // Use your named container
+    const groupId = `group-${Date.now()}`; // Generate a unique ID for each group
     const table = createTable(container, groupId);
-    container.appendChild(table);
-    createAddRowButton(table, container, groupId);
+    container.appendChild(table); // Append the table to the container
+    createAddRowButton(table, container, groupId); // Append the Add Item button to the container
 });
-async function saveGroupData(groupData) {
-    try {
-        const docRef = await db.collection('groups').doc(groupData.groupId).set(groupData);
-        console.log('Group saved with ID:', docRef.id);
-    } catch (e) {
-        console.error('Error saving group:', e);
-    }
-}
 
-document.addEventListener('DOMContentLoaded', async function () {
-    try {
-        const groupsSnapshot = await db.collection('groups').get();
-        const container = document.querySelector('.group-container');
 
-        for (const doc of groupsSnapshot.docs) {
-            const groupData = doc.data();
-            const table = createTable(container, groupData.groupId);
-            container.appendChild(table);
-            createAddRowButton(table, container, groupData.groupId);
+// Save Project Button Event Listener
+document.getElementById('saveProjectBtn').addEventListener('click', function () {
+    const projectName = document.getElementById('projectName').textContent.trim() || "Untitled Project";
+    const groups = [];
+    const groupTables = document.querySelectorAll('.group-table');
 
-            // Fetch and populate rows from the subcollection
-            const rowsSnapshot = await doc.ref.collection('contents').get();
-            rowsSnapshot.forEach(rowDoc => {
-                const rowData = rowDoc.data();
-                populateRow(table, rowData);
-            });
+    groupTables.forEach((table) => {
+        const groupData = {
+            groupId: table.dataset.id,
+            columns: [],
+            rows: [],
+        };
+
+        // Collect column headers
+        const headerCells = table.rows[0].cells;
+        for (let i = 1; i < headerCells.length; i++) {
+            groupData.columns.push(headerCells[i].textContent.trim());
         }
-    } catch (e) {
-        console.error('Error loading groups:', e);
-    }
-});
 
-
-function populateRow(table, rowData) {
-    const row = document.createElement('tr');
-    const headerRow = table.rows[0];
-
-    Array.from(headerRow.cells).forEach((header, index) => {
-        const headerText = header.textContent.trim();
-        const cell = index === 0 ? createActionCell(row) : createCell(headerText);
-        row.appendChild(cell);
-
-        if (index > 0) {
-            const value = rowData.cells[headerText] || '';
-            if (headerText === 'Upload File') {
-                cell.dataset.fileUrl = value;
-                const fileInput = createInput('file');
-                fileInput.addEventListener('change', handleFileUpload);
-                cell.appendChild(fileInput);
-            } else if (headerText === 'Status') {
-                const select = createSelect(['To-do', 'In Progress', 'Done']);
-                select.value = value;
-                cell.appendChild(select);
-            } else {
-                cell.contentEditable = true;
-                cell.textContent = value;
+        // Collect row data
+        for (let i = 1; i < table.rows.length; i++) {
+            const row = table.rows[i];
+            const rowData = [];
+            for (let j = 1; j < row.cells.length; j++) {
+                rowData.push(row.cells[j].textContent.trim());
             }
+            groupData.rows.push(rowData);
         }
+
+        groups.push(groupData);
     });
 
-    table.appendChild(row);
-}
+    // Prepare data to save
+    const projectData = {
+        projectName,
+        groups,
+        lastModified: new Date().toISOString(),
+    };
 
-// Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyCOo_r7lBGB_FiuwFIcsc-ecRsd43pDXF0",
-    authDomain: "ceo-projectmanagementweb.firebaseapp.com",
-    projectId: "ceo-projectmanagementweb",
-    storageBucket: "ceo-projectmanagementweb.appspot.com",
-    messagingSenderId: "60010633148",
-    appId: "1:60010633148:web:abaa3776928df2a351fdb9",
-};
-// Initialize Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const storage = firebase.storage();
+    // Save to Firebase
+    const projectRef = ref(database, 'projects'); // Ensure the path 'projects' exists in your Firebase Realtime Database
+    push(projectRef, projectData)
+        .then(() => {
+            alert('Project saved successfully!');
+        })
+        .catch((error) => {
+            console.error('Error saving project:', error);
+            alert('Failed to save project. Please try again.');
+        });
+});
 
 
 // Function to Create a Table
@@ -192,38 +161,6 @@ function createHeaderRow(table, groupId) {
     return headerRow;
 }
 
-function createActionCell(row, groupId) {
-    const cell = document.createElement('td');
-    cell.className = 'fixed-column';
-
-    const dropdownBtn = document.createElement('button');
-    dropdownBtn.textContent = '⋮';
-    dropdownBtn.className = 'dropdown-btn';
-
-    const dropdownMenu = document.createElement('div');
-    dropdownMenu.className = 'dropdown-menu';
-    dropdownMenu.style.display = 'none';
-
-    const deleteOption = document.createElement('div');
-    deleteOption.textContent = 'Delete Row';
-    deleteOption.className = 'dropdown-item';
-    deleteOption.addEventListener('click', async () => {
-        row.remove();
-        const rowData = {}; // Define or pass the correct rowData structure
-        await deleteRow(groupId, rowData);
-    });
-
-    dropdownBtn.addEventListener('click', () => {
-        dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
-    });
-
-    dropdownMenu.appendChild(deleteOption);
-    cell.appendChild(dropdownBtn);
-    cell.appendChild(dropdownMenu);
-    return cell;
-}
-
-
 // Function to Create Add Row Button
 function createAddRowButton(table, container, groupId) {
     const addRowBtn = document.createElement('button');
@@ -293,43 +230,15 @@ function addTimelineColumns(table, headerRow) {
 }
 
 // Function to Add a Row
-async function addRow(table, headerRow) {
+function addRow(table, headerRow) {
     const row = document.createElement('tr');
-    const groupId = table.dataset.id;
-    const projectId = "currentProjectId"; // Replace with the actual project ID context.
-    const rowData = { groupId, cells: {} };
 
     Array.from(headerRow.cells).forEach((header, index) => {
-        const headerText = header.textContent.trim();
-        const cell = index === 0 ? createActionCell(row) : createCell(headerText);
+        const cell = index === 0 ? createActionCell(row) : createCell(header.textContent);
         row.appendChild(cell);
-
-        if (index > 0) {
-            rowData.cells[headerText] = headerText === 'Upload File' ? null : '';
-        }
     });
 
     table.appendChild(row);
-    await saveToSubCollection(projectId, rowData); // Save row data to the project's subcollection.
-}
-
-function saveRow(groupId, row) {
-    const rowData = {
-        groupId: groupId,
-        cells: {},
-    };
-
-    row.querySelectorAll('td').forEach((cell, index) => {
-        const headerText = table.querySelectorAll('thead th')[index].textContent.trim();
-        rowData.cells[headerText] =
-            headerText === 'Start Date' || headerText === 'Due Date'
-                ? new Date(cell.querySelector('input[type="date"]').value).toISOString()
-                : headerText === 'Upload File'
-                ? cell.dataset.fileUrl
-                : cell.textContent;
-    });
-
-    saveRowData(rowData);
 }
 
 // Function to Create Cell
@@ -386,6 +295,14 @@ function createDateCell() {
     return cell;
 }
 
+// Synchronize the selected date to the calendar
+function syncDateToCalendar(date) {
+    if (!date) return;
+    if (!pinnedDates.includes(date)) {
+        pinnedDates.push(date); // Add the date to pinnedDates
+    }
+    renderCalendar(); // Re-render the calendar to reflect the changes
+}
 // Function to Create Input
 function createInput(type, placeholder = '') {
     const input = document.createElement('input');
@@ -423,10 +340,7 @@ function createActionCell(row) {
     const deleteOption = document.createElement('div');
     deleteOption.textContent = 'Delete Row';
     deleteOption.className = 'dropdown-item';
-    deleteOption.addEventListener('click', async () => {
-        row.remove();
-        await deleteRow(groupId, rowData);
-    });
+    deleteOption.addEventListener('click', () => row.remove());
 
     dropdownBtn.addEventListener('click', () => {
         dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
@@ -438,56 +352,17 @@ function createActionCell(row) {
     return cell;
 }
 
-async function handleFileUpload(event) {
+
+// Function to Handle File Upload
+function handleFileUpload(event) {
     const file = event.target.files[0];
     if (file) {
-        const progressIndicator = document.createElement('div');
-        progressIndicator.textContent = 'Uploading...';
-        event.target.parentElement.appendChild(progressIndicator);
-
-        const fileUrl = await uploadFile(file);
-        progressIndicator.textContent = 'Upload complete!';
-        event.target.parentElement.dataset.fileUrl = fileUrl;
-
-        console.log('File uploaded and URL saved:', fileUrl);
-    }
-}
-async function uploadFile(file) {
-    const storageRef = storage.ref(`uploads/${Date.now()}-${file.name}`);
-    const snapshot = await storageRef.put(file);
-    return await snapshot.ref.getDownloadURL();
-}
-
-
-async function deleteGroup(groupId) {
-    try {
-        await db.collection('groups').doc(groupId).delete();
-        console.log('Group deleted:', groupId);
-    } catch (e) {
-        console.error('Error deleting group:', e);
-    }
-}
-
-async function deleteRow(groupId, rowId) {
-    try {
-        const groupRef = db.collection('groups').doc(groupId);
-        await groupRef.collection('contents').doc(rowId).delete();
-        console.log('Row deleted from subcollection:', rowId);
-    } catch (e) {
-        console.error('Error deleting row:', e);
-    }
-}
-
-
-async function saveToSubCollection(projectId, data) {
-    try {
-        // Access the "projects" collection and then the specified project's sub-collection
-        const projectRef = db.collection('projects').doc(projectId);
-        await projectRef.collection('contents').add(data); // Save data into the "contents" sub-collection
-
-        console.log('Data successfully saved in the sub-collection');
-    } catch (error) {
-        console.error('Error saving to sub-collection:', error);
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            console.log('File content:', e.target.result);
+            // Process the file content or upload it to a server
+        };
+        reader.readAsDataURL(file);
     }
 }
 
