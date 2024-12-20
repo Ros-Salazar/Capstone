@@ -1,6 +1,5 @@
 // First, declare a variable to hold the button reference
 let addGroupBtn;
-
 // Update the import statement at the top of the file
 import { 
     doc, 
@@ -13,7 +12,6 @@ import {
     where 
 } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 import { db } from './dashboard_script.js';
-
 
 // Wait for DOM to load before accessing elements
 document.addEventListener('DOMContentLoaded', async function () {
@@ -715,5 +713,3 @@ async function saveToSubCollection(projectId, data) {
         console.error('Error saving to sub-collection:', error);
     }
 }
-
-
