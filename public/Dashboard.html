@@ -8,10 +8,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js"></script>
-
 </head>
 <body>
-    <!-- Header Template -->
     <div class="header">
         <a href="/public/Dashboard.html" class="logo">
             <img src="img/341835580_3377258052532133_4186880548703356922_n.jpg" alt="CEO">
@@ -24,19 +22,15 @@
             </a>
         </div>
     </div>
-    
     <div class="container">
         <h1 id="noProjectsText">No Existing Projects</h1>
         <div id="projectContainer" class="project-container"></div>
         <button id="newProjectBtn" class="btn">Add Project</button>
     </div>
-
     <div class="navigation-pane" id="navigationPane">
         <h2>Project List</h2>
         <ul id="projectList"></ul>
     </div>
-    
-
     <!-- Popup Window for Creating Project -->
     <div id="popupWindow" class="popup">
         <div class="popup-content">
@@ -59,7 +53,6 @@
             </form>
         </div>
     </div>
-
     <!-- Popup Window for Editing Project -->
     <div id="editPopupWindow" class="popup">
         <div class="popup-content">
@@ -76,6 +69,6 @@
             </form>
         </div>
     </div>
-    <script type = "module" src="/public/asset/javascript/dashboard_script.js"></script>
+    <script type="module" src="/public/asset/javascript/dashboard_script.js"></script>
 </body>
 </html>

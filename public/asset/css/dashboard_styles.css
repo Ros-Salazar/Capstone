@@ -1,3 +1,4 @@
+/* Media Queries */
 @media (max-width: 768px) {
     .header-right a {
         font-size: 14px;
@@ -8,6 +9,7 @@
     }
 }
 
+/* General Styles */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f5f5f5;
@@ -38,6 +40,7 @@ body {
     margin-bottom: 20px;
 }
 
+/* Project Box Styles */
 .project-box {
     background-color: white;
     color: black;
@@ -53,7 +56,16 @@ body {
     position: relative;
 }
 
-/* Progress bar on top */
+.project-box:hover {
+    transform: scale(1.05);
+}
+
+.project-box.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+/* Progress Bar */
 .progress-bar {
     position: absolute;
     top: 0;
@@ -61,20 +73,10 @@ body {
     height: 5px;
     width: 100%;
     background-color: red;
-    z-index: 1; /* Make sure it's above the content */
+    z-index: 1;
 }
 
-.project-box:hover {
-    transform: scale(1.05);
-}
-
-/* For making the project box draggable */
-.project-box.dragging {
-    opacity: 0.5;
-    cursor: grabbing;
-}
-
-/* Edit icon (pencil) */
+/* Edit Icon */
 .edit-icon {
     display: none;
     position: absolute;
@@ -89,11 +91,11 @@ body {
     z-index: 2;
 }
 
-/* Show the pencil icon only on hover */
 .project-box:hover .edit-icon {
     display: block;
 }
 
+/* Button Styles */
 .btn {
     background-color: #077d03;
     color: white;
@@ -108,7 +110,7 @@ body {
     background-color: #26a828;
 }
 
-/* Popup styles */
+/* Popup Styles */
 .popup {
     display: none;
     position: fixed;
@@ -136,9 +138,8 @@ body {
     cursor: pointer;
 }
 
-/* Header Template */
-
-.header{
+/* Header Styles */
+.header {
     position: fixed;
     top: 0;
     left: 0;
@@ -152,20 +153,20 @@ body {
     justify-content: space-between;
 }
 
-.header .logo img{
+.header .logo img {
     height: 60px;
     border-radius: 30px;
-    width:auto;
+    width: auto;
     margin-right: 20px;
 }
 
-.header-right{
+.header-right {
     display: flex;
     align-items: center;
     gap: 40px;
 }
 
-.header-right a{
+.header-right a {
     color: white;
     text-decoration: none;
     font-size: 18px;
@@ -174,11 +175,11 @@ body {
     margin-right: 20px;
 }
 
-.header-right a:hover{
+.header-right a:hover {
     text-decoration: underline;
 }
 
-.header a{
+.header a {
     float: left;
     color: white;
     text-align: center;
@@ -189,7 +190,7 @@ body {
     border-radius: 4px;
 }
 
-/* Group option Dropdown options color */
+/* Group Option Dropdown Colors */
 .urgent-option {
     color: red;
 }
@@ -202,32 +203,31 @@ body {
     color: green;
 }
 
-/* Style for each project item based on group */
+/* Project Item Styles Based on Group */
 .project.urgent {
     background-color: red;
-    color: white; /* Optional: for better text visibility */
+    color: white;
 }
 
 .project.ongoing {
     background-color: yellow;
-    color: black; /* Optional: for better text visibility */
+    color: black;
 }
 
 .project.new {
     background-color: green;
-    color: white; /* Optional: for better text visibility */
+    color: white;
 }
-
-/* General project styling */
+/* General Project Styling */
 .project {
     padding: 15px;
     margin: 10px 0;
     border-radius: 5px;
 }
-
+/* Navigation Pane Styles */
 .navigation-pane {
     position: fixed;
-    top: 80px; /* Adjust to align below the header */
+    top: 80px;
     right: 0;
     width: 300px;
     height: calc(100% - 80px);
@@ -236,19 +236,16 @@ body {
     padding: 20px;
     overflow-y: auto;
     box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-    display: none; /* Initially hidden */
+    display: none;
 }
-
 .navigation-pane h2 {
     font-size: 20px;
     margin-bottom: 15px;
 }
-
 .navigation-pane ul {
     list-style: none;
     padding: 0;
 }
-
 .navigation-pane ul li {
     margin-bottom: 10px;
     cursor: pointer;
@@ -256,7 +253,6 @@ body {
     border-radius: 5px;
     transition: background-color 0.3s;
 }
-
 .navigation-pane ul li:hover {
     background-color: #e9ecef;
 }
