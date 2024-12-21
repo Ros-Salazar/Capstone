@@ -87,7 +87,7 @@
                     const userCredential = await signInWithEmailAndPassword(auth, email, password);
                     const user = userCredential.user;
                     alert(`Welcome back, ${user.email}`);
-                    window.location.href = "dashboard.html";
+                    window.location.href = "Dashboard.html";
                 } catch (error) {
                     window.alert("Incorrect credentials, please try again.");
                 }
