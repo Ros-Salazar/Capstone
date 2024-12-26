@@ -52,6 +52,28 @@ document.addEventListener('DOMContentLoaded', async function () {// Wait for DOM
     }
 });
 
+document.getElementById('mainTableBtn').addEventListener('click', function() {
+    document.querySelector('.group-section').classList.add('active-section');
+    document.querySelector('.calendar-section').classList.remove('active-section');
+    setActiveButton('mainTableBtn');
+});
+document.getElementById('calendarBtn').addEventListener('click', function() {
+    document.querySelector('.group-section').classList.remove('active-section');
+    document.querySelector('.calendar-section').classList.add('active-section');
+    setActiveButton('calendarBtn');
+});
+document.addEventListener('DOMContentLoaded', function() {// Set main table as the default active section on page load
+    document.querySelector('.group-section').classList.add('active-section');
+    document.querySelector('.calendar-section').classList.remove('active-section');
+    setActiveButton('mainTableBtn');
+});
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.dropdown-menu') && !e.target.closest('.dropdown-btn') && !e.target.closest('.plus-header')) {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => menu.style.display = 'none');
+    }
+});
+
+
 async function saveGroupData(groupData) {//? main issue with data persistence is in how structuring and saving the group data.
     try {
         console.log('Creating new group with data:', groupData);
@@ -70,9 +92,7 @@ async function saveGroupData(groupData) {//? main issue with data persistence is
         throw e;
     }
 }
-
-//? when adding columns, we need to update the Firestore document
-async function updateGroupColumns(groupId, columns) {
+async function updateGroupColumns(groupId, columns) {//? when adding columns, we need to update the Firestore document
     try {
         const groupRef = doc(db, "groups", groupId);
         await updateDoc(groupRef, {
@@ -83,38 +103,28 @@ async function updateGroupColumns(groupId, columns) {
     }
 }
 
-document.getElementById('mainTableBtn').addEventListener('click', function() {
-    document.querySelector('.group-section').classList.add('active-section');
-    document.querySelector('.calendar-section').classList.remove('active-section');
-    setActiveButton('mainTableBtn');
-});
-document.getElementById('calendarBtn').addEventListener('click', function() {
-    document.querySelector('.group-section').classList.remove('active-section');
-    document.querySelector('.calendar-section').classList.add('active-section');
-    setActiveButton('calendarBtn');
-});
 function setActiveButton(buttonId) {// Function to set the active button
     document.getElementById('mainTableBtn').classList.remove('active');
     document.getElementById('calendarBtn').classList.remove('active');
     document.getElementById(buttonId).classList.add('active');
 }
-document.addEventListener('DOMContentLoaded', function() {// Set main table as the default active section on page load
-    document.querySelector('.group-section').classList.add('active-section');
-    document.querySelector('.calendar-section').classList.remove('active-section');
-    setActiveButton('mainTableBtn');
-});
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.dropdown-menu') && !e.target.closest('.dropdown-btn') && !e.target.closest('.plus-header')) {
-        document.querySelectorAll('.dropdown-menu').forEach(menu => menu.style.display = 'none');
-    }
-});
 
-//!Implement Update for storing
-function populateRow(table, rowData) {
+
+function createTable(container, groupId) {// Function to Create a Table
+    const table = document.createElement('table');
+    table.className = 'group-table';
+    table.dataset.id = groupId; // Associate the table with the group ID
+    const headerRow = createHeaderRow(table, groupId);
+    table.appendChild(headerRow);
+    addRow(table, headerRow); // Add Default Row
+    return table;
+}
+
+
+function populateRow(table, rowData) {//!Implement Update for storing
     const row = document.createElement('tr');
     row.dataset.rowId = rowData.id; //! Store the row ID
     const headerRow = table.rows[0];
-
     Array.from(headerRow.cells).forEach((header, index) => {
         const headerText = header.textContent.trim();
         const cell = index === 0 ? createActionCell(row) : createCell(headerText);
@@ -138,18 +148,6 @@ function populateRow(table, rowData) {
         }
     });
     table.appendChild(row);
-}
-
-
-// Function to Create a Table
-function createTable(container, groupId) {
-    const table = document.createElement('table');
-    table.className = 'group-table';
-    table.dataset.id = groupId; // Associate the table with the group ID
-    const headerRow = createHeaderRow(table, groupId);
-    table.appendChild(headerRow);
-    addRow(table, headerRow); // Add Default Row
-    return table;
 }
 
 // having problems of updating the group name
@@ -565,31 +563,25 @@ function createCell(headerText) {// Function to Create Cell
     }
     return cell;
 }
-function validateEmail(email) {// Helper: Validate Email
-    const re = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
-    return re.test(email);
-}
-async function sendEmailNotification(email) {
-    try {
-        const response = await fetch('/send-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email }),
-        });
-
+function notifyUser(email) {
+    fetch('http://localhost:3000/notify', { // Update with your server URL
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email })
+    })
+    .then(response => {
         if (response.ok) {
             alert('Notification sent successfully!');
         } else {
-            const error = await response.json();
-            console.error('Error sending email:', error);
             alert('Failed to send notification.');
         }
-    } catch (error) {
-        console.error('Network error:', error);
-        alert('Failed to send notification.');
-    }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
 }
-
 
 
 
