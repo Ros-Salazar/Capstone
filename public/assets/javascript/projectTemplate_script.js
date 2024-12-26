@@ -585,13 +585,14 @@ function notifyUser(email) {
 
 
 
-function createDateCell() {// Function to Create Date Cell
+function createDateCell() {
     const cell = document.createElement('td');
     const dateInput = createInput('date');
     const dateDisplay = document.createElement('span');
     dateDisplay.className = 'formatted-date';
     dateDisplay.style.cursor = 'pointer';
     dateDisplay.style.display = 'none';
+
     dateInput.addEventListener('change', () => {
         const date = new Date(dateInput.value);
         if (!isNaN(date)) {
@@ -603,14 +604,256 @@ function createDateCell() {// Function to Create Date Cell
             syncDateToCalendar(dateInput.value);
         }
     });
+
     dateDisplay.addEventListener('click', () => {
         dateInput.style.display = 'block';
         dateDisplay.style.display = 'none';
     });
+
     cell.appendChild(dateInput);
     cell.appendChild(dateDisplay);
     return cell;
 }
+
+let seletedDate = null;
+
+// Function to generate the calendar
+function generateCalendar() {
+    const calendarSection = document.querySelector('.calendar-section');
+    calendarSection.innerHTML = ''; // Clear any existing content
+
+    // Create header for month and year
+    const calendarHeader = document.createElement('div');
+    calendarHeader.className = 'calendar-header';
+
+    const prevButton = document.createElement('button');
+    prevButton.textContent = 'Previous';
+    prevButton.className = 'calendar-nav-btn';
+    const nextButton = document.createElement('button');
+    nextButton.textContent = 'Next';
+    nextButton.className = 'calendar-nav-btn';
+
+    const monthYearDisplay = document.createElement('div');
+    monthYearDisplay.className = 'month-year-display';
+
+    let currentDate = selectedDate ? new Date(selectedDate) : new Date(); // Current date
+    let currentMonth = currentDate.getMonth();
+    let currentYear = currentDate.getFullYear();
+
+    const updateCalendar = () => {
+        monthYearDisplay.textContent = `${currentDate.toLocaleString('default', { month: 'long' })} ${currentYear}`;
+        renderCalendar(currentYear, currentMonth);
+    };
+
+    prevButton.addEventListener('click', () => {
+        if (currentMonth === 0) {
+            currentMonth = 11;
+            currentYear -= 1;
+        } else {
+            currentMonth -= 1;
+        }
+        currentDate = new Date(currentYear, currentMonth, 1);
+        updateCalendar();
+    });
+
+    nextButton.addEventListener('click', () => {
+        if (currentMonth === 11) {
+            currentMonth = 0;
+            currentYear += 1;
+        } else {
+            currentMonth += 1;
+        }
+        currentDate = new Date(currentYear, currentMonth, 1);
+        updateCalendar();
+    });
+
+    calendarHeader.appendChild(prevButton);
+    calendarHeader.appendChild(monthYearDisplay);
+    calendarHeader.appendChild(nextButton);
+
+    // Append header to the calendar section
+    calendarSection.appendChild(calendarHeader);
+
+    // Create calendar grid container
+    const calendarGrid = document.createElement('div');
+    calendarGrid.className = 'calendar-grid';
+
+    // Function to render the calendar days
+    const renderCalendar = (year, month) => {
+        calendarGrid.innerHTML = ''; // Clear existing grid
+
+        // Days of the week header
+        const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        daysOfWeek.forEach(day => {
+            const dayHeader = document.createElement('div');
+            dayHeader.className = 'calendar-day-header';
+            dayHeader.textContent = day;
+            calendarGrid.appendChild(dayHeader);
+        });
+
+        // Determine first day of the month and number of days in the month
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        // Add blank cells for days before the first day of the month
+        for (let i = 0; i < firstDay; i++) {
+            const emptyCell = document.createElement('div');
+            emptyCell.className = 'calendar-day empty';
+            calendarGrid.appendChild(emptyCell);
+        }
+
+        // Add cells for each day in the month
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dayCell = document.createElement('div');
+            dayCell.className = 'calendar-day';
+            dayCell.textContent = day;
+
+            //highlight selected date
+            if (
+                selectedDate &&
+                new Date(selectedDate).getFullYear() === year &&
+                new Date(selectedDate).getMonth() === month &&
+                new Date(selectedDate).getDate() === day
+            ){
+                dayCell.classList.add('selected-day');
+            }
+
+            dayCell.addEventListener('click', () => {
+                selectedDate = new Date(year, month, day);
+                alert(`Selected date: ${day}/${month + 1}/${year}`);
+                renderCalendar(year, month); // Re-render to highlight the selected day
+            });
+
+            calendarGrid.appendChild(dayCell);
+        }
+    };
+
+    // Append calendar grid to the section
+    calendarSection.appendChild(calendarGrid);
+
+    // Initial render
+    updateCalendar();
+}
+
+// Attach the function to the calendar button click event
+document.getElementById('calendarBtn').addEventListener('click', function() {
+    document.querySelector('.group-section').classList.remove('active-section');
+    document.querySelector('.calendar-section').classList.add('active-section');
+    setActiveButton('calendarBtn');
+
+    // Generate the calendar
+    generateCalendar();
+});
+
+// Synchronize with Timeline
+function syncCalendarWithTimeline(dateString) {
+    selectedDate = new Date(dateString); // Update the selected date
+    if (document.querySelector('.calendar-section').classList.contains('active-section')) {
+        generateCalendar(); // Update the calendar only if it's active
+    }
+}
+
+// Example: Listening for Timeline changes (this depends on your Timeline implementation)
+document.querySelector('.timeline-input').addEventListener('change', (event) => {
+    const inputDate = event.target.value; // Assuming the input is in "YYYY-MM-DD" format
+    syncCalendarWithTimeline(inputDate);
+});
+
+// Calendar Variables
+const calendarGrid = document.querySelector('.calendar-grid');
+const monthYearDisplay = document.getElementById('monthYearDisplay');
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
+let pinnedDates = []; // Array to store pinned dates
+
+// sync date to calendar
+function syncDateToCalendar(date) {
+    if (!date) return;
+    if (!pinnedDates.includes(date)){
+        pinnedDates.push(date);
+    }
+    renderCalendar();
+}
+function renderCalendar() {
+    calendarGrid.innerHTML = ''; // Clear previous calendar
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    // Display current month and year
+    monthYearDisplay.textContent = `${new Date(currentYear, currentMonth).toLocaleString('en-US', { month: 'long' })} ${currentYear}`;
+
+    // Add empty days for the previous month
+    for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.classList.add('calendar-day');
+        calendarGrid.appendChild(emptyCell);
+    }
+
+    // Add days of the current month
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayCell = document.createElement('div');
+        dayCell.textContent = day;
+        dayCell.classList.add('calendar-day');
+        const fullDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        // Check if the date is pinned
+        if (pinnedDates.includes(fullDate)) {
+            dayCell.classList.add('pinned');
+        }
+
+        dayCell.addEventListener('click', () => togglePinDate(fullDate, dayCell));
+        calendarGrid.appendChild(dayCell);
+    }
+}
+//function to toggle pin date
+function togglePinDate(date, dayCell) {
+    if (pinnedDates.includes(date)) {
+        pinnedDates = pinnedDates.filter(d => d !== date);
+        dayCell.classList.remove('pinned');
+    } else {
+        pinnedDates.push(date);
+        dayCell.classList.add('pinned');
+    }
+    renderCalendar();
+}
+
+// Function to Update Table with Pinned Dates
+function updateTableWithPinnedDates() {
+    const tables = document.querySelectorAll('.group-table');
+    tables.forEach(table => {
+        const headerRow = table.rows[0];
+        const dateHeaders = Array.from(headerRow.cells).map(cell => cell.textContent.trim());
+
+        pinnedDates.forEach(date => {
+            if (!dateHeaders.includes(date)) {
+                addColumn(date, table, headerRow);
+            }
+        });
+    });
+}
+
+// Navigation Buttons for Calendar
+document.getElementById('prevMonth').addEventListener('click', () => {
+    currentMonth--;
+    if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+    }
+    renderCalendar();
+});
+
+document.getElementById('nextMonth').addEventListener('click', () => {
+    currentMonth++;
+    if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+    }
+    renderCalendar();
+});
+
+// Initialize Calendar
+document.addEventListener('DOMContentLoaded', renderCalendar);
+
 function createInput(type, placeholder = '') {// Function to Create Input
     const input = document.createElement('input');
     input.type = type;
