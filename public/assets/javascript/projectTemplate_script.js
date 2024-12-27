@@ -1,208 +1,77 @@
-let addGroupBtn;
-import { 
-    doc, collection, addDoc, getDocs, updateDoc, deleteDoc,query, where 
-} from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
-import { db } from './dashboard_script.js';
-
-document.addEventListener('DOMContentLoaded', async function () {// Wait for DOM to load before accessing elements
-    addGroupBtn = document.getElementById('addGroupBtn');
-    console.log('Add Group Button:', addGroupBtn);
-    if (addGroupBtn) {
-        addGroupBtn.addEventListener('click', async function () {
-            console.log('Add New Group button clicked');
-            const container = document.querySelector('.group-container');
-            const groupId = `group-${Date.now()}`;
-            const groupData = { groupId, rows: [] };
-
-            const docRef = await saveGroupData(groupData);
-            
-            const table = createTable(container, docRef.id); // Use Firestore document ID
-            container.appendChild(table);
-            createAddRowButton(table, container, docRef.id);
-        });
-    }
-    try {
-        const projectId = new URLSearchParams(window.location.search).get('projectId');
-        const groupsQuery = query(
-            collection(db, "groups"),
-            where("projectId", "==", projectId)
-        );
-        const groupsSnapshot = await getDocs(groupsQuery);
-        const container = document.querySelector('.group-container');
-        groupsSnapshot.forEach((doc) => {
-            const groupData = doc.data();
-            const table = createTable(container, doc.id);
-            container.appendChild(table);
-            createAddRowButton(table, container, doc.id);
-            if (groupData.columns) {// Populate existing columns
-                groupData.columns.forEach(columnName => {
-                    if (columnName !== "New Group") {
-                        addColumn(columnName, table, table.rows[0]);
-                    }
-                });
-            }
-            if (groupData.rows) {// Populate existing rows
-                groupData.rows.forEach(rowData => {
-                    populateRow(table, rowData);
-                });
-            }
-        });
-    } catch (e) {
-        console.error('Error loading groups:', e);
-    }
-});
-
 document.getElementById('mainTableBtn').addEventListener('click', function() {
     document.querySelector('.group-section').classList.add('active-section');
     document.querySelector('.calendar-section').classList.remove('active-section');
     setActiveButton('mainTableBtn');
 });
+
 document.getElementById('calendarBtn').addEventListener('click', function() {
     document.querySelector('.group-section').classList.remove('active-section');
     document.querySelector('.calendar-section').classList.add('active-section');
     setActiveButton('calendarBtn');
 });
-document.addEventListener('DOMContentLoaded', function() {// Set main table as the default active section on page load
-    document.querySelector('.group-section').classList.add('active-section');
-    document.querySelector('.calendar-section').classList.remove('active-section');
-    setActiveButton('mainTableBtn');
-});
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.dropdown-menu') && !e.target.closest('.dropdown-btn') && !e.target.closest('.plus-header')) {
-        document.querySelectorAll('.dropdown-menu').forEach(menu => menu.style.display = 'none');
-    }
-});
 
-
-async function saveGroupData(groupData) {//? main issue with data persistence is in how structuring and saving the group data.
-    try {
-        console.log('Creating new group with data:', groupData);
-        const docRef = await addDoc(collection(db, "groups"), {
-            groupId: groupData.groupId,
-            projectId: new URLSearchParams(window.location.search).get('projectId'), // Get current project ID
-            name: "New Group",
-            columns: ["New Group"], // Initial columns
-            createdAt: new Date().toISOString(),
-            rows: []
-        });
-        console.log("Group created with ID:", docRef.id);
-        return docRef;
-    } catch (e) {
-        console.error('Error saving group:', e);
-        throw e;
-    }
-}
-async function updateGroupColumns(groupId, columns) {//? when adding columns, we need to update the Firestore document
-    try {
-        const groupRef = doc(db, "groups", groupId);
-        await updateDoc(groupRef, {
-            columns: columns
-        });
-    } catch (error) {
-        console.error('Error updating columns:', error);
-    }
-}
-
-function setActiveButton(buttonId) {// Function to set the active button
+// Function to set the active button
+function setActiveButton(buttonId) {
     document.getElementById('mainTableBtn').classList.remove('active');
     document.getElementById('calendarBtn').classList.remove('active');
     document.getElementById(buttonId).classList.add('active');
 }
 
+// Set main table as the default active section on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('.group-section').classList.add('active-section');
+    document.querySelector('.calendar-section').classList.remove('active-section');
+    setActiveButton('mainTableBtn');
+});
 
-function createTable(container, groupId) {// Function to Create a Table
+document.getElementById('addGroupBtn').addEventListener('click', function () {
+    const container = document.querySelector('.group-container'); // Use your named container
+    const groupId = `group-${Date.now()}`; // Generate a unique ID for each group
+    const table = createTable(container, groupId);
+    container.appendChild(table); // Append the table to the container
+    createAddRowButton(table, container, groupId); // Append the Add Item button to the container
+});
+
+// Function to Create a Table
+function createTable(container, groupId) {
     const table = document.createElement('table');
     table.className = 'group-table';
     table.dataset.id = groupId; // Associate the table with the group ID
+
     const headerRow = createHeaderRow(table, groupId);
     table.appendChild(headerRow);
+
     addRow(table, headerRow); // Add Default Row
     return table;
 }
 
-
-function populateRow(table, rowData) {//!Implement Update for storing
-    const row = document.createElement('tr');
-    row.dataset.rowId = rowData.id; //! Store the row ID
-    const headerRow = table.rows[0];
-    Array.from(headerRow.cells).forEach((header, index) => {
-        const headerText = header.textContent.trim();
-        const cell = index === 0 ? createActionCell(row) : createCell(headerText);
-        row.appendChild(cell);
-
-        if (index > 0) {
-            const value = rowData.cells[headerText] || '';
-            if (headerText === 'Upload File') {
-                cell.dataset.fileUrl = value;
-                const fileInput = createInput('file');
-                fileInput.addEventListener('change', handleFileUpload);
-                cell.appendChild(fileInput);
-            } else if (headerText === 'Status') {
-                const select = createSelect(['To-do', 'In Progress', 'Done']);
-                select.value = value;
-                cell.appendChild(select);
-            } else {
-                cell.contentEditable = true;
-                cell.textContent = value;
-            }
-        }
-    });
-    table.appendChild(row);
-}
-
-// having problems of updating the group name
-function createHeaderRow(table, groupId) {// Function to Create Header Row
+// Function to Create Header Row
+function createHeaderRow(table, groupId) {
     const headerRow = document.createElement('tr');
-    const fixedColumnHeader = document.createElement('th');// Create a header cell for the dropdown button
+
+    // Create a header cell for the dropdown button
+    const fixedColumnHeader = document.createElement('th');
     fixedColumnHeader.className = 'fixed-column';
     const dropdownBtn = document.createElement('button');
     dropdownBtn.textContent = '⋮';
     dropdownBtn.className = 'dropdown-btn';
+
     const dropdownMenu = document.createElement('div');
     dropdownMenu.className = 'dropdown-menu';
     dropdownMenu.style.display = 'none';
 
-    // Implement Updates
-    const groupNameHeader = createHeaderCell('New Group', '', true);
-    groupNameHeader.contentEditable = true;
-    groupNameHeader.addEventListener('blur', async () => {
-        const newName = groupNameHeader.textContent.trim();
-        if (newName) {
-            try {
-                const groupRef = doc(db, 'groups', groupId);
-                await updateGroupName(groupRef, { name: newName });
-                console.log('Group name updated successfully');
-            } catch (error) {
-                console.error('Error updating group name:', error);
-            }
-        }
-    });
-
-    // Add "Delete Group" Option with proper event handling
+    // Add "Delete Group" Option
     const deleteGroupOption = document.createElement('div');
     deleteGroupOption.textContent = 'Delete Group';
     deleteGroupOption.className = 'dropdown-item';
-    
-    deleteGroupOption.addEventListener('click', async (e) => {
-        e.stopPropagation(); // Prevent event bubbling
-        try {
-            await deleteGroup(groupId);
-            const groupContainer = document.querySelector('.group-container');
-            const addItemButton = document.querySelector(`.add-item-btn[data-id="${groupId}"]`);
-            if (addItemButton) {
-                addItemButton.remove();
-            }
-            if (table && table.parentNode) {
-                table.parentNode.removeChild(table);
-            }
-            dropdownMenu.style.display = 'none';
-        } catch (error) {
-            console.error('Error deleting group:', error);
-        }
+    deleteGroupOption.addEventListener('click', () => {
+        const groupContainer = document.querySelector('.group-container'); // Reference the container
+        const addItemButton = document.querySelector(`.add-item-btn[data-id="${groupId}"]`); // Find the associated "Add Item" button
+        if (addItemButton) addItemButton.remove(); // Remove the button
+        groupContainer.removeChild(table); // Remove the table from the container
     });
 
-    dropdownBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent event bubbling
+    dropdownBtn.addEventListener('click', () => {
         dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
     });
 
@@ -211,9 +80,13 @@ function createHeaderRow(table, groupId) {// Function to Create Header Row
     fixedColumnHeader.appendChild(dropdownMenu);
     headerRow.appendChild(fixedColumnHeader);
 
-    headerRow.appendChild(createHeaderCell('New Group', '', true));// Add "New Group" header
-    const plusHeader = createHeaderCell('+', 'plus-header');// Add the "+" header with dropdown for column types
+    // Add "New Group" header
+    headerRow.appendChild(createHeaderCell('New Group', '', true));
+
+    // Add the "+" header with dropdown for column types
+    const plusHeader = createHeaderCell('+', 'plus-header');
     plusHeader.style.cursor = 'pointer';
+
     const columnDropdownMenu = createDropdownMenu(
         ['Text', 'Numbers', 'Status', 'Key Persons', 'Timeline', 'Upload File'],
         (option) => {
@@ -223,25 +96,19 @@ function createHeaderRow(table, groupId) {// Function to Create Header Row
             columnDropdownMenu.style.display = 'none';
         }
     );
+
     plusHeader.addEventListener('click', () => {
         columnDropdownMenu.style.display = columnDropdownMenu.style.display === 'none' ? 'block' : 'none';
     });
+
     plusHeader.appendChild(columnDropdownMenu);
     headerRow.appendChild(plusHeader);
+
     return headerRow;
 }
-async function updateGroupName(groupId, newName) {
-    try {
-        const groupRef = doc(db, 'groups', groupId);
-        await updateDoc(groupRef, { name: newName });
-        console.log('Group name updated successfully');
-    } catch (error) {
-        console.error('Error updating group name:', error);
-    }
-}
 
-
-function createActionCell(row, groupId) {
+// Function to Create Action Cell
+function createActionCell(row) {
     const cell = document.createElement('td');
     cell.className = 'fixed-column';
 
@@ -256,13 +123,8 @@ function createActionCell(row, groupId) {
     const deleteOption = document.createElement('div');
     deleteOption.textContent = 'Delete Row';
     deleteOption.className = 'dropdown-item';
-    deleteOption.addEventListener('click', async () => {
-        const rowId = row.dataset.rowId;
-        if (rowId) {
-            await deleteRow(groupId, rowId);
-            row.remove();
-        }
-    });
+    deleteOption.addEventListener('click', () => row.remove());
+
     dropdownBtn.addEventListener('click', () => {
         dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
     });
@@ -306,31 +168,23 @@ function createDropdownMenu(options, onSelect) {
         item.addEventListener('click', () => onSelect(option));
         menu.appendChild(item);
     });
+
     return menu;
 }
 
 // Function to Add a Column
-//? add the updateColukmn
-async function addColumn(option, table, headerRow) {
+function addColumn(option, table, headerRow) {
     if (Array.from(headerRow.cells).some(cell => cell.textContent.trim() === option)) return;
 
     const newHeader = createHeaderCell(option, '', true);
     headerRow.insertBefore(newHeader, headerRow.lastChild);
-
-    // Get all current column headers
-    const columns = Array.from(headerRow.cells)
-        .map(cell => cell.textContent.trim())
-        .filter(text => text !== '⋮' && text !== '+');
-
-    // Update in Firestore
-    const groupId = table.dataset.id;
-    await updateGroupColumns(groupId, columns);
 
     Array.from(table.rows).forEach((row, index) => {
         if (index === 0) return;
         row.insertBefore(createCell(option), row.lastChild);
     });
 }
+
 // Function to Add Timeline Columns
 function addTimelineColumns(table, headerRow) {
     ['Start Date', 'Due Date'].forEach(dateColumn => {
@@ -350,210 +204,29 @@ function addTimelineColumns(table, headerRow) {
 }
 
 // Function to Add a Row
-//? never actually called when adding new rows [1]
-async function addRow(table, headerRow) {
+function addRow(table, headerRow) {
     const row = document.createElement('tr');
-    const groupId = table.dataset.id;
-    const rowData = { 
-        groupId, 
-        cells: {},
-        createdAt: new Date().toISOString()
-    };
 
     Array.from(headerRow.cells).forEach((header, index) => {
-        const headerText = header.textContent.trim();
-        let cell;
-
-        if (index === 0) {
-            cell = createActionCell(row, groupId);
-        } else {
-            cell = createCell(headerText);
-
-            rowData.cells[headerText] = '';
-        }
+        const cell = index === 0 ? createActionCell(row) : createCell(header.textContent);
         row.appendChild(cell);
     });
 
-    // Save to Firestore first
-    const docRef = await saveRowData(groupId, rowData);
-    row.dataset.rowId = docRef.id; // Store the row ID for later use
-
-    // Add event listeners to all editable cells
-    row.querySelectorAll('td').forEach((cell, index) => {
-        if (index > 0) { // Skip action cell
-            addCellEventListeners(cell, headerRow.cells[index].textContent.trim(), row);
-        }
-    });
-
     table.appendChild(row);
-    return row;
 }
 
-//! helper for renaming or creating item rows
-function addCellEventListeners(cell, headerText, row) {
-    if (headerText === 'Status') {
-        const select = cell.querySelector('select');
-        if (select) {
-            select.addEventListener('change', () => saveRowChanges(row));
-        }
-    } else if (headerText === 'Start Date' || headerText === 'Due Date') {
-        const dateInput = cell.querySelector('input[type="date"]');
-        if (dateInput) {
-            dateInput.addEventListener('change', () => saveRowChanges(row));
-        }
-    } else if (headerText === 'Upload File') {
-        const fileInput = cell.querySelector('input[type="file"]');
-        if (fileInput) {
-            fileInput.addEventListener('change', handleFileUpload);
-        }
-    } else {
-        cell.addEventListener('input', () => saveRowChanges(row));
-        cell.addEventListener('blur', () => saveRowChanges(row));
-    }
-}
-
-//! Update was not implemented bro
-async function updateRowData(groupId, rowId, cells) {
-    try {
-        const groupRef = doc(db, 'groups', groupId);
-        const rowRef = doc(collection(groupRef, 'contents'), rowId);
-        await updateDoc(rowRef, {
-            cells: cells,
-            updatedAt: new Date().toISOString()
-        });
-        console.log('Row updated successfully:', cells);
-    } catch (error) {
-        console.error('Error updating row:', error);
-        throw error;
-    }
-}
-
-//? First, keep  saveRow function to collect the data [2]
-function saveRow(groupId, row) {
-    console.log('Starting saveRow with groupId:', groupId);
-    const rowData = {
-        groupId: groupId,
-        cells: {},
-        createdAt: new Date().toISOString()
-    };
-
-    row.querySelectorAll('td').forEach((cell, index) => {
-        const headerText = table.querySelectorAll('thead th')[index].textContent.trim();
-        console.log('Processing cell:', headerText, cell.textContent);
-        rowData.cells[headerText] =
-            headerText === 'Start Date' || headerText === 'Due Date'
-                ? new Date(cell.querySelector('input[type="date"]').value).toISOString()
-                : headerText === 'Upload File'
-                ? cell.dataset.fileUrl
-                : cell.textContent;
-    });
-
-    console.log('Row data before saving:', rowData);
-    return saveRowData(groupId, rowData);
-}
-
-//? Then add the new saveRowData function to handle Firestore operations
-async function saveRowData(groupId, rowData) {
-    try {
-        console.log('Starting saveRowData with:', { groupId, rowData });
-        const groupRef = doc(db, 'groups', groupId);
-        const contentsRef = collection(groupRef, 'contents');
-        
-        // Ensure all required fields are present
-        const enhancedRowData = {
-            ...rowData,
-            updatedAt: new Date().toISOString(),
-            cells: {
-                ...rowData.cells,
-                'Status': rowData.cells['Status'] || 'Pending',
-                'Key Persons': rowData.cells['Key Persons'] || '',
-                'Text': rowData.cells['Text'] || '',
-                'Numbers': rowData.cells['Numbers'] || '',
-                'Start Date': rowData.cells['Start Date'] || null,
-                'Due Date': rowData.cells['Due Date'] || null,
-                'Upload File': rowData.cells['Upload File'] || null
-            }
-        };
-        
-        const docRef = await addDoc(contentsRef, enhancedRowData);
-        console.log('Row data saved successfully with ID:', docRef.id);
-        return docRef;
-    } catch (error) {
-        console.error('Error in saveRowData:', error);
-        throw error;
-    }
-}
-
-//! add Updates
-async function saveRowChanges(row) {
-    const table = row.closest('table');
-    const groupId = table.dataset.id;
-    const rowId = row.dataset.rowId;
-    
-    if (!groupId || !rowId) {
-        console.error('Missing groupId or rowId');
-        return;
-    }
-
-    const cells = {};
-    const headerRow = table.rows[0];
-    
-    Array.from(row.cells).forEach((cell, index) => {
-        if (index === 0) return; // Skip action column
-        
-        const headerText = headerRow.cells[index].textContent.trim();
-        let value;
-
-        // Handle different types of inputs
-        if (headerText === 'Status') {
-            const select = cell.querySelector('select');
-            value = select ? select.value : '';
-        } else if (headerText === 'Start Date' || headerText === 'Due Date') {
-            const dateInput = cell.querySelector('input[type="date"]');
-            value = dateInput ? dateInput.value : '';
-        } else if (headerText === 'Upload File') {
-            value = cell.dataset.fileUrl || '';
-        } else {
-            value = cell.textContent.trim();
-        }
-
-        cells[headerText] = value;
-    });
-
-    try {
-        await updateRowData(groupId, rowId, cells);
-        console.log('Row updated successfully');
-    } catch (error) {
-        console.error('Error updating row:', error);
-    }
-}
-
-
-function createCell(headerText) {// Function to Create Cell
+// Function to Create Cell
+function createCell(headerText) {
     const cell = document.createElement('td');
+
     if (headerText === 'Start Date' || headerText === 'Due Date') {
         return createDateCell();
     } else if (headerText === 'Numbers') {
-        cell.contentEditable = true;
-        cell.addEventListener('input', () => {
-            cell.textContent = cell.textContent.replace(/[^0-9]/g, '');
-        });
+        cell.appendChild(createInput('text', 'Enter Value'));
     } else if (headerText === 'Status') {
-        const select = createSelect(['To-do', 'In Progress', 'Done']);
-        cell.appendChild(select);
+        cell.appendChild(createSelect(['To-do', 'In Progress', 'Done']));
     } else if (headerText === 'Key Persons') {
-        const input = document.createElement('input');
-        input.type = 'email';
-        input.placeholder = 'Enter Google email';
-        input.addEventListener('change', async () => {
-            const email = input.value.trim();
-            if (validateEmail(email)) {
-                await sendEmailNotification(email);
-            } else {
-                alert('Please enter a valid email address.');
-            }
-        });
-        cell.appendChild(input);
+        cell.appendChild(createInput('email'));
     } else if (headerText === 'Upload File') {
         const fileInput = createInput('file');
         fileInput.addEventListener('change', handleFileUpload);
@@ -561,30 +234,11 @@ function createCell(headerText) {// Function to Create Cell
     } else {
         cell.contentEditable = true;
     }
+
     return cell;
 }
-function notifyUser(email) {
-    fetch('http://localhost:3000/notify', { // Update with your server URL
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email })
-    })
-    .then(response => {
-        if (response.ok) {
-            alert('Notification sent successfully!');
-        } else {
-            alert('Failed to send notification.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
-}
 
-
-
+// Function to Create Date Cell
 function createDateCell() {
     const cell = document.createElement('td');
     const dateInput = createInput('date');
@@ -615,253 +269,17 @@ function createDateCell() {
     return cell;
 }
 
-let seletedDate = null;
-
-// Function to generate the calendar
-function generateCalendar() {
-    const calendarSection = document.querySelector('.calendar-section');
-    calendarSection.innerHTML = ''; // Clear any existing content
-
-    // Create header for month and year
-    const calendarHeader = document.createElement('div');
-    calendarHeader.className = 'calendar-header';
-
-    const prevButton = document.createElement('button');
-    prevButton.textContent = 'Previous';
-    prevButton.className = 'calendar-nav-btn';
-    const nextButton = document.createElement('button');
-    nextButton.textContent = 'Next';
-    nextButton.className = 'calendar-nav-btn';
-
-    const monthYearDisplay = document.createElement('div');
-    monthYearDisplay.className = 'month-year-display';
-
-    let currentDate = selectedDate ? new Date(selectedDate) : new Date(); // Current date
-    let currentMonth = currentDate.getMonth();
-    let currentYear = currentDate.getFullYear();
-
-    const updateCalendar = () => {
-        monthYearDisplay.textContent = `${currentDate.toLocaleString('default', { month: 'long' })} ${currentYear}`;
-        renderCalendar(currentYear, currentMonth);
-    };
-
-    prevButton.addEventListener('click', () => {
-        if (currentMonth === 0) {
-            currentMonth = 11;
-            currentYear -= 1;
-        } else {
-            currentMonth -= 1;
-        }
-        currentDate = new Date(currentYear, currentMonth, 1);
-        updateCalendar();
-    });
-
-    nextButton.addEventListener('click', () => {
-        if (currentMonth === 11) {
-            currentMonth = 0;
-            currentYear += 1;
-        } else {
-            currentMonth += 1;
-        }
-        currentDate = new Date(currentYear, currentMonth, 1);
-        updateCalendar();
-    });
-
-    calendarHeader.appendChild(prevButton);
-    calendarHeader.appendChild(monthYearDisplay);
-    calendarHeader.appendChild(nextButton);
-
-    // Append header to the calendar section
-    calendarSection.appendChild(calendarHeader);
-
-    // Create calendar grid container
-    const calendarGrid = document.createElement('div');
-    calendarGrid.className = 'calendar-grid';
-
-    // Function to render the calendar days
-    const renderCalendar = (year, month) => {
-        calendarGrid.innerHTML = ''; // Clear existing grid
-
-        // Days of the week header
-        const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        daysOfWeek.forEach(day => {
-            const dayHeader = document.createElement('div');
-            dayHeader.className = 'calendar-day-header';
-            dayHeader.textContent = day;
-            calendarGrid.appendChild(dayHeader);
-        });
-
-        // Determine first day of the month and number of days in the month
-        const firstDay = new Date(year, month, 1).getDay();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-        // Add blank cells for days before the first day of the month
-        for (let i = 0; i < firstDay; i++) {
-            const emptyCell = document.createElement('div');
-            emptyCell.className = 'calendar-day empty';
-            calendarGrid.appendChild(emptyCell);
-        }
-
-        // Add cells for each day in the month
-        for (let day = 1; day <= daysInMonth; day++) {
-            const dayCell = document.createElement('div');
-            dayCell.className = 'calendar-day';
-            dayCell.textContent = day;
-
-            //highlight selected date
-            if (
-                selectedDate &&
-                new Date(selectedDate).getFullYear() === year &&
-                new Date(selectedDate).getMonth() === month &&
-                new Date(selectedDate).getDate() === day
-            ){
-                dayCell.classList.add('selected-day');
-            }
-
-            dayCell.addEventListener('click', () => {
-                selectedDate = new Date(year, month, day);
-                alert(`Selected date: ${day}/${month + 1}/${year}`);
-                renderCalendar(year, month); // Re-render to highlight the selected day
-            });
-
-            calendarGrid.appendChild(dayCell);
-        }
-    };
-
-    // Append calendar grid to the section
-    calendarSection.appendChild(calendarGrid);
-
-    // Initial render
-    updateCalendar();
-}
-
-// Attach the function to the calendar button click event
-document.getElementById('calendarBtn').addEventListener('click', function() {
-    document.querySelector('.group-section').classList.remove('active-section');
-    document.querySelector('.calendar-section').classList.add('active-section');
-    setActiveButton('calendarBtn');
-
-    // Generate the calendar
-    generateCalendar();
-});
-
-// Synchronize with Timeline
-function syncCalendarWithTimeline(dateString) {
-    selectedDate = new Date(dateString); // Update the selected date
-    if (document.querySelector('.calendar-section').classList.contains('active-section')) {
-        generateCalendar(); // Update the calendar only if it's active
-    }
-}
-
-// Example: Listening for Timeline changes (this depends on your Timeline implementation)
-document.querySelector('.timeline-input').addEventListener('change', (event) => {
-    const inputDate = event.target.value; // Assuming the input is in "YYYY-MM-DD" format
-    syncCalendarWithTimeline(inputDate);
-});
-
-// Calendar Variables
-const calendarGrid = document.querySelector('.calendar-grid');
-const monthYearDisplay = document.getElementById('monthYearDisplay');
-let currentMonth = new Date().getMonth();
-let currentYear = new Date().getFullYear();
-let pinnedDates = []; // Array to store pinned dates
-
-// sync date to calendar
-function syncDateToCalendar(date) {
-    if (!date) return;
-    if (!pinnedDates.includes(date)){
-        pinnedDates.push(date);
-    }
-    renderCalendar();
-}
-function renderCalendar() {
-    calendarGrid.innerHTML = ''; // Clear previous calendar
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-
-    // Display current month and year
-    monthYearDisplay.textContent = `${new Date(currentYear, currentMonth).toLocaleString('en-US', { month: 'long' })} ${currentYear}`;
-
-    // Add empty days for the previous month
-    for (let i = 0; i < firstDay; i++) {
-        const emptyCell = document.createElement('div');
-        emptyCell.classList.add('calendar-day');
-        calendarGrid.appendChild(emptyCell);
-    }
-
-    // Add days of the current month
-    for (let day = 1; day <= daysInMonth; day++) {
-        const dayCell = document.createElement('div');
-        dayCell.textContent = day;
-        dayCell.classList.add('calendar-day');
-        const fullDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-
-        // Check if the date is pinned
-        if (pinnedDates.includes(fullDate)) {
-            dayCell.classList.add('pinned');
-        }
-
-        dayCell.addEventListener('click', () => togglePinDate(fullDate, dayCell));
-        calendarGrid.appendChild(dayCell);
-    }
-}
-//function to toggle pin date
-function togglePinDate(date, dayCell) {
-    if (pinnedDates.includes(date)) {
-        pinnedDates = pinnedDates.filter(d => d !== date);
-        dayCell.classList.remove('pinned');
-    } else {
-        pinnedDates.push(date);
-        dayCell.classList.add('pinned');
-    }
-    renderCalendar();
-}
-
-// Function to Update Table with Pinned Dates
-function updateTableWithPinnedDates() {
-    const tables = document.querySelectorAll('.group-table');
-    tables.forEach(table => {
-        const headerRow = table.rows[0];
-        const dateHeaders = Array.from(headerRow.cells).map(cell => cell.textContent.trim());
-
-        pinnedDates.forEach(date => {
-            if (!dateHeaders.includes(date)) {
-                addColumn(date, table, headerRow);
-            }
-        });
-    });
-}
-
-// Navigation Buttons for Calendar
-document.getElementById('prevMonth').addEventListener('click', () => {
-    currentMonth--;
-    if (currentMonth < 0) {
-        currentMonth = 11;
-        currentYear--;
-    }
-    renderCalendar();
-});
-
-document.getElementById('nextMonth').addEventListener('click', () => {
-    currentMonth++;
-    if (currentMonth > 11) {
-        currentMonth = 0;
-        currentYear++;
-    }
-    renderCalendar();
-});
-
-// Initialize Calendar
-document.addEventListener('DOMContentLoaded', renderCalendar);
-
-function createInput(type, placeholder = '') {// Function to Create Input
+// Function to Create Input
+function createInput(type, placeholder = '') {
     const input = document.createElement('input');
     input.type = type;
     input.style.width = '100%';
     if (placeholder) input.placeholder = placeholder;
     return input;
 }
-function createSelect(options) {// Function to Create Select
+
+// Function to Create Select
+function createSelect(options) {
     const select = document.createElement('select');
     options.forEach(option => {
         const opt = document.createElement('option');
@@ -871,48 +289,16 @@ function createSelect(options) {// Function to Create Select
     });
     return select;
 }
-async function handleFileUpload(event) {
+
+// Function to Handle File Upload
+function handleFileUpload(event) {
     const file = event.target.files[0];
     if (file) {
-        const progressIndicator = document.createElement('div');
-        progressIndicator.textContent = 'Uploading...';
-        event.target.parentElement.appendChild(progressIndicator);
-        const fileUrl = await uploadFile(file);
-        progressIndicator.textContent = 'Upload complete!';
-        event.target.parentElement.dataset.fileUrl = fileUrl;
-        console.log('File uploaded and URL saved:', fileUrl);
-    }
-}
-async function uploadFile(file) {
-    const storageRef = storage.ref(`uploads/${Date.now()}-${file.name}`);
-    const snapshot = await storageRef.put(file);
-    return await snapshot.ref.getDownloadURL();
-}
-async function deleteGroup(groupId) {
-    try {
-        console.log('Deleting group:', groupId);
-        const groupRef = doc(db, 'groups', groupId);// First, delete all rows in the group's contents subcollection
-        const contentsRef = collection(groupRef, 'contents');
-        const contentsSnapshot = await getDocs(contentsRef);
-        const deletionPromises = contentsSnapshot.docs.map(doc => 
-            deleteDoc(doc.ref)
-        );
-        await Promise.all(deletionPromises);
-        await deleteDoc(groupRef);// Then delete the group document itself
-        console.log('Group and all contents deleted:', groupId);
-    } catch (e) {
-        console.error('Error deleting group:', e);
-        throw e;
-    }
-}
-async function deleteRow(groupId, rowId) {
-    try {
-        const groupRef = doc(db, 'groups', groupId);
-        const rowRef = doc(collection(groupRef, 'contents'), rowId);
-        await deleteDoc(rowRef);
-        console.log('Row deleted:', rowId);
-    } catch (e) {
-        console.error('Error deleting row:', e);
-        throw e;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            console.log('File content:', e.target.result);
+            // Process the file content or upload it to a server
+        };
+        reader.readAsDataURL(file);
     }
 }

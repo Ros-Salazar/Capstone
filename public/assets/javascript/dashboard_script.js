@@ -1,21 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
-import { getFirestore, getDocs, collection, addDoc, onSnapshot, query, doc, updateDoc} from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
-
-// Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyCOo_r7lBGB_FiuwFIcsc-ecRsd43pDXF0",
-    authDomain: "ceo-projectmanagementweb.firebaseapp.com",
-    projectId: "ceo-projectmanagementweb",
-    storageBucket: "ceo-projectmanagementweb.appspot.com",
-    messagingSenderId: "60010633148",
-    appId: "1:60010633148:web:abaa3776928df2a351fdb9",
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
- 
+// !UPDATE BUTTON NOT WORKING, NEEDS FIXING!
 // DOM Elements declarations
 let newProjectBtn;
 let popupWindow;
@@ -25,17 +8,54 @@ let projectContainer;
 let noProjectsText;
 let editPopupWindow;
 let editProjectForm;
+let projectList;
+let navigationPane;
 
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize DOM elements after the document has loaded
-    newProjectBtn = document.getElementById('newProjectBtn');
-    popupWindow = document.getElementById('popupWindow');
-    closeBtns = document.querySelectorAll('.close-btn');
-    projectForm = document.getElementById('projectForm');
-    projectContainer = document.getElementById('projectContainer');
-    noProjectsText = document.getElementById('noProjectsText');
-    editPopupWindow = document.getElementById('editPopupWindow');
-    editProjectForm = document.getElementById('editProjectForm');
+    const newProjectBtn = document.getElementById('newProjectBtn');
+    const popupWindow = document.getElementById('popupWindow');
+    const closeBtns = document.querySelectorAll('.close-btn');
+    const projectForm = document.getElementById('projectForm');
+    const projectContainer = document.getElementById('projectContainer');
+    const noProjectsText = document.getElementById('noProjectsText');
+    const editPopupWindow = document.getElementById('editPopupWindow');
+    const editProjectForm = document.getElementById('editProjectForm');
+    const projectList = document.getElementById('projectList');
+    const navigationPane = document.getElementById('navigationPane');
+
+    // Ensure all elements are found
+    if (!newProjectBtn || !popupWindow || !projectForm || !projectContainer || !noProjectsText || !editPopupWindow || !editProjectForm || !projectList || !navigationPane) {
+        console.error('One or more DOM elements are missing');
+        return;
+    }
+
+    // Initialize the projects array
+    let projects = [];
+
+    // Fetch projects from the database when the page loads
+    const fetchProjects = async () => {
+        try {
+            console.log('Fetching projects...');
+            const response = await fetch('http://127.0.0.1:3000/api/projects');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            projects = data.map(project => ({
+                id: project.project_id,
+                name: project.project_name,
+                location: project.project_location,
+                description: project.project_description,
+                completion: project.project_completion || '0%',
+                group: 'default'
+            }));
+            console.log('Projects fetched:', projects);
+            loadProjects();
+        } catch (error) {
+            console.error('Fetch error:', error);
+        }
+    };
 
     // Show popup when 'Add Project' is clicked
     newProjectBtn.addEventListener('click', () => {
@@ -50,28 +70,52 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Add Project to Firestore
-    projectForm.addEventListener("submit", async (event) => {
+    // Add Project
+    projectForm.addEventListener('submit', async (event) => {
         event.preventDefault();
 
-        const projectName = document.getElementById("project-name").value;
-        const location = document.getElementById("location").value;
-        const group = document.getElementById("group").value;
+        const projectName = document.getElementById('project-name').value;
+        const location = document.getElementById('location').value;
+        const description = document.getElementById('description').value;
 
         try {
-            const docRef = await addDoc(collection(db, "projects"), {
-                name: projectName,
-                location: location,
-                group: group,
-                completion: "0%",
+            const response = await fetch('http://127.0.0.1:3000/api/create_project', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    project_name: projectName,
+                    project_location: location,
+                    project_description: description,
+                }),
             });
 
-            console.log("Project added with ID:", docRef.id);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+            }
+
+            const result = await response.json();
+            console.log('Project creation response:', result);
+
+            const project = {
+                id: result.projectId,
+                name: projectName,
+                location: location,
+                description: description,
+                group: 'default',
+                completion: '0%',
+            };
+
+            projects.push(project);
+            loadProjects();
 
             projectForm.reset();
             popupWindow.style.display = 'none';
         } catch (error) {
-            console.error("Error adding project:", error);
+            console.error('Fetch error:', error);
+            alert(`Error creating project: ${error.message}`);
         }
     });
 
@@ -83,18 +127,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Populate Navigation Pane
-    const fetchProjectsForNav = async () => {
-        const projects = [];
-        const querySnapshot = await getDocs(collection(db, "projects"));
-        querySnapshot.forEach((doc) => {
-            projects.push({ id: doc.id, ...doc.data() });
-        });
-        return projects;
-    };
-
-    const populateNavigationPane = async () => {
+    const populateNavigationPane = () => {
         projectList.innerHTML = ''; // Clear existing items
-        const projects = await fetchProjectsForNav();
         projects.forEach((project) => {
             const li = document.createElement('li');
             li.textContent = project.name;
@@ -104,71 +138,158 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // Load Projects in Real-Time
+    // Load Projects
     const loadProjects = () => {
-        const q = query(collection(db, "projects"));
+        projectContainer.innerHTML = ''; // Clear existing projects
+        console.log('Loading projects...', projects);
 
-        onSnapshot(q, (snapshot) => {
-            projectContainer.innerHTML = ''; // Clear existing projects
+        projects.forEach((project) => {
+            const projectBox = document.createElement('div');
+            projectBox.classList.add('project-box', project.group);
+            projectBox.setAttribute('data-id', project.id);
+            projectBox.innerHTML = `
+                <div class="project-options">
+                    <i class="fas fa-trash-alt delete-icon"></i>
+                    <i class="fas fa-archive archive-icon"></i>
+                </div>
+                <h3>${project.name}</h3>
+                <p>${project.location}</p>
+                <p class="completion-text">${project.completion} COMPLETED</p>
+                <i class="fas fa-pencil-alt edit-icon"></i>
+            `;
 
-            snapshot.forEach((doc) => {
-                const project = doc.data();
+            // Add click event for redirecting to project template
+            projectBox.addEventListener('click', () => openProject(project.id));
 
-                const projectBox = document.createElement("div");
-                projectBox.classList.add("project-box", project.group);
-                projectBox.setAttribute("data-id", doc.id);
-                projectBox.innerHTML = `
-                    <h3>${project.name}</h3>
-                    <p>${project.location}</p>
-                    <p class="completion-text">${project.completion} COMPLETED</p>
-                    <i class="fas fa-pencil-alt edit-icon"></i>
-                `;
-
-                // Add click event for redirecting to project template
-                projectBox.addEventListener('click', () => openProject(doc.id));
-
-                projectContainer.appendChild(projectBox);
+            // Add click event for editing project
+            projectBox.querySelector('.edit-icon').addEventListener('click', (e) => {
+                e.stopPropagation();
+                currentProjectBox = projectBox;
+                document.getElementById('edit-project-name').value = project.name;
+                document.getElementById('edit-location').value = project.location;
+                document.getElementById('edit-description').value = project.description;
+                editPopupWindow.style.display = 'flex';
             });
 
-            noProjectsText.style.display = projectContainer.children.length ? "none" : "block";
+            // Add delete functionality
+            projectBox.querySelector('.delete-icon').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const projectId = projectBox.getAttribute('data-id');
+                console.log(`Deleting project with ID: ${projectId}`);
+
+                // Make a delete request to the server
+                try {
+                    const response = await fetch(`http://127.0.0.1:3000/api/delete_project/${projectId}`, {
+                        method: 'DELETE',
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    console.log('Project deleted successfully');
+
+                    // Remove the project from the projects array
+                    projects = projects.filter((p) => p.id !== projectId);
+
+                    // Remove the project element from the DOM
+                    projectBox.remove();
+
+                    // Update the noProjectsText display
+                    if (projects.length === 0) {
+                        noProjectsText.style.display = 'block';
+                    }
+
+                } catch (error) {
+                    console.error('Deletion error:', error);
+                    alert(`Error deleting project: ${error.message}`);
+                }
+            });
+
+            // Add archive functionality
+            projectBox.querySelector('.archive-icon').addEventListener('click', (e) => {
+                e.stopPropagation();
+                const projectId = projectBox.getAttribute('data-id');
+                const project = projects.find((p) => p.id === projectId);
+                if (project) {
+                    project.group = 'archived';
+                }
+                loadProjects();
+            });
+
+            projectContainer.appendChild(projectBox);
         });
+
+        noProjectsText.style.display = projectContainer.children.length ? 'none' : 'block';
     };
 
-    loadProjects();
+    // Edit Project
+    editProjectForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
 
-    // Edit Project in Firestore
-    editProjectForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
+    const updatedProjectName = document.getElementById('edit-project-name').value;
+    const updatedLocation = document.getElementById('edit-location').value;
+    const updatedDescription = document.getElementById('edit-description').value;
 
-        const updatedProjectName = document.getElementById("edit-project-name").value;
-        const updatedLocation = document.getElementById("edit-location").value;
+    const projectId = currentProjectBox.getAttribute('data-id');
+    const project = projects.find((p) => p.id === projectId);
 
+    if (project) {
+        console.log('Updating project:', project);
+
+        project.name = updatedProjectName;
+        project.location = updatedLocation;
+        project.description = updatedDescription;
+
+        // Make an update request to the server
         try {
-            const projectId = currentProjectBox.getAttribute("data-id");
-            const projectDoc = doc(db, "projects", projectId);
-
-            await updateDoc(projectDoc, {
-                name: updatedProjectName,
-                location: updatedLocation,
+            const response = await fetch(`http://127.0.0.1:3000/api/update_project/${projectId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    project_name: updatedProjectName,
+                    project_location: updatedLocation,
+                    project_description: updatedDescription
+                }),
             });
 
-            editPopupWindow.style.display = "none";
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+            }
+
+            const result = await response.json();
+            console.log('Project update response:', result);
+
+            // Update the project box display
+            currentProjectBox.querySelector('h3').textContent = updatedProjectName;
+            currentProjectBox.querySelector('p').textContent = updatedLocation;
+
+            // Hide the edit popup
+            editPopupWindow.style.display = 'none';
             editProjectForm.reset();
+
+            // Reload the projects to reflect the changes
+            loadProjects();
+
         } catch (error) {
-            console.error("Error updating project:", error);
+            console.error('Update error:', error);
+            alert(`Error updating project: ${error.message}`);
         }
-    });
+    }
+});
 
     // Handle navigation pane toggle
-    document.querySelector('.header-right a[href="#projects"]').addEventListener('click', async (e) => {
+    document.querySelector('.header-right a[href="#projects"]').addEventListener('click', (e) => {
         e.preventDefault();
         if (navigationPane.style.display === 'none' || !navigationPane.style.display) {
-            await populateNavigationPane();
+            populateNavigationPane();
             navigationPane.style.display = 'block';
         } else {
             navigationPane.style.display = 'none';
         }
     });
-});
 
-export {db};    
+    // Initial projects load
+    fetchProjects();
+});
