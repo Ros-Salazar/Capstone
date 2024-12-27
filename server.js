@@ -146,6 +146,102 @@ app.get('/api/project/:id', (req, res) => {
         res.status(200).json(results[0]);
     });
 });
+// Create a group
+app.post('/api/proj_groups', (req, res) => {
+    const { project_id, name } = req.body;
+    console.log('Received request to create group:', req.body); // Debug log
+
+    if (!project_id || !name) {
+        console.log('Project ID or group name is missing'); // Debug log
+        return res.status(400).json({ message: 'Project ID and group name are required' });
+    }
+
+    // Use backticks to escape the `groups` table name
+    const query = 'INSERT INTO proj_groups (project_id, name) VALUES (?, ?)';
+    db.query(query, [project_id, name], (err, results) => {
+        if (err) {
+            console.error('Database insert error:', err); // Debug log
+            return res.status(500).json({ message: 'Server error during group creation', error: err });
+        }
+        console.log('Group created successfully:', results); // Debug log
+        res.status(201).json({ id: results.insertId, message: 'Group created successfully' });
+    });
+});
+// Add a column to a group
+app.post('/api/group_columns', (req, res) => {
+    const { group_id, name, type } = req.body;
+    if (!group_id || !name || !type) {
+        return res.status(400).json({ message: 'Group ID, column name, and type are required' });
+    }
+    const query = 'INSERT INTO group_columns (group_id, name, type) VALUES (?, ?, ?)';
+    db.query(query, [group_id, name, type], (err, results) => {
+        if (err) {
+            console.error('Database insert error:', err);
+            return res.status(500).json({ message: 'Server error during column creation', error: err });
+        }
+        res.status(201).json({ id: results.insertId, message: 'Column added successfully' });
+    });
+});
+// Add a row to a group
+app.post('/api/group_rows', (req, res) => {
+    const { group_id } = req.body;
+    if (!group_id) {
+        return res.status(400).json({ message: 'Group ID is required' });
+    }
+    const query = 'INSERT INTO group_rows (group_id) VALUES (?)';
+    db.query(query, [group_id], (err, results) => {
+        if (err) {
+            console.error('Database insert error:', err);
+            return res.status(500).json({ message: 'Server error during row creation', error: err });
+        }
+        res.status(201).json({ id: results.insertId, message: 'Row added successfully' });
+    });
+});
+// Save cell data
+app.post('/api/cell_data', (req, res) => {
+    const { row_id, column_id, value } = req.body;
+    if (!row_id || !column_id || value === undefined) {
+        return res.status(400).json({ message: 'Row ID, column ID, and value are required' });
+    }
+
+    const query = `
+        INSERT INTO cell_data (row_id, column_id, value)
+        VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE value = VALUES(value)
+    `;
+    db.query(query, [row_id, column_id, value], (err, results) => {
+        if (err) {
+            console.error('Database insert/update error:', err);
+            return res.status(500).json({ message: 'Server error during cell data save', error: err });
+        }
+        res.status(200).json({ message: 'Cell data saved successfully' });
+    });
+});
+// Fetch all groups for a project
+app.get('/api/project/:projectId/groups', (req, res) => {
+    const projectId = req.params.projectId;
+    const query = 'SELECT * FROM proj_groups WHERE project_id = ?';
+    db.query(query, [projectId], (err, results) => {
+        if (err) {
+            console.error('Database fetch error:', err);
+            return res.status(500).json({ message: 'Server error during groups fetch', error: err });
+        }
+        res.status(200).json(results);
+    });
+});
+// Fetch all rows for a group
+app.get('/api/group/:groupId/rows', (req, res) => {
+    const groupId = req.params.groupId;
+    const query = 'SELECT * FROM group_rows WHERE group_id = ?';
+    db.query(query, [groupId], (err, results) => {
+        if (err) {
+            console.error('Database fetch error:', err);
+            return res.status(500).json({ message: 'Server error during rows fetch', error: err });
+        }
+        res.status(200).json(results);
+    });
+});
+
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);

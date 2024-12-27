@@ -9,13 +9,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     const projectNameElement = document.getElementById('projectName');
     const projectDescriptionElement = document.getElementById('projectDescription');
 
-    // Ensure elements are found
     if (!mainTableBtn || !calendarBtn || !groupSection || !calendarSection || !addGroupBtn || !groupContainer || !projectNameElement || !projectDescriptionElement) {
         console.error('One or more DOM elements are missing');
         return;
     }
 
-    // Get project ID from URL
     const urlParams = new URLSearchParams(window.location.search);
     const projectId = urlParams.get('projectId');
 
@@ -24,20 +22,59 @@ document.addEventListener('DOMContentLoaded', async function() {
         return;
     }
 
-    // Fetch project details
     try {
-        const response = await fetch(`http://127.0.0.1:3000/api/project/${projectId}`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        const projectResponse = await fetch(`http://127.0.0.1:3000/api/project/${projectId}`);
+        if (!projectResponse.ok) {
+            throw new Error(`HTTP error! status: ${projectResponse.status}`);
         }
-        const project = await response.json();
+        const project = await projectResponse.json();
         projectNameElement.textContent = project.project_name;
         projectDescriptionElement.textContent = project.project_description;
     } catch (error) {
         console.error('Fetch error:', error);
     }
 
-    // Event listeners for switching sections
+    // Fetch and render groups and their rows
+    try {
+        const groupsResponse = await fetch(`http://127.0.0.1:3000/api/project/${projectId}/groups`);
+        if (!groupsResponse.ok) {
+            throw new Error(`HTTP error! status: ${groupsResponse.status}`);
+        }
+        const groups = await groupsResponse.json();
+
+        for (const group of groups) {
+            const table = createTable(group.id);
+            groupContainer.appendChild(table);
+            createAddRowButton(table, group.id);
+
+            // Fetch and render rows for each group
+            try {
+                const rowsResponse = await fetch(`http://127.0.0.1:3000/api/group/${group.id}/rows`);
+                if (!rowsResponse.ok) {
+                    throw new Error(`HTTP error! status: ${rowsResponse.status}`);
+                }
+                const rows = await rowsResponse.json();
+
+                for (const row of rows) {
+                    const headerRow = table.rows[0];
+                    const tr = document.createElement('tr');
+                    tr.dataset.rowId = row.id; // Set the row ID
+
+                    Array.from(headerRow.cells).forEach((header, index) => {
+                        const cell = index === 0 ? createActionCell(tr) : createCell(header.textContent);
+                        tr.appendChild(cell);
+                    });
+
+                    table.appendChild(tr);
+                }
+            } catch (error) {
+                console.error('Error fetching rows:', error);
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching groups:', error);
+    }
+
     mainTableBtn.addEventListener('click', function() {
         groupSection.classList.add('active-section');
         calendarSection.classList.remove('active-section');
@@ -55,24 +92,40 @@ document.addEventListener('DOMContentLoaded', async function() {
     calendarSection.classList.remove('active-section');
     setActiveButton('mainTableBtn');
 
-    // Event listener for adding a new group
-    addGroupBtn.addEventListener('click', function() {
-        const groupId = `group-${Date.now()}`; // Generate a unique ID for each group
-        const table = createTable(groupId);
-        groupContainer.appendChild(table); // Append the table to the container
-        createAddRowButton(table, groupId); // Append the Add Item button to the container
+    addGroupBtn.addEventListener('click', async function() {
+        try {
+            const groupName = prompt("Enter group name:");
+            if (!groupName) return;
+
+            const response = await fetch('http://127.0.0.1:3000/api/proj_groups', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    project_id: projectId,
+                    name: groupName,
+                }),
+            });
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const group = await response.json();
+
+            const groupId = group.id;
+            const table = createTable(groupId);
+            groupContainer.appendChild(table);
+            createAddRowButton(table, groupId);
+
+        } catch (error) {
+            console.error('Error creating group:', error);
+        }
     });
 
-    // Save project details when content is changed and focus is lost
     projectNameElement.addEventListener('blur', saveProjectDetails);
     projectDescriptionElement.addEventListener('blur', saveProjectDetails);
 
-    // Function to save project details
     async function saveProjectDetails() {
         const projectName = projectNameElement.textContent.trim();
         const projectDescription = projectDescriptionElement.textContent.trim();
 
-        // Make an update request to the server
         try {
             const response = await fetch(`http://127.0.0.1:3000/api/update_project_details/${projectId}`, {
                 method: 'PUT',
@@ -92,39 +145,32 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             const result = await response.json();
             console.log('Project details update response:', result);
-
-            // Optionally show a success message or handle success feedback
         } catch (error) {
             console.error('Update error:', error);
             alert(`Error updating project details: ${error.message}`);
         }
     }
 
-    // Function to set the active button
     function setActiveButton(buttonId) {
         mainTableBtn.classList.remove('active');
         calendarBtn.classList.remove('active');
         document.getElementById(buttonId).classList.add('active');
     }
 
-    // Function to create a table
     function createTable(groupId) {
         const table = document.createElement('table');
         table.className = 'group-table';
-        table.dataset.id = groupId; // Associate the table with the group ID
+        table.dataset.id = groupId;
 
         const headerRow = createHeaderRow(table, groupId);
         table.appendChild(headerRow);
 
-        addRow(table, headerRow); // Add Default Row
         return table;
     }
 
-    // Function to create header row
     function createHeaderRow(table, groupId) {
         const headerRow = document.createElement('tr');
 
-        // Create a header cell for the dropdown button
         const fixedColumnHeader = document.createElement('th');
         fixedColumnHeader.className = 'fixed-column';
         const dropdownBtn = document.createElement('button');
@@ -135,14 +181,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         dropdownMenu.className = 'dropdown-menu';
         dropdownMenu.style.display = 'none';
 
-        // Add "Delete Group" Option
         const deleteGroupOption = document.createElement('div');
         deleteGroupOption.textContent = 'Delete Group';
         deleteGroupOption.className = 'dropdown-item';
         deleteGroupOption.addEventListener('click', () => {
-            const addItemButton = document.querySelector(`.add-item-btn[data-id="${groupId}"]`); // Find the associated "Add Item" button
-            if (addItemButton) addItemButton.remove(); // Remove the button
-            groupContainer.removeChild(table); // Remove the table from the container
+            const addItemButton = document.querySelector(`.add-item-btn[data-id="${groupId}"]`);
+            if (addItemButton) addItemButton.remove();
+            groupContainer.removeChild(table);
         });
 
         dropdownBtn.addEventListener('click', () => {
@@ -154,14 +199,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         fixedColumnHeader.appendChild(dropdownMenu);
         headerRow.appendChild(fixedColumnHeader);
 
-        // Add "New Group" header
         headerRow.appendChild(createHeaderCell('New Group', '', true));
 
-        // Add the "+" header with dropdown for column types
         const plusHeader = createHeaderCell('+', 'plus-header');
         plusHeader.style.cursor = 'pointer';
 
-        // Create and attach the column type dropdown menu
         const columnDropdownMenu = createDropdownMenu(
             ['Text', 'Numbers', 'Status', 'Key Persons', 'Timeline', 'Upload File'],
             (option) => {
@@ -184,7 +226,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         return headerRow;
     }
 
-    // Function to create action cell
     function createActionCell(row) {
         const cell = document.createElement('td');
         cell.className = 'fixed-column';
@@ -212,18 +253,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         return cell;
     }
 
-    // Function to create add row button
     function createAddRowButton(table, groupId) {
         const addRowBtn = document.createElement('button');
         addRowBtn.className = 'add-item-btn';
-        addRowBtn.dataset.id = groupId; // Associate the button with the group ID
+        addRowBtn.dataset.id = groupId;
         addRowBtn.textContent = 'Add Item';
         addRowBtn.addEventListener('click', () => addRow(table, table.rows[0]));
         groupContainer.appendChild(addRowBtn);
         return addRowBtn;
     }
 
-    // Function to create header cell
     function createHeaderCell(text, className = '', editable = false) {
         const header = document.createElement('th');
         header.textContent = text;
@@ -232,7 +271,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         return header;
     }
 
-    // Function to create dropdown menu
     function createDropdownMenu(options, onSelect) {
         const menu = document.createElement('div');
         menu.className = 'dropdown-menu';
@@ -249,77 +287,116 @@ document.addEventListener('DOMContentLoaded', async function() {
         return menu;
     }
 
-    // Function to add a column
-    function addColumn(option, table, headerRow) {
-        console.log('Attempting to add column:', option);
+    async function addColumn(option, table, headerRow) {
+        const groupId = table.dataset.id;
+        try {
+            const response = await fetch('http://127.0.0.1:3000/api/group_columns', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    group_id: groupId,
+                    name: option,
+                    type: option,
+                }),
+            });
 
-        // Create a new header for the column
-        const newHeader = createHeaderCell(option, '', true);
-        headerRow.insertBefore(newHeader, headerRow.lastChild);
-        console.log('New header added:', newHeader.textContent);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const column = await response.json();
 
-        // Add the new column to each row in the table
-        Array.from(table.rows).forEach((row, index) => {
-            if (index === 0) return; // Skip the header row
-            const newCell = createCell(option);
-            row.insertBefore(newCell, row.lastChild);
-            console.log('New cell added to row:', newCell);
-        });
+            const newHeader = createHeaderCell(option, '', true);
+            newHeader.dataset.columnId = column.id;
+            headerRow.insertBefore(newHeader, headerRow.lastChild);
+
+            Array.from(table.rows).forEach((row, index) => {
+                if (index === 0) return;
+                const newCell = createCell(option);
+                row.insertBefore(newCell, row.lastChild);
+            });
+
+        } catch (error) {
+            console.error('Error adding column:', error);
+        }
     }
 
-    // Function to add timeline columns
     function addTimelineColumns(table, headerRow) {
         ['Start Date', 'Due Date'].forEach(dateColumn => {
             const newHeader = createHeaderCell(dateColumn, '', true);
             headerRow.insertBefore(newHeader, headerRow.lastChild);
 
             Array.from(table.rows).forEach((row, index) => {
-                if (index === 0) return; // Skip the header row
+                if (index === 0) return;
                 const dateCell = createDateCell();
                 row.insertBefore(dateCell, row.lastChild);
 
-                // Add synchronization to the calendar
                 const dateInput = dateCell.querySelector('input[type="date"]');
                 dateInput.addEventListener('change', () => syncDateToCalendar(dateInput.value));
             });
         });
     }
 
-    // Function to add a row
-    function addRow(table, headerRow) {
-        const row = document.createElement('tr');
+    async function addRow(table, headerRow) {
+        const groupId = table.dataset.id;
 
-        Array.from(headerRow.cells).forEach((header, index) => {
-            const cell = index === 0 ? createActionCell(row) : createCell(header.textContent);
-            row.appendChild(cell);
-        });
+        try {
+            const response = await fetch('http://127.0.0.1:3000/api/group_rows', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    group_id: groupId,
+                }),
+            });
 
-        table.appendChild(row);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const row = await response.json();
+
+            const rowId = row.id;
+            const tr = document.createElement('tr');
+            tr.dataset.rowId = rowId;
+
+            Array.from(headerRow.cells).forEach((header, index) => {
+                const cell = index === 0 ? createActionCell(tr) : createCell(header.textContent);
+                tr.appendChild(cell);
+            });
+
+            table.appendChild(tr);
+
+        } catch (error) {
+            console.error('Error adding row:', error);
+        }
     }
 
-    // Function to create cell
     function createCell(headerText) {
         const cell = document.createElement('td');
-        // Logic to handle different types of cells based on headerText
-        if (headerText === 'Start Date' || headerText === 'Due Date') {
-            return createDateCell();
-        } else if (headerText === 'Numbers') {
-            cell.appendChild(createInput('text', 'Enter Value'));
-        } else if (headerText === 'Status') {
-            cell.appendChild(createSelect(['To-do', 'In Progress', 'Done']));
-        } else if (headerText === 'Key Persons') {
-            cell.appendChild(createInput('email'));
-        } else if (headerText === 'Upload File') {
-            const fileInput = createInput('file');
-            fileInput.addEventListener('change', handleFileUpload);
-            cell.appendChild(fileInput);
-        } else {
-            cell.contentEditable = true;
-        }
+        cell.contentEditable = true;
+
+        cell.addEventListener('blur', async function () {
+            const value = cell.textContent.trim();
+            const rowId = cell.closest('tr').dataset.rowId;
+            const columnId = cell.closest('table').rows[0].cells[cell.cellIndex].dataset.columnId;
+
+            try {
+                const response = await fetch('http://127.0.0.1:3000/api/cell_data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        row_id: rowId,
+                        column_id: columnId,
+                        value: value,
+                    }),
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+                console.log('Cell data saved:', result);
+
+            } catch (error) {
+                console.error('Error saving cell data:', error);
+            }
+        });
+
         return cell;
     }
 
-    // Function to create date cell
     function createDateCell() {
         const cell = document.createElement('td');
         const dateInput = createInput('date');
@@ -335,7 +412,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 dateInput.style.display = 'none';
                 dateDisplay.style.display = 'block';
 
-                // Synchronize with calendar
                 syncDateToCalendar(dateInput.value);
             }
         });
@@ -350,7 +426,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         return cell;
     }
 
-    // Function to create input
     function createInput(type, placeholder = '') {
         const input = document.createElement('input');
         input.type = type;
@@ -359,34 +434,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         return input;
     }
 
-    // Function to create select
-    function createSelect(options) {
-        const select = document.createElement('select');
-        options.forEach(option => {
-            const opt = document.createElement('option');
-            opt.value = option;
-            opt.textContent = option;
-            select.appendChild(opt);
-        });
-        return select;
-    }
-
-    // Function to handle file upload
-    function handleFileUpload(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                console.log('File content:', e.target.result);
-                // Process the file content or upload it to a server
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    // Function to synchronize date to calendar
     function syncDateToCalendar(dateValue) {
-        // Implement calendar synchronization logic here
         console.log('Synchronizing date to calendar:', dateValue);
     }
 });
