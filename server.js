@@ -114,24 +114,38 @@ app.post('/api/create_project', (req, res) => {
                 res.status(200).json({ message: 'Project deleted successfully' });
             });
         });
-        // Update project endpoint
-        app.put('/api/update_project/:id', (req, res) => {
+        // Update project name, location, and description endpoint
+        app.put('/api/update_project_details/:id', (req, res) => {
             const projectId = req.params.id;
-            const { project_name, project_location, project_description } = req.body;
-            console.log('Received update request for project ID:', projectId);
-            console.log('Update data:', { project_name, project_location, project_description });
+            const { project_name, project_description } = req.body;
+            console.log('Received update request for project details:', { projectId, project_name, project_description });
 
-            const query = 'UPDATE projects SET project_name = ?, project_location = ?, project_description = ? WHERE project_id = ?';
-            db.query(query, [project_name, project_location, project_description, projectId], (err, results) => {
+            const query = 'UPDATE projects SET project_name = ?, project_description = ? WHERE project_id = ?';
+            db.query(query, [project_name, project_description, projectId], (err, results) => {
                 if (err) {
                     console.error('Database update error:', err);
                     return res.status(500).json({ message: 'Server error during project update', error: err });
                 }
-                console.log('Project updated successfully:', results);
-                res.status(200).json({ message: 'Project updated successfully' });
+                console.log('Project details updated successfully:', results);
+                res.status(200).json({ message: 'Project details updated successfully' });
             });
         });
 
+// UNDER TEMPLATE: Fetch project details endpoint
+app.get('/api/project/:id', (req, res) => {
+    const projectId = req.params.id;
+    const query = 'SELECT project_name, project_description FROM projects WHERE project_id = ?';
+    db.query(query, [projectId], (err, results) => {
+        if (err) {
+            console.error('Database fetch error:', err);
+            return res.status(500).json({ message: 'Server error during project fetch', error: err });
+        }
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+        res.status(200).json(results[0]);
+    });
+});
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
