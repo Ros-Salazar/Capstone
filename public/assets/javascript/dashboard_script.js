@@ -1,4 +1,3 @@
-// !UPDATE BUTTON NOT WORKING, NEEDS FIXING!
 // DOM Elements declarations
 let newProjectBtn;
 let popupWindow;
@@ -10,22 +9,28 @@ let editPopupWindow;
 let editProjectForm;
 let projectList;
 let navigationPane;
+let archiveLink;
+let archivePopupWindow;
+let archivedProjectsContainer;
 
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize DOM elements after the document has loaded
-    const newProjectBtn = document.getElementById('newProjectBtn');
-    const popupWindow = document.getElementById('popupWindow');
-    const closeBtns = document.querySelectorAll('.close-btn');
-    const projectForm = document.getElementById('projectForm');
-    const projectContainer = document.getElementById('projectContainer');
-    const noProjectsText = document.getElementById('noProjectsText');
-    const editPopupWindow = document.getElementById('editPopupWindow');
-    const editProjectForm = document.getElementById('editProjectForm');
-    const projectList = document.getElementById('projectList');
-    const navigationPane = document.getElementById('navigationPane');
+    newProjectBtn = document.getElementById('newProjectBtn');
+    popupWindow = document.getElementById('popupWindow');
+    closeBtns = document.querySelectorAll('.close-btn');
+    projectForm = document.getElementById('projectForm');
+    projectContainer = document.getElementById('projectContainer');
+    noProjectsText = document.getElementById('noProjectsText');
+    editPopupWindow = document.getElementById('editPopupWindow');
+    editProjectForm = document.getElementById('editProjectForm');
+    projectList = document.getElementById('projectList');
+    navigationPane = document.getElementById('navigationPane');
+    archiveLink = document.getElementById('archiveLink');
+    archivePopupWindow = document.getElementById('archivePopupWindow');
+    archivedProjectsContainer = document.getElementById('archivedProjectsContainer');
 
     // Ensure all elements are found
-    if (!newProjectBtn || !popupWindow || !projectForm || !projectContainer || !noProjectsText || !editPopupWindow || !editProjectForm || !projectList || !navigationPane) {
+    if (!newProjectBtn || !popupWindow || !projectForm || !projectContainer || !noProjectsText || !editPopupWindow || !editProjectForm || !projectList || !navigationPane || !archiveLink || !archivePopupWindow || !archivedProjectsContainer) {
         console.error('One or more DOM elements are missing');
         return;
     }
@@ -67,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => {
             popupWindow.style.display = 'none';
             editPopupWindow.style.display = 'none';
+            archivePopupWindow.style.display = 'none';
         });
     });
 
@@ -138,11 +144,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // Archive Project
+    const archiveProject = (projectId) => {
+        console.log(`Archiving project with ID: ${projectId}`); // Debugging line
+        const project = projects.find((p) => p.id === projectId);
+        if (project) {
+            project.group = 'archived';
+            console.log(`Project with ID: ${projectId} archived`); // Debugging line
+            loadProjects();
+        } else {
+            console.error(`Project with ID: ${projectId} not found`);
+        }
+    };
+
     // Load Projects
     const loadProjects = () => {
         projectContainer.innerHTML = ''; // Clear existing projects
-        console.log('Loading projects...', projects);
-
+        archivedProjectsContainer.innerHTML = ''; // Clear existing archived projects
+        
         projects.forEach((project) => {
             const projectBox = document.createElement('div');
             projectBox.classList.add('project-box', project.group);
@@ -157,10 +176,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p class="completion-text">${project.completion} COMPLETED</p>
                 <i class="fas fa-pencil-alt edit-icon"></i>
             `;
-
+    
             // Add click event for redirecting to project template
             projectBox.addEventListener('click', () => openProject(project.id));
-
+    
             // Add click event for editing project
             projectBox.querySelector('.edit-icon').addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -170,13 +189,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('edit-description').value = project.description;
                 editPopupWindow.style.display = 'flex';
             });
-
+    
             // Add delete functionality
             projectBox.querySelector('.delete-icon').addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const projectId = projectBox.getAttribute('data-id');
                 console.log(`Deleting project with ID: ${projectId}`);
-
+    
                 // Make a delete request to the server
                 try {
                     const response = await fetch(`http://127.0.0.1:3000/api/delete_project/${projectId}`, {
@@ -186,110 +205,119 @@ document.addEventListener('DOMContentLoaded', () => {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     console.log('Project deleted successfully');
-
+    
                     // Remove the project from the projects array
                     projects = projects.filter((p) => p.id !== projectId);
-
+    
                     // Remove the project element from the DOM
                     projectBox.remove();
-
+    
                     // Update the noProjectsText display
                     if (projects.length === 0) {
                         noProjectsText.style.display = 'block';
                     }
-
+    
                 } catch (error) {
                     console.error('Deletion error:', error);
                     alert(`Error deleting project: ${error.message}`);
                 }
             });
-
+    
             // Add archive functionality
             projectBox.querySelector('.archive-icon').addEventListener('click', (e) => {
                 e.stopPropagation();
                 const projectId = projectBox.getAttribute('data-id');
-                const project = projects.find((p) => p.id === projectId);
-                if (project) {
-                    project.group = 'archived';
-                }
-                loadProjects();
+                console.log(`Archiving project with ID: ${projectId}`); // Add this line to confirm the event listener is working
+                archiveProject(projectId);
             });
-
-            projectContainer.appendChild(projectBox);
+    
+            if (project.group === 'default') {
+                projectContainer.appendChild(projectBox);
+            } else if (project.group === 'archived') {
+                archivedProjectsContainer.appendChild(projectBox);
+            }
         });
-
+    
         noProjectsText.style.display = projectContainer.children.length ? 'none' : 'block';
     };
 
     // Edit Project
     editProjectForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
+        event.preventDefault();
 
-    const updatedProjectName = document.getElementById('edit-project-name').value;
-    const updatedLocation = document.getElementById('edit-location').value;
-    const updatedDescription = document.getElementById('edit-description').value;
+        const updatedProjectName = document.getElementById('edit-project-name').value;
+        const updatedLocation = document.getElementById('edit-location').value;
+        const updatedDescription = document.getElementById('edit-description').value;
 
-    const projectId = currentProjectBox.getAttribute('data-id');
-    const project = projects.find((p) => p.id === projectId);
+        const projectId = currentProjectBox.getAttribute('data-id');
+        const project = projects.find((p) => p.id === projectId);
 
-    if (project) {
-        console.log('Updating project:', project);
+        if (project) {
+            console.log('Updating project:', project);
 
-        project.name = updatedProjectName;
-        project.location = updatedLocation;
-        project.description = updatedDescription;
+            project.name = updatedProjectName;
+            project.location = updatedLocation;
+            project.description = updatedDescription;
 
-        // Make an update request to the server
-        try {
-            const response = await fetch(`http://127.0.0.1:3000/api/update_project/${projectId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    project_name: updatedProjectName,
-                    project_location: updatedLocation,
-                    project_description: updatedDescription
-                }),
-            });
+            // Make an update request to the server
+            try {
+                const response = await fetch(`http://127.0.0.1:3000/api/update_project/${projectId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        project_name: updatedProjectName,
+                        project_location: updatedLocation,
+                        project_description: updatedDescription,
+                    }),
+                });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+                }
+
+                const result = await response.json();
+                console.log('Project update response:', result);
+
+                // Update the project box display
+                currentProjectBox.querySelector('h3').textContent = updatedProjectName;
+                currentProjectBox.querySelector('p').textContent = updatedLocation;
+
+                // Hide the edit popup
+                editPopupWindow.style.display = 'none';
+                editProjectForm.reset();
+
+                // Reload the projects to reflect the changes
+                loadProjects();
+
+            } catch (error) {
+                console.error('Update error:', error);
+                alert(`Error updating project: ${error.message}`);
             }
-
-            const result = await response.json();
-            console.log('Project update response:', result);
-
-            // Update the project box display
-            currentProjectBox.querySelector('h3').textContent = updatedProjectName;
-            currentProjectBox.querySelector('p').textContent = updatedLocation;
-
-            // Hide the edit popup
-            editPopupWindow.style.display = 'none';
-            editProjectForm.reset();
-
-            // Reload the projects to reflect the changes
-            loadProjects();
-
-        } catch (error) {
-            console.error('Update error:', error);
-            alert(`Error updating project: ${error.message}`);
-        }
-    }
-});
-
-    // Handle navigation pane toggle
-    document.querySelector('.header-right a[href="#projects"]').addEventListener('click', (e) => {
-        e.preventDefault();
-        if (navigationPane.style.display === 'none' || !navigationPane.style.display) {
-            populateNavigationPane();
-            navigationPane.style.display = 'block';
-        } else {
-            navigationPane.style.display = 'none';
         }
     });
 
-    // Initial projects load
-    fetchProjects();
+
+  // Handle navigation pane toggle
+  document.querySelector('.header-right a[href="#projects"]').addEventListener('click', (e) => {
+    e.preventDefault();
+    if (navigationPane.style.display === 'none' || !navigationPane.style.display) {
+        populateNavigationPane();
+        navigationPane.style.display = 'block';
+    } else {
+        navigationPane.style.display = 'none';
+    }
+});
+
+// Show archive popup when 'Archive' is clicked
+archiveLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    archivePopupWindow.style.display = 'flex';
+    loadProjects(); // Ensure the archived projects are loaded when the popup is displayed
+});
+
+// Initial projects load
+fetchProjects();
 });
