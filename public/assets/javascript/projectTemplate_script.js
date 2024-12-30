@@ -1,440 +1,473 @@
-document.addEventListener('DOMContentLoaded', async function() {
-    // Initialize buttons and sections
-    const mainTableBtn = document.getElementById('mainTableBtn');
-    const calendarBtn = document.getElementById('calendarBtn');
-    const groupSection = document.querySelector('.group-section');
-    const calendarSection = document.querySelector('.calendar-section');
-    const addGroupBtn = document.getElementById('addGroupBtn');
-    const groupContainer = document.querySelector('.group-container');
-    const projectNameElement = document.getElementById('projectName');
-    const projectDescriptionElement = document.getElementById('projectDescription');
-
-    if (!mainTableBtn || !calendarBtn || !groupSection || !calendarSection || !addGroupBtn || !groupContainer || !projectNameElement || !projectDescriptionElement) {
-        console.error('One or more DOM elements are missing');
-        return;
-    }
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const projectId = urlParams.get('projectId');
-
-    if (!projectId) {
-        console.error('Project ID not found in URL');
-        return;
-    }
-
-    try {
-        const projectResponse = await fetch(`http://127.0.0.1:3000/api/project/${projectId}`);
-        if (!projectResponse.ok) {
-            throw new Error(`HTTP error! status: ${projectResponse.status}`);
-        }
-        const project = await projectResponse.json();
-        projectNameElement.textContent = project.project_name;
-        projectDescriptionElement.textContent = project.project_description;
-    } catch (error) {
-        console.error('Fetch error:', error);
-    }
-
-    // Fetch and render groups and their rows
-    try {
-        const groupsResponse = await fetch(`http://127.0.0.1:3000/api/project/${projectId}/groups`);
-        if (!groupsResponse.ok) {
-            throw new Error(`HTTP error! status: ${groupsResponse.status}`);
-        }
-        const groups = await groupsResponse.json();
-
-        for (const group of groups) {
-            const table = createTable(group.id);
-            groupContainer.appendChild(table);
-            createAddRowButton(table, group.id);
-
-            // Fetch and render rows for each group
-            try {
-                const rowsResponse = await fetch(`http://127.0.0.1:3000/api/group/${group.id}/rows`);
-                if (!rowsResponse.ok) {
-                    throw new Error(`HTTP error! status: ${rowsResponse.status}`);
-                }
-                const rows = await rowsResponse.json();
-
-                for (const row of rows) {
-                    const headerRow = table.rows[0];
-                    const tr = document.createElement('tr');
-                    tr.dataset.rowId = row.id; // Set the row ID
-
-                    Array.from(headerRow.cells).forEach((header, index) => {
-                        const cell = index === 0 ? createActionCell(tr) : createCell(header.textContent);
-                        tr.appendChild(cell);
-                    });
-
-                    table.appendChild(tr);
-                }
-            } catch (error) {
-                console.error('Error fetching rows:', error);
-            }
-        }
-    } catch (error) {
-        console.error('Error fetching groups:', error);
-    }
-
-    mainTableBtn.addEventListener('click', function() {
-        groupSection.classList.add('active-section');
-        calendarSection.classList.remove('active-section');
-        setActiveButton('mainTableBtn');
-    });
-
-    calendarBtn.addEventListener('click', function() {
-        groupSection.classList.remove('active-section');
-        calendarSection.classList.add('active-section');
-        setActiveButton('calendarBtn');
-    });
-
-    // Set main table as the default active section on page load
-    groupSection.classList.add('active-section');
-    calendarSection.classList.remove('active-section');
+document.getElementById('mainTableBtn').addEventListener('click', function() {
+    document.querySelector('.group-section').classList.add('active-section');
+    document.querySelector('.calendar-section').classList.remove('active-section');
     setActiveButton('mainTableBtn');
+});
 
-    addGroupBtn.addEventListener('click', async function() {
-        try {
-            const groupName = prompt("Enter group name:");
-            if (!groupName) return;
+document.getElementById('calendarBtn').addEventListener('click', function() {
+    document.querySelector('.group-section').classList.remove('active-section');
+    document.querySelector('.calendar-section').classList.add('active-section');
+    setActiveButton('calendarBtn');
+});
 
-            const response = await fetch('http://127.0.0.1:3000/api/proj_groups', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    project_id: projectId,
-                    name: groupName,
-                }),
-            });
+// Function to set the active button
+function setActiveButton(buttonId) {
+    document.getElementById('mainTableBtn').classList.remove('active');
+    document.getElementById('calendarBtn').classList.remove('active');
+    document.getElementById(buttonId).classList.add('active');
+}
 
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const group = await response.json();
+// Set main table as the default active section on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('.group-section').classList.add('active-section');
+    document.querySelector('.calendar-section').classList.remove('active-section');
+    setActiveButton('mainTableBtn');
+});
 
-            const groupId = group.id;
-            const table = createTable(groupId);
-            groupContainer.appendChild(table);
-            createAddRowButton(table, groupId);
 
-        } catch (error) {
-            console.error('Error creating group:', error);
+document.getElementById('addGroupBtn').addEventListener('click', function () {
+    const container = document.querySelector('.group-container'); // Use your named container
+    const groupId = `group-${Date.now()}`; // Generate a unique ID for each group
+    const table = createTable(container, groupId);
+    container.appendChild(table); // Append the table to the container
+    createAddRowButton(table, container, groupId); // Append the Add Item button to the container
+});
+
+// Function to Create a Table
+function createTable(container, groupId) {
+    const table = document.createElement('table');
+    table.className = 'group-table';
+    table.dataset.id = groupId; // Associate the table with the group ID
+
+    const headerRow = createHeaderRow(table, groupId);
+    table.appendChild(headerRow);
+
+    addRow(table, headerRow); // Add Default Row
+    return table;
+}
+
+// Function to Create Header Row
+function createHeaderRow(table, groupId) {
+    const headerRow = document.createElement('tr');
+
+    // Create a header cell for the dropdown button
+    const fixedColumnHeader = document.createElement('th');
+    fixedColumnHeader.className = 'fixed-column';
+    const dropdownBtn = document.createElement('button');
+    dropdownBtn.textContent = '⋮';
+    dropdownBtn.className = 'dropdown-btn';
+
+    const dropdownMenu = document.createElement('div');
+    dropdownMenu.className = 'dropdown-menu';
+    dropdownMenu.style.display = 'none';
+
+    // Add "Delete Group" Option
+    const deleteGroupOption = document.createElement('div');
+    deleteGroupOption.textContent = 'Delete Group';
+    deleteGroupOption.className = 'dropdown-item';
+    deleteGroupOption.addEventListener('click', () => {
+        const groupContainer = document.querySelector('.group-container'); // Reference the container
+        const addItemButton = document.querySelector(`.add-item-btn[data-id="${groupId}"]`); // Find the associated "Add Item" button
+        if (addItemButton) addItemButton.remove(); // Remove the button
+        groupContainer.removeChild(table); // Remove the table from the container
+    });
+
+    dropdownBtn.addEventListener('click', () => {
+        dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
+    });
+
+    dropdownMenu.appendChild(deleteGroupOption);
+    fixedColumnHeader.appendChild(dropdownBtn);
+    fixedColumnHeader.appendChild(dropdownMenu);
+    headerRow.appendChild(fixedColumnHeader);
+
+    // Add "New Group" header
+    headerRow.appendChild(createHeaderCell('New Group', '', true));
+
+    // Add the "+" header with dropdown for column types
+    const plusHeader = createHeaderCell('+', 'plus-header');
+    plusHeader.style.cursor = 'pointer';
+
+    const columnDropdownMenu = createDropdownMenu(
+        ['Text', 'Numbers', 'Status', 'Key Persons', 'Timeline', 'Upload File'],
+        (option) => {
+            option === 'Timeline'
+                ? addTimelineColumns(table, headerRow)
+                : addColumn(option, table, headerRow);
+            columnDropdownMenu.style.display = 'none';
+        }
+    );
+
+    plusHeader.addEventListener('click', () => {
+        columnDropdownMenu.style.display = columnDropdownMenu.style.display === 'none' ? 'block' : 'none';
+    });
+
+    plusHeader.appendChild(columnDropdownMenu);
+    headerRow.appendChild(plusHeader);
+
+    return headerRow;
+}
+
+function createActionCell(row) {
+    const cell = document.createElement('td');
+    cell.className = 'fixed-column';
+
+    // No dropdown button here anymore
+    return cell;
+}
+
+// Function to Create Add Row Button
+function createAddRowButton(table, container, groupId) {
+    const addRowBtn = document.createElement('button');
+    addRowBtn.className = 'add-item-btn';
+    addRowBtn.dataset.id = groupId; // Associate the button with the group ID
+    addRowBtn.textContent = 'Add Item';
+    addRowBtn.addEventListener('click', () => addRow(table, table.rows[0]));
+    container.appendChild(addRowBtn);
+    return addRowBtn;
+}
+
+// Function to Create Header Cell
+function createHeaderCell(text, className = '', editable = false) {
+    const header = document.createElement('th');
+    header.textContent = text;
+    header.className = className;
+    if (editable) header.contentEditable = true;
+    return header;
+}
+
+// Function to Create Dropdown Menu
+function createDropdownMenu(options, onSelect) {
+    const menu = document.createElement('div');
+    menu.className = 'dropdown-menu';
+    menu.style.display = 'none';
+
+    options.forEach(option => {
+        const item = document.createElement('div');
+        item.textContent = option;
+        item.className = 'dropdown-item';
+        item.addEventListener('click', () => onSelect(option));
+        menu.appendChild(item);
+    });
+
+    return menu;
+}
+
+// Function to Add a Column
+function addColumn(option, table, headerRow) {
+    if (Array.from(headerRow.cells).some(cell => cell.textContent.trim() === option)) return;
+
+    const newHeader = createHeaderCell(option, '', true);
+    headerRow.insertBefore(newHeader, headerRow.lastChild);
+
+    Array.from(table.rows).forEach((row, index) => {
+        if (index === 0) return;
+        row.insertBefore(createCell(option), row.lastChild);
+    });
+}
+
+// Function to Add Timeline Columns
+function addTimelineColumns(table, headerRow) {
+    ['Start Date', 'Due Date'].forEach(dateColumn => {
+        const newHeader = createHeaderCell(dateColumn, '', true);
+        headerRow.insertBefore(newHeader, headerRow.lastChild);
+
+        Array.from(table.rows).forEach((row, index) => {
+            if (index === 0) return; // Skip the header row
+            const dateCell = createDateCell();
+            row.insertBefore(dateCell, row.lastChild);
+
+            // Add synchronization to the calendar
+            const dateInput = dateCell.querySelector('input[type="date"]');
+            dateInput.addEventListener('change', () => syncDateToCalendar(dateInput.value));
+        });
+    });
+}
+
+// Function to Add a Row
+function addRow(table, headerRow) {
+    const row = document.createElement('tr');
+
+    Array.from(headerRow.cells).forEach((header, index) => {
+        const cell = index === 0 ? createActionCell(row) : createCell(header.textContent);
+        row.appendChild(cell);
+    });
+
+    table.appendChild(row);
+}
+
+// Function to Create Cell
+function createCell(headerText) {
+    const cell = document.createElement('td');
+
+    if (headerText === 'Start Date' || headerText === 'Due Date') {
+        return createDateCell();
+    } else if (headerText === 'Numbers') {
+        cell.appendChild(createInput('text', 'Enter Value'));
+    } else if (headerText === 'Status') {
+        cell.appendChild(createSelect(['To-do', 'In Progress', 'Done']));
+    } else if (headerText === 'Key Persons') {
+        cell.appendChild(createInput('email'));
+    } else if (headerText === 'Upload File') {
+        const fileInput = createInput('file');
+        fileInput.addEventListener('change', handleFileUpload);
+        cell.appendChild(fileInput);
+    } else {
+        cell.contentEditable = true;
+    }
+
+    return cell;
+}
+
+// Function to Create Date Cell
+function createDateCell() {
+    const cell = document.createElement('td');
+    const dateInput = createInput('date');
+    const dateDisplay = document.createElement('span');
+    dateDisplay.className = 'formatted-date';
+    dateDisplay.style.cursor = 'pointer';
+    dateDisplay.style.display = 'none';
+
+    dateInput.addEventListener('change', () => {
+        const date = new Date(dateInput.value);
+        if (!isNaN(date)) {
+            dateDisplay.textContent = date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+            dateInput.style.display = 'none';
+            dateDisplay.style.display = 'block';
+
+            // Synchronize with calendar
+            syncDateToCalendar(dateInput.value);
         }
     });
 
-    projectNameElement.addEventListener('blur', saveProjectDetails);
-    projectDescriptionElement.addEventListener('blur', saveProjectDetails);
-
-    async function saveProjectDetails() {
-        const projectName = projectNameElement.textContent.trim();
-        const projectDescription = projectDescriptionElement.textContent.trim();
-
-        try {
-            const response = await fetch(`http://127.0.0.1:3000/api/update_project_details/${projectId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    project_name: projectName,
-                    project_description: projectDescription
-                }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
-            }
-
-            const result = await response.json();
-            console.log('Project details update response:', result);
-        } catch (error) {
-            console.error('Update error:', error);
-            alert(`Error updating project details: ${error.message}`);
-        }
-    }
-
-    function setActiveButton(buttonId) {
-        mainTableBtn.classList.remove('active');
-        calendarBtn.classList.remove('active');
-        document.getElementById(buttonId).classList.add('active');
-    }
-
-    function createTable(groupId) {
-        const table = document.createElement('table');
-        table.className = 'group-table';
-        table.dataset.id = groupId;
-
-        const headerRow = createHeaderRow(table, groupId);
-        table.appendChild(headerRow);
-
-        return table;
-    }
-
-    function createHeaderRow(table, groupId) {
-        const headerRow = document.createElement('tr');
-
-        const fixedColumnHeader = document.createElement('th');
-        fixedColumnHeader.className = 'fixed-column';
-        const dropdownBtn = document.createElement('button');
-        dropdownBtn.textContent = '⋮';
-        dropdownBtn.className = 'dropdown-btn';
-
-        const dropdownMenu = document.createElement('div');
-        dropdownMenu.className = 'dropdown-menu';
-        dropdownMenu.style.display = 'none';
-
-        const deleteGroupOption = document.createElement('div');
-        deleteGroupOption.textContent = 'Delete Group';
-        deleteGroupOption.className = 'dropdown-item';
-        deleteGroupOption.addEventListener('click', () => {
-            const addItemButton = document.querySelector(`.add-item-btn[data-id="${groupId}"]`);
-            if (addItemButton) addItemButton.remove();
-            groupContainer.removeChild(table);
-        });
-
-        dropdownBtn.addEventListener('click', () => {
-            dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
-        });
-
-        dropdownMenu.appendChild(deleteGroupOption);
-        fixedColumnHeader.appendChild(dropdownBtn);
-        fixedColumnHeader.appendChild(dropdownMenu);
-        headerRow.appendChild(fixedColumnHeader);
-
-        headerRow.appendChild(createHeaderCell('New Group', '', true));
-
-        const plusHeader = createHeaderCell('+', 'plus-header');
-        plusHeader.style.cursor = 'pointer';
-
-        const columnDropdownMenu = createDropdownMenu(
-            ['Text', 'Numbers', 'Status', 'Key Persons', 'Timeline', 'Upload File'],
-            (option) => {
-                if (option === 'Timeline') {
-                    addTimelineColumns(table, headerRow);
-                } else {
-                    addColumn(option, table, headerRow);
-                }
-                columnDropdownMenu.style.display = 'none';
-            }
-        );
-
-        plusHeader.addEventListener('click', () => {
-            columnDropdownMenu.style.display = columnDropdownMenu.style.display === 'none' ? 'block' : 'none';
-        });
-
-        plusHeader.appendChild(columnDropdownMenu);
-        headerRow.appendChild(plusHeader);
-
-        return headerRow;
-    }
-
-    function createActionCell(row) {
-        const cell = document.createElement('td');
-        cell.className = 'fixed-column';
-
-        const dropdownBtn = document.createElement('button');
-        dropdownBtn.textContent = '⋮';
-        dropdownBtn.className = 'dropdown-btn';
-
-        const dropdownMenu = document.createElement('div');
-        dropdownMenu.className = 'dropdown-menu';
-        dropdownMenu.style.display = 'none';
-
-        const deleteOption = document.createElement('div');
-        deleteOption.textContent = 'Delete Row';
-        deleteOption.className = 'dropdown-item';
-        deleteOption.addEventListener('click', () => row.remove());
-
-        dropdownBtn.addEventListener('click', () => {
-            dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
-        });
-
-        dropdownMenu.appendChild(deleteOption);
-        cell.appendChild(dropdownBtn);
-        cell.appendChild(dropdownMenu);
-        return cell;
-    }
-
-    function createAddRowButton(table, groupId) {
-        const addRowBtn = document.createElement('button');
-        addRowBtn.className = 'add-item-btn';
-        addRowBtn.dataset.id = groupId;
-        addRowBtn.textContent = 'Add Item';
-        addRowBtn.addEventListener('click', () => addRow(table, table.rows[0]));
-        groupContainer.appendChild(addRowBtn);
-        return addRowBtn;
-    }
-
-    function createHeaderCell(text, className = '', editable = false) {
-        const header = document.createElement('th');
-        header.textContent = text;
-        header.className = className;
-        if (editable) header.contentEditable = true;
-        return header;
-    }
-
-    function createDropdownMenu(options, onSelect) {
-        const menu = document.createElement('div');
-        menu.className = 'dropdown-menu';
-        menu.style.display = 'none';
-
-        options.forEach(option => {
-            const item = document.createElement('div');
-            item.textContent = option;
-            item.className = 'dropdown-item';
-            item.addEventListener('click', () => onSelect(option));
-            menu.appendChild(item);
-        });
-
-        return menu;
-    }
-
-    async function addColumn(option, table, headerRow) {
-        const groupId = table.dataset.id;
-        try {
-            const response = await fetch('http://127.0.0.1:3000/api/group_columns', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    group_id: groupId,
-                    name: option,
-                    type: option,
-                }),
-            });
-
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const column = await response.json();
-
-            const newHeader = createHeaderCell(option, '', true);
-            newHeader.dataset.columnId = column.id;
-            headerRow.insertBefore(newHeader, headerRow.lastChild);
-
-            Array.from(table.rows).forEach((row, index) => {
-                if (index === 0) return;
-                const newCell = createCell(option);
-                row.insertBefore(newCell, row.lastChild);
-            });
-
-        } catch (error) {
-            console.error('Error adding column:', error);
-        }
-    }
-
-    function addTimelineColumns(table, headerRow) {
-        ['Start Date', 'Due Date'].forEach(dateColumn => {
-            const newHeader = createHeaderCell(dateColumn, '', true);
-            headerRow.insertBefore(newHeader, headerRow.lastChild);
-
-            Array.from(table.rows).forEach((row, index) => {
-                if (index === 0) return;
-                const dateCell = createDateCell();
-                row.insertBefore(dateCell, row.lastChild);
-
-                const dateInput = dateCell.querySelector('input[type="date"]');
-                dateInput.addEventListener('change', () => syncDateToCalendar(dateInput.value));
-            });
-        });
-    }
-
-    async function addRow(table, headerRow) {
-        const groupId = table.dataset.id;
-
-        try {
-            const response = await fetch('http://127.0.0.1:3000/api/group_rows', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    group_id: groupId,
-                }),
-            });
-
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const row = await response.json();
-
-            const rowId = row.id;
-            const tr = document.createElement('tr');
-            tr.dataset.rowId = rowId;
-
-            Array.from(headerRow.cells).forEach((header, index) => {
-                const cell = index === 0 ? createActionCell(tr) : createCell(header.textContent);
-                tr.appendChild(cell);
-            });
-
-            table.appendChild(tr);
-
-        } catch (error) {
-            console.error('Error adding row:', error);
-        }
-    }
-
-    function createCell(headerText) {
-        const cell = document.createElement('td');
-        cell.contentEditable = true;
-
-        cell.addEventListener('blur', async function () {
-            const value = cell.textContent.trim();
-            const rowId = cell.closest('tr').dataset.rowId;
-            const columnId = cell.closest('table').rows[0].cells[cell.cellIndex].dataset.columnId;
-
-            try {
-                const response = await fetch('http://127.0.0.1:3000/api/cell_data', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        row_id: rowId,
-                        column_id: columnId,
-                        value: value,
-                    }),
-                });
-
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const result = await response.json();
-                console.log('Cell data saved:', result);
-
-            } catch (error) {
-                console.error('Error saving cell data:', error);
-            }
-        });
-
-        return cell;
-    }
-
-    function createDateCell() {
-        const cell = document.createElement('td');
-        const dateInput = createInput('date');
-        const dateDisplay = document.createElement('span');
-        dateDisplay.className = 'formatted-date';
-        dateDisplay.style.cursor = 'pointer';
+    dateDisplay.addEventListener('click', () => {
+        dateInput.style.display = 'block';
         dateDisplay.style.display = 'none';
+    });
 
-        dateInput.addEventListener('change', () => {
-            const date = new Date(dateInput.value);
-            if (!isNaN(date)) {
-                dateDisplay.textContent = date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
-                dateInput.style.display = 'none';
-                dateDisplay.style.display = 'block';
+    cell.appendChild(dateInput);
+    cell.appendChild(dateDisplay);
+    return cell;
+}
 
-                syncDateToCalendar(dateInput.value);
+// Synchronize the selected date to the calendar
+function syncDateToCalendar(date) {
+    if (!date) return;
+    if (!pinnedDates.includes(date)) {
+        pinnedDates.push(date); // Add the date to pinnedDates
+    }
+    renderCalendar(); // Re-render the calendar to reflect the changes
+}
+// Function to Create Input
+function createInput(type, placeholder = '') {
+    const input = document.createElement('input');
+    input.type = type;
+    input.style.width = '100%';
+    if (placeholder) input.placeholder = placeholder;
+    return input;
+}
+
+// Function to Create Select
+function createSelect(options) {
+    const select = document.createElement('select');
+    options.forEach(option => {
+        const opt = document.createElement('option');
+        opt.value = option;
+        opt.textContent = option;
+        select.appendChild(opt);
+    });
+    return select;
+}
+
+// Function to Create Action Cell
+function createActionCell(row) {
+    const cell = document.createElement('td');
+    cell.className = 'fixed-column';
+
+    const dropdownBtn = document.createElement('button');
+    dropdownBtn.textContent = '⋮';
+    dropdownBtn.className = 'dropdown-btn';
+
+    const dropdownMenu = document.createElement('div');
+    dropdownMenu.className = 'dropdown-menu';
+    dropdownMenu.style.display = 'none';
+
+    const deleteOption = document.createElement('div');
+    deleteOption.textContent = 'Delete Row';
+    deleteOption.className = 'dropdown-item';
+    deleteOption.addEventListener('click', () => row.remove());
+
+    dropdownBtn.addEventListener('click', () => {
+        dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
+    });
+
+    dropdownMenu.appendChild(deleteOption);
+    cell.appendChild(dropdownBtn);
+    cell.appendChild(dropdownMenu);
+    return cell;
+}
+
+
+
+// Function to Handle File Upload
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            console.log('File content:', e.target.result);
+            // Process the file content or upload it to a server
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+document.getElementById('calendarBtn').addEventListener('click', function () {
+    document.querySelector('.group-section').classList.remove('active-section');
+    document.querySelector('.calendar-section').classList.add('active-section');
+    setActiveButton('calendarBtn');
+    renderCalendar();
+});
+
+// Calendar Variables
+const calendarGrid = document.querySelector('.calendar-grid');
+const monthYearDisplay = document.getElementById('monthYearDisplay');
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
+let pinnedDates = []; // Array to store pinned dates
+
+// Function to Render Calendar
+function renderCalendar() {
+    calendarGrid.innerHTML = ''; // Clear previous calendar
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    // Display current month and year
+    monthYearDisplay.textContent = `${new Date(currentYear, currentMonth).toLocaleString('en-US', { month: 'long' })} ${currentYear}`;
+
+    // Add empty days for the previous month
+    for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.classList.add('calendar-day');
+        calendarGrid.appendChild(emptyCell);
+    }
+
+    // Add days of the current month
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayCell = document.createElement('div');
+        dayCell.textContent = day;
+        dayCell.classList.add('calendar-day');
+        const fullDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        // Check if the date is pinned
+        if (pinnedDates.includes(fullDate)) {
+            dayCell.classList.add('pinned');
+        }
+
+        dayCell.addEventListener('click', () => togglePinDate(fullDate, dayCell));
+        calendarGrid.appendChild(dayCell);
+    }
+}
+
+// Function to Toggle Pin Date
+function togglePinDate(date, dayCell) {
+    if (pinnedDates.includes(date)) {
+        pinnedDates = pinnedDates.filter(d => d !== date);
+        dayCell.classList.remove('pinned');
+    } else {
+        pinnedDates.push(date);
+        dayCell.classList.add('pinned');
+    }
+    renderCalendar();
+}
+
+// Function to Update Table with Pinned Dates
+function updateTableWithPinnedDates() {
+    const tables = document.querySelectorAll('.group-table');
+    tables.forEach(table => {
+        const headerRow = table.rows[0];
+        const dateHeaders = Array.from(headerRow.cells).map(cell => cell.textContent.trim());
+
+        pinnedDates.forEach(date => {
+            if (!dateHeaders.includes(date)) {
+                addColumn(date, table, headerRow);
             }
         });
+    });
+}
 
-        dateDisplay.addEventListener('click', () => {
-            dateInput.style.display = 'block';
-            dateDisplay.style.display = 'none';
-        });
-
-        cell.appendChild(dateInput);
-        cell.appendChild(dateDisplay);
-        return cell;
+// Navigation Buttons for Calendar
+document.getElementById('prevMonth').addEventListener('click', () => {
+    currentMonth--;
+    if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
     }
-
-    function createInput(type, placeholder = '') {
-        const input = document.createElement('input');
-        input.type = type;
-        input.style.width = '100%';
-        if (placeholder) input.placeholder = placeholder;
-        return input;
-    }
-
-    function syncDateToCalendar(dateValue) {
-        console.log('Synchronizing date to calendar:', dateValue);
-    }
+    renderCalendar();
 });
+
+document.getElementById('nextMonth').addEventListener('click', () => {
+    currentMonth++;
+    if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+    }
+    renderCalendar();
+});
+
+// Initialize Calendar
+document.addEventListener('DOMContentLoaded', renderCalendar);
+
+// Add event listener for the Kanban button
+document.getElementById('kanbanBtn').addEventListener('click', function () {
+    // Hide other sections
+    document.querySelector('.group-section').classList.remove('active-section');
+    document.querySelector('.calendar-section').classList.remove('active-section');
+
+    // Show the Kanban section
+    document.querySelector('.kanban-section').classList.add('active-section');
+    setActiveButton('kanbanBtn');
+
+    renderKanbanBoard(); // Function to render the Kanban board
+});
+
+// Set active section function (update if needed)
+function setActiveButton(buttonId) {
+    document.getElementById('mainTableBtn').classList.remove('active');
+    document.getElementById('calendarBtn').classList.remove('active');
+    document.getElementById('kanbanBtn').classList.remove('active');
+    document.getElementById(buttonId).classList.add('active');
+}
+
+function renderKanbanBoard() {
+    const kanbanBoard = document.getElementById('kanbanBoard');
+    kanbanBoard.innerHTML = ''; // Clear previous content
+
+    const columns = ['To-Do', 'In Progress', 'Done'];
+
+    columns.forEach(column => {
+        const columnDiv = document.createElement('div');
+        columnDiv.className = 'kanban-column';
+        columnDiv.innerHTML = `
+            <div class="kanban-column-header">${column}</div>
+            <div class="kanban-column-body" id="${column.replace(/\s+/g, '')}">
+                <!-- Cards will go here -->
+            </div>
+            <button class="add-card-btn" onclick="addKanbanCard('${column.replace(/\s+/g, '')}')">Add Card</button>
+        `;
+        kanbanBoard.appendChild(columnDiv);
+    });
+}
+
+// Add a Kanban card
+function addKanbanCard(columnId) {
+    const columnBody = document.getElementById(columnId);
+    const cardText = prompt('Enter card text:', '');
+    if (cardText) {
+        const card = document.createElement('div');
+        card.className = 'kanban-card';
+        card.textContent = cardText;
+        columnBody.appendChild(card);
+    }
+}
+
