@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const groups = await groupsResponse.json();
 
         for (const group of groups) {
-            const table = createTable(group.id);
+            const table = createTable(group.id, group.name); // Pass group name to createTable
             groupContainer.appendChild(table);
             createAddRowButton(table, group.id);
 
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         try {
             const groupName = prompt("Enter group name:");
             if (!groupName) return;
-
+    
             const response = await fetch('http://127.0.0.1:3000/api/proj_groups', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -105,15 +105,15 @@ document.addEventListener('DOMContentLoaded', async function() {
                     name: groupName,
                 }),
             });
-
+    
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const group = await response.json();
-
+    
             const groupId = group.id;
-            const table = createTable(groupId);
+            const table = createTable(groupId, groupName);
             groupContainer.appendChild(table);
             createAddRowButton(table, groupId);
-
+    
         } catch (error) {
             console.error('Error creating group:', error);
         }
@@ -157,53 +157,111 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.getElementById(buttonId).classList.add('active');
     }
 
-    function createTable(groupId) {
+    function createTable(groupId, groupName) {
         const table = document.createElement('table');
         table.className = 'group-table';
         table.dataset.id = groupId;
-
-        const headerRow = createHeaderRow(table, groupId);
+    
+        const headerRow = createHeaderRow(table, groupId, groupName);
         table.appendChild(headerRow);
-
+    
+        fetchColumnsAndRender(groupId, table, headerRow);
+    
         return table;
     }
 
-    function createHeaderRow(table, groupId) {
-        const headerRow = document.createElement('tr');
+    async function fetchColumnsAndRender(groupId, table, headerRow) {
+        try {
+            const response = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/columns`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const columns = await response.json();
+    
+            columns.forEach(column => {
+                const newHeader = createHeaderCell(column.name, '', true, column.id); // Pass column.id
+                newHeader.dataset.columnId = column.id;
+                headerRow.insertBefore(newHeader, headerRow.lastChild);
+    
+                Array.from(table.rows).forEach((row, index) => {
+                    if (index === 0) return; // Skip header row
+                    const newCell = createCell(column.id); // Pass column.id
+                    row.insertBefore(newCell, row.lastChild);
+                });
+            });
+    
+            // Fetch and render cell data
+            fetchCellDataAndRender(groupId, table);
+        } catch (error) {
+            console.error('Error fetching columns:', error);
+        }
+    }
+    
+    async function fetchCellDataAndRender(groupId, table) {
+        try {
+            const response = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/cell_data`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const cellData = await response.json();
+    
+            cellData.forEach(data => {
+                const row = table.querySelector(`tr[data-row-id="${data.row_id}"]`);
+                const cell = row.querySelector(`td[data-column-id="${data.column_id}"]`);
+                if (cell) {
+                    cell.textContent = data.value; // Set the cell data
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching cell data:', error);
+        }
+    }
 
+    function createHeaderRow(table, groupId, groupName) {
+        const headerRow = document.createElement('tr');
+    
         const fixedColumnHeader = document.createElement('th');
         fixedColumnHeader.className = 'fixed-column';
         const dropdownBtn = document.createElement('button');
         dropdownBtn.textContent = '⋮';
         dropdownBtn.className = 'dropdown-btn';
-
+    
         const dropdownMenu = document.createElement('div');
         dropdownMenu.className = 'dropdown-menu';
         dropdownMenu.style.display = 'none';
-
+    
         const deleteGroupOption = document.createElement('div');
         deleteGroupOption.textContent = 'Delete Group';
         deleteGroupOption.className = 'dropdown-item';
-        deleteGroupOption.addEventListener('click', () => {
-            const addItemButton = document.querySelector(`.add-item-btn[data-id="${groupId}"]`);
-            if (addItemButton) addItemButton.remove();
-            groupContainer.removeChild(table);
+        deleteGroupOption.addEventListener('click', async () => {
+            try {
+                const response = await fetch(`http://127.0.0.1:3000/api/group/${groupId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+    
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    
+                const addItemButton = document.querySelector(`.add-item-btn[data-id="${groupId}"]`);
+                if (addItemButton) addItemButton.remove();
+                groupContainer.removeChild(table);
+    
+                console.log('Group deleted successfully');
+            } catch (error) {
+                console.error('Error deleting group:', error);
+            }
         });
-
+    
         dropdownBtn.addEventListener('click', () => {
             dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
         });
-
+    
         dropdownMenu.appendChild(deleteGroupOption);
         fixedColumnHeader.appendChild(dropdownBtn);
         fixedColumnHeader.appendChild(dropdownMenu);
         headerRow.appendChild(fixedColumnHeader);
-
-        headerRow.appendChild(createHeaderCell('New Group', '', true));
-
+    
+        headerRow.appendChild(createHeaderCell(groupName, '', true));
+    
         const plusHeader = createHeaderCell('+', 'plus-header');
         plusHeader.style.cursor = 'pointer';
-
+    
         const columnDropdownMenu = createDropdownMenu(
             ['Text', 'Numbers', 'Status', 'Key Persons', 'Timeline', 'Upload File'],
             (option) => {
@@ -215,38 +273,53 @@ document.addEventListener('DOMContentLoaded', async function() {
                 columnDropdownMenu.style.display = 'none';
             }
         );
-
+    
         plusHeader.addEventListener('click', () => {
             columnDropdownMenu.style.display = columnDropdownMenu.style.display === 'none' ? 'block' : 'none';
         });
-
+    
         plusHeader.appendChild(columnDropdownMenu);
         headerRow.appendChild(plusHeader);
-
+    
         return headerRow;
     }
 
     function createActionCell(row) {
         const cell = document.createElement('td');
         cell.className = 'fixed-column';
-
+    
         const dropdownBtn = document.createElement('button');
         dropdownBtn.textContent = '⋮';
         dropdownBtn.className = 'dropdown-btn';
-
+    
         const dropdownMenu = document.createElement('div');
         dropdownMenu.className = 'dropdown-menu';
         dropdownMenu.style.display = 'none';
-
+    
         const deleteOption = document.createElement('div');
         deleteOption.textContent = 'Delete Row';
         deleteOption.className = 'dropdown-item';
-        deleteOption.addEventListener('click', () => row.remove());
-
+        deleteOption.addEventListener('click', async () => {
+            const rowId = row.dataset.rowId;
+            try {
+                const response = await fetch(`http://127.0.0.1:3000/api/group_row/${rowId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+    
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    
+                row.remove();
+                console.log('Row deleted successfully');
+            } catch (error) {
+                console.error('Error deleting row:', error);
+            }
+        });
+    
         dropdownBtn.addEventListener('click', () => {
             dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
         });
-
+    
         dropdownMenu.appendChild(deleteOption);
         cell.appendChild(dropdownBtn);
         cell.appendChild(dropdownMenu);
@@ -263,11 +336,38 @@ document.addEventListener('DOMContentLoaded', async function() {
         return addRowBtn;
     }
 
-    function createHeaderCell(text, className = '', editable = false) {
+    function createHeaderCell(text, className = '', editable = false, columnId = null) {
         const header = document.createElement('th');
         header.textContent = text;
         header.className = className;
-        if (editable) header.contentEditable = true;
+        if (editable) {
+            header.contentEditable = true;
+            header.dataset.columnId = columnId; // Set columnId as a data attribute
+            header.addEventListener('blur', async function () {
+                const newName = header.textContent.trim();
+    
+                if (columnId) {
+                    try {
+                        const response = await fetch(`http://127.0.0.1:3000/api/group_column/${columnId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: newName }),
+                        });
+    
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+                        }
+    
+                        const result = await response.json();
+                        console.log('Column name updated:', result);
+                    } catch (error) {
+                        console.error('Error updating column name:', error);
+                        alert(`Error updating column name: ${error.message}`);
+                    }
+                }
+            });
+        }
         return header;
     }
 
@@ -365,35 +465,48 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    function createCell(headerText) {
+    function createCell(columnId) {
         const cell = document.createElement('td');
         cell.contentEditable = true;
-
+        cell.dataset.columnId = columnId; // Set columnId as a data attribute
+    
         cell.addEventListener('blur', async function () {
             const value = cell.textContent.trim();
             const rowId = cell.closest('tr').dataset.rowId;
-            const columnId = cell.closest('table').rows[0].cells[cell.cellIndex].dataset.columnId;
-
+            const cellColumnId = cell.dataset.columnId; // Use dataset to get column_id
+    
+            // Debugging logs
+            console.log('Saving cell data:', { rowId, columnId: cellColumnId, value });
+    
+            if (!rowId || !cellColumnId) {
+                console.error('Row ID or Column ID is missing');
+                return;
+            }
+    
             try {
                 const response = await fetch('http://127.0.0.1:3000/api/cell_data', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         row_id: rowId,
-                        column_id: columnId,
+                        column_id: cellColumnId, // Use the correct column_id
                         value: value,
                     }),
                 });
-
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+                }
+    
                 const result = await response.json();
                 console.log('Cell data saved:', result);
-
+    
             } catch (error) {
                 console.error('Error saving cell data:', error);
             }
         });
-
+    
         return cell;
     }
 

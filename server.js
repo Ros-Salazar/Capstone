@@ -91,47 +91,78 @@ app.post('/api/create_project', (req, res) => {
     });
 });
 
-        // Fetch projects endpoint
-        app.get('/api/projects', (req, res) => {
-            const query = 'SELECT * FROM projects';
-            db.query(query, (err, results) => {
-                if (err) {
-                    console.error('Database fetch error:', err);
-                    return res.status(500).json({ message: 'Server error during project fetch', error: err });
-                }
-                res.status(200).json(results);
-            });
-        });
-        // Delete project endpoint
-        app.delete('/api/delete_project/:id', (req, res) => {
-            const projectId = req.params.id;
-            db.query('DELETE FROM projects WHERE project_id = ?', [projectId], (err, results) => {
-                if (err) {
-                    console.error('Database delete error:', err);
-                    return res.status(500).json({ message: 'Server error during project deletion', error: err });
-                }
-                console.log('Project deleted successfully:', results);
-                res.status(200).json({ message: 'Project deleted successfully' });
-            });
-        });
-        // Update project name, location, and description endpoint
-        app.put('/api/update_project_details/:id', (req, res) => {
-            const projectId = req.params.id;
-            const { project_name, project_description } = req.body;
-            console.log('Received update request for project details:', { projectId, project_name, project_description });
+// Fetch projects endpoint
+app.get('/api/projects', (req, res) => {
+    const query = 'SELECT * FROM projects';
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Database fetch error:', err);
+            return res.status(500).json({ message: 'Server error during project fetch', error: err });
+        }
+        res.status(200).json(results);
+    });
+});
 
-            const query = 'UPDATE projects SET project_name = ?, project_description = ? WHERE project_id = ?';
-            db.query(query, [project_name, project_description, projectId], (err, results) => {
-                if (err) {
-                    console.error('Database update error:', err);
-                    return res.status(500).json({ message: 'Server error during project update', error: err });
-                }
-                console.log('Project details updated successfully:', results);
-                res.status(200).json({ message: 'Project details updated successfully' });
-            });
-        });
+// Delete project endpoint
+app.delete('/api/delete_project/:id', (req, res) => {
+    const projectId = req.params.id;
+    db.query('DELETE FROM projects WHERE project_id = ?', [projectId], (err, results) => {
+        if (err) {
+            console.error('Database delete error:', err);
+            return res.status(500).json({ message: 'Server error during project deletion', error: err });
+        }
+        console.log('Project deleted successfully:', results);
+        res.status(200).json({ message: 'Project deleted successfully' });
+    });
+});
 
-// UNDER TEMPLATE: Fetch project details endpoint
+// Update project name, location, and description endpoint
+app.put('/api/update_project_details/:id', (req, res) => {
+    const projectId = req.params.id;
+    const { project_name, project_description } = req.body;
+    console.log('Received update request for project details:', { projectId, project_name, project_description });
+
+    const query = 'UPDATE projects SET project_name = ?, project_description = ? WHERE project_id = ?';
+    db.query(query, [project_name, project_description, projectId], (err, results) => {
+        if (err) {
+            console.error('Database update error:', err);
+            return res.status(500).json({ message: 'Server error during project update', error: err });
+        }
+        console.log('Project details updated successfully:', results);
+        res.status(200).json({ message: 'Project details updated successfully' });
+    });
+});
+
+// Archive project route
+app.put('/api/archive_project/:id', async (req, res) => {
+    const projectId = req.params.id;
+    const { group } = req.body;
+
+    try {
+        const query = 'UPDATE projects SET project_group = ? WHERE project_id = ?';
+        const values = [group, projectId];
+
+        db.query(query, values, (err, result) => {
+            if (err) {
+                console.error('Database update error:', err);
+                return res.status(500).json({ message: 'Internal server error', error: err });
+            }
+
+            if (result.affectedRows === 0) {
+                console.log(`No project found with ID: ${projectId}`);
+                return res.status(404).json({ message: 'Project not found' });
+            }
+
+            console.log(`Project with ID: ${projectId} archived successfully`);
+            res.json({ message: 'Project archived successfully' });
+        });
+    } catch (error) {
+        console.error('Error archiving project:', error);
+        res.status(500).json({ message: 'Internal server error', error });
+    }
+});
+
+// Fetch project details endpoint
 app.get('/api/project/:id', (req, res) => {
     const projectId = req.params.id;
     const query = 'SELECT project_name, project_description FROM projects WHERE project_id = ?';
@@ -146,6 +177,7 @@ app.get('/api/project/:id', (req, res) => {
         res.status(200).json(results[0]);
     });
 });
+
 // Create a group
 app.post('/api/proj_groups', (req, res) => {
     const { project_id, name } = req.body;
@@ -167,6 +199,7 @@ app.post('/api/proj_groups', (req, res) => {
         res.status(201).json({ id: results.insertId, message: 'Group created successfully' });
     });
 });
+
 // Add a column to a group
 app.post('/api/group_columns', (req, res) => {
     const { group_id, name, type } = req.body;
@@ -182,6 +215,7 @@ app.post('/api/group_columns', (req, res) => {
         res.status(201).json({ id: results.insertId, message: 'Column added successfully' });
     });
 });
+
 // Add a row to a group
 app.post('/api/group_rows', (req, res) => {
     const { group_id } = req.body;
@@ -197,10 +231,14 @@ app.post('/api/group_rows', (req, res) => {
         res.status(201).json({ id: results.insertId, message: 'Row added successfully' });
     });
 });
+
 // Save cell data
 app.post('/api/cell_data', (req, res) => {
     const { row_id, column_id, value } = req.body;
+    console.log('Received cell data save request:', { row_id, column_id, value }); // Debug log
+
     if (!row_id || !column_id || value === undefined) {
+        console.error('Missing parameters:', { row_id, column_id, value }); // Debug log
         return res.status(400).json({ message: 'Row ID, column ID, and value are required' });
     }
 
@@ -211,16 +249,18 @@ app.post('/api/cell_data', (req, res) => {
     `;
     db.query(query, [row_id, column_id, value], (err, results) => {
         if (err) {
-            console.error('Database insert/update error:', err);
+            console.error('Database insert/update error:', err); // Debug log
             return res.status(500).json({ message: 'Server error during cell data save', error: err });
         }
+        console.log('Cell data saved successfully:', results); // Debug log
         res.status(200).json({ message: 'Cell data saved successfully' });
     });
 });
+
 // Fetch all groups for a project
 app.get('/api/project/:projectId/groups', (req, res) => {
     const projectId = req.params.projectId;
-    const query = 'SELECT * FROM proj_groups WHERE project_id = ?';
+    const query = 'SELECT id, name FROM proj_groups WHERE project_id = ?';
     db.query(query, [projectId], (err, results) => {
         if (err) {
             console.error('Database fetch error:', err);
@@ -229,6 +269,7 @@ app.get('/api/project/:projectId/groups', (req, res) => {
         res.status(200).json(results);
     });
 });
+
 // Fetch all rows for a group
 app.get('/api/group/:groupId/rows', (req, res) => {
     const groupId = req.params.groupId;
@@ -242,6 +283,108 @@ app.get('/api/group/:groupId/rows', (req, res) => {
     });
 });
 
+// Endpoint to delete a group
+app.delete('/api/group/:groupId', (req, res) => {
+    const groupId = req.params.groupId;
+    // First, delete the associated rows and columns (if any)
+    const deleteRowsQuery = 'DELETE FROM group_rows WHERE group_id = ?';
+    const deleteColumnsQuery = 'DELETE FROM group_columns WHERE group_id = ?';
+    const deleteGroupQuery = 'DELETE FROM proj_groups WHERE id = ?';
+    db.query(deleteRowsQuery, [groupId], (err, results) => {
+        if (err) {
+            console.error('Database delete error (rows):', err);
+            return res.status(500).json({ message: 'Server error during rows deletion', error: err });
+        }
+        db.query(deleteColumnsQuery, [groupId], (err, results) => {
+            if (err) {
+                console.error('Database delete error (columns):', err);
+                return res.status(500).json({ message: 'Server error during columns deletion', error: err });
+            }
+            db.query(deleteGroupQuery, [groupId], (err, results) => {
+                if (err) {
+                    console.error('Database delete error (group):', err);
+                    return res.status(500).json({ message: 'Server error during group deletion', error: err });
+                }
+                res.status(200).json({ message: 'Group deleted successfully' });
+            });
+        });
+    });
+});
+
+// Endpoint to delete a row
+app.delete('/api/group_row/:rowId', (req, res) => {
+    const rowId = req.params.rowId;
+
+    const deleteRowQuery = 'DELETE FROM group_rows WHERE id = ?';
+    const deleteCellDataQuery = 'DELETE FROM cell_data WHERE row_id = ?';
+
+    db.query(deleteCellDataQuery, [rowId], (err, results) => {
+        if (err) {
+            console.error('Database delete error (cell data):', err);
+            return res.status(500).json({ message: 'Server error during cell data deletion', error: err });
+        }
+
+        db.query(deleteRowQuery, [rowId], (err, results) => {
+            if (err) {
+                console.error('Database delete error (row):', err);
+                return res.status(500).json({ message: 'Server error during row deletion', error: err });
+            }
+
+            res.status(200).json({ message: 'Row deleted successfully' });
+        });
+    });
+});
+
+// Fetch all columns for a group
+app.get('/api/group/:groupId/columns', (req, res) => {
+    const groupId = req.params.groupId;
+    const query = 'SELECT id, name, type FROM group_columns WHERE group_id = ?';
+    db.query(query, [groupId], (err, results) => {
+        if (err) {
+            console.error('Database fetch error:', err);
+            return res.status(500).json({ message: 'Server error during columns fetch', error: err });
+        }
+        res.status(200).json(results);
+    });
+});
+
+// Fetch all cell data for a group
+app.get('/api/group/:groupId/cell_data', (req, res) => {
+    const groupId = req.params.groupId;
+    const query = `
+        SELECT cd.row_id, cd.column_id, cd.value 
+        FROM cell_data cd
+        JOIN group_rows gr ON cd.row_id = gr.id
+        WHERE gr.group_id = ?
+    `;
+    db.query(query, [groupId], (err, results) => {
+        if (err) {
+            console.error('Database fetch error:', err);
+            return res.status(500).json({ message: 'Server error during cell data fetch', error: err });
+        }
+        res.status(200).json(results);
+    });
+});
+
+// Endpoint to update column name
+app.put('/api/group_column/:columnId', (req, res) => {
+    const columnId = req.params.columnId;
+    const { name } = req.body;
+
+    if (!name) {
+        return res.status(400).json({ message: 'Column name is required' });
+    }
+
+    const query = 'UPDATE group_columns SET name = ? WHERE id = ?';
+    db.query(query, [name, columnId], (err, results) => {
+        if (err) {
+            console.error('Database update error:', err);
+            return res.status(500).json({ message: 'Server error during column name update', error: err });
+        }
+
+        res.status(200).json({ message: 'Column name updated successfully' });
+    });
+});
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
