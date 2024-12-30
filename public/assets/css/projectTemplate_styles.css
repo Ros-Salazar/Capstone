@@ -372,15 +372,19 @@ input[type="date"] {
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
+  gap: 10px;
 }
 
 .calendar-day {
   border: 1px solid #ccc;
-  text-align: center;
+  text-align: left;
   padding: 10px;
   border-radius: 4px;
   cursor: pointer;
+  min-height: 150px;
+  font-size: 14px;
+  overflow-y: auto;
+  background-color: #fff;
 }
 
 .calendar-day.pinned {
@@ -391,6 +395,15 @@ input[type="date"] {
 .calendar-day:hover {
   background-color: #f1f1f1;
   color: black;
+}
+
+.calendar-info {
+  margin-top: 5px;
+  font-size: 12px;
+  background-color: #f9f9f9;
+  padding: 5px;
+  border-radius: 3px;
+  color: #333;
 }
 
 /* Updated styles for calendar navigation buttons */
