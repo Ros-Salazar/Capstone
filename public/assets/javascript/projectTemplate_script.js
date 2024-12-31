@@ -342,7 +342,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         header.className = className;
         if (editable) {
             header.contentEditable = true;
-            header.dataset.columnId = columnId; // Set columnId as a data attribute
+            header.dataset.columnId = columnId;
             header.addEventListener('blur', async function () {
                 const newName = header.textContent.trim();
     
