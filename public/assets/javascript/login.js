@@ -44,7 +44,12 @@ loginForm.addEventListener("submit", async (e) => {
         console.log('Parsed JSON Response:', result);
 
         alert(`Welcome back, ${result.user.email}`);
-        window.location.href = "Dashboard.html";
+        // Redirect based on user position
+        if (result.user.position === 'admin') {
+            window.location.href = "AdminPage.html";
+        } else {
+            window.location.href = "Dashboard.html";
+        }
     } catch (error) {
         errorMessage.textContent = error.message || 'Incorrect credentials, please try again.';
         console.error('Fetch error:', error);
