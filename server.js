@@ -324,6 +324,8 @@ app.post('/api/proj_groups', (req, res) => {
         if (!group_id || !name || !type) {
             return res.status(400).json({ message: 'Group ID, column name, and type are required' });
         }
+
+        // Insert the column without checking for duplicates
         const query = 'INSERT INTO group_columns (group_id, name, type) VALUES (?, ?, ?)';
         db.query(query, [group_id, name, type], (err, results) => {
             if (err) {
@@ -352,20 +354,20 @@ app.post('/api/proj_groups', (req, res) => {
 
     // Save cell data
     app.post('/api/cell_data', (req, res) => {
-        const { row_id, column_id, value } = req.body;
-        console.log('Received cell data save request:', { row_id, column_id, value }); // Debug log
+        const { row_id, column_id, field, value } = req.body; // Include field in the request body
+        console.log('Received cell data save request:', { row_id, column_id, field, value }); // Debug log
 
-        if (!row_id || !column_id || value === undefined) {
-            console.error('Missing parameters:', { row_id, column_id, value }); // Debug log
-            return res.status(400).json({ message: 'Row ID, column ID, and value are required' });
+        if (!row_id || !column_id || !field || value === undefined) {
+            console.error('Missing parameters:', { row_id, column_id, field, value }); // Debug log
+            return res.status(400).json({ message: 'Row ID, column ID, field, and value are required' });
         }
 
         const query = `
-            INSERT INTO cell_data (row_id, column_id, value)
-            VALUES (?, ?, ?)
-            ON DUPLICATE KEY UPDATE value = VALUES(value)
+            INSERT INTO cell_data (row_id, column_id, field, value)
+            VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE value = VALUES(value), field = VALUES(field)
         `;
-        db.query(query, [row_id, column_id, value], (err, results) => {
+        db.query(query, [row_id, column_id, field, value], (err, results) => {
             if (err) {
                 console.error('Database insert/update error:', err); // Debug log
                 return res.status(500).json({ message: 'Server error during cell data save', error: err });
@@ -374,6 +376,12 @@ app.post('/api/proj_groups', (req, res) => {
             res.status(200).json({ message: 'Cell data saved successfully' });
         });
     });
+
+
+
+
+
+
 
     // Fetch all groups for a project
     app.get('/api/project/:projectId/groups', (req, res) => {
@@ -455,14 +463,14 @@ app.post('/api/proj_groups', (req, res) => {
 
     // Fetch all columns for a group
     app.get('/api/group/:groupId/columns', (req, res) => {
-        const groupId = req.params.groupId;
-        const query = 'SELECT id, name, type FROM group_columns WHERE group_id = ?';
-        db.query(query, [groupId], (err, results) => {
-            if (err) {
-                console.error('Database fetch error:', err);
-                return res.status(500).json({ message: 'Server error during columns fetch', error: err });
-            }
-            res.status(200).json(results);
+    const groupId = req.params.groupId;
+    const query = 'SELECT id, name, type FROM group_columns WHERE group_id = ?';
+    db.query(query, [groupId], (err, results) => {
+        if (err) {
+            console.error('Database fetch error:', err);
+            return res.status(500).json({ message: 'Server error during columns fetch', error: err });
+        }
+        res.status(200).json(results);
         });
     });
 
@@ -483,7 +491,6 @@ app.post('/api/proj_groups', (req, res) => {
             res.status(200).json(results);
         });
     });
-
     // Endpoint to update column name
     app.put('/api/group_column/:columnId', (req, res) => {
         const columnId = req.params.columnId;

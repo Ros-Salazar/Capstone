@@ -175,21 +175,22 @@ document.addEventListener('DOMContentLoaded', async function() {
             const response = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/columns`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const columns = await response.json();
+            console.log('Fetched columns:', columns); // Add logging
     
             columns.forEach(column => {
-                const newHeader = createHeaderCell(column.name, '', true, column.id); // Pass column.id
+                const newHeader = createHeaderCell(column.name, '', true, column.id, column.field); // Pass column.id and column.field
                 newHeader.dataset.columnId = column.id;
                 headerRow.insertBefore(newHeader, headerRow.lastChild);
     
                 Array.from(table.rows).forEach((row, index) => {
                     if (index === 0) return; // Skip header row
-                    const newCell = createCell(column.id); // Pass column.id
+                    const newCell = createCell(column.id, column.name === '+'); // Pass column.id and check if column name is "+"
                     row.insertBefore(newCell, row.lastChild);
                 });
             });
     
             // Fetch and render cell data
-            fetchCellDataAndRender(groupId, table);
+            await fetchCellDataAndRender(groupId, table);
         } catch (error) {
             console.error('Error fetching columns:', error);
         }
@@ -200,6 +201,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             const response = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/cell_data`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const cellData = await response.json();
+            console.log('Fetched cell data:', cellData); // Add logging
     
             cellData.forEach(data => {
                 const row = table.querySelector(`tr[data-row-id="${data.row_id}"]`);
@@ -281,9 +283,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         plusHeader.appendChild(columnDropdownMenu);
         headerRow.appendChild(plusHeader);
     
+        // Disable input for the plus-header column cells
+        table.querySelectorAll('tr').forEach((row, index) => {
+            if (index === 0) return; // Skip the header row
+            const cell = row.insertCell(-1); // Add a new cell at the end of each row
+            cell.style.pointerEvents = 'none'; // Disable input for this cell
+        });
+    
         return headerRow;
     }
-
+    
+    
     function createActionCell(row) {
         const cell = document.createElement('td');
         cell.className = 'fixed-column';
@@ -336,13 +346,19 @@ document.addEventListener('DOMContentLoaded', async function() {
         return addRowBtn;
     }
 
-    function createHeaderCell(text, className = '', editable = false, columnId = null) {
+    function createHeaderCell(text, className = '', editable = false, columnId = null, field = '') {
         const header = document.createElement('th');
         header.textContent = text;
         header.className = className;
-        if (editable) {
+    
+        // Ensure the "plus-header" column is not editable
+        if (text === '+') {
+            header.contentEditable = false;
+            header.style.cursor = 'default'; // Change cursor to indicate no action
+        } else if (editable) {
             header.contentEditable = true;
-            header.dataset.columnId = columnId;
+            header.dataset.columnId = columnId; // Ensure columnId is stored as a data attribute
+            header.dataset.field = field; // Add field as a data attribute
             header.addEventListener('blur', async function () {
                 const newName = header.textContent.trim();
     
@@ -368,6 +384,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             });
         }
+    
         return header;
     }
 
@@ -396,27 +413,35 @@ document.addEventListener('DOMContentLoaded', async function() {
                 body: JSON.stringify({
                     group_id: groupId,
                     name: option,
-                    type: option,
+                    type: option, // Assuming type and field are the same for simplicity
+                    field: option
                 }),
             });
-
+    
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const column = await response.json();
-
-            const newHeader = createHeaderCell(option, '', true);
+    
+            const newHeader = createHeaderCell(option, '', true, column.id, column.field); // Pass column.id and column.field
             newHeader.dataset.columnId = column.id;
             headerRow.insertBefore(newHeader, headerRow.lastChild);
-
+    
             Array.from(table.rows).forEach((row, index) => {
                 if (index === 0) return;
-                const newCell = createCell(option);
+                const newCell = createCell(column.id);
+    
+                // Enable input for the new cell
+                newCell.style.pointerEvents = 'auto';
+    
                 row.insertBefore(newCell, row.lastChild);
             });
-
+    
         } catch (error) {
             console.error('Error adding column:', error);
         }
     }
+    
+    
+    
 
     function addTimelineColumns(table, headerRow) {
         ['Start Date', 'Due Date'].forEach(dateColumn => {
@@ -465,47 +490,56 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    function createCell(columnId) {
+    function createCell(columnId, isNonEditable = false) {
         const cell = document.createElement('td');
-        cell.contentEditable = true;
-        cell.dataset.columnId = columnId; // Set columnId as a data attribute
+        cell.dataset.columnId = columnId; // Ensure columnId is stored as a data attribute
     
-        cell.addEventListener('blur', async function () {
-            const value = cell.textContent.trim();
-            const rowId = cell.closest('tr').dataset.rowId;
-            const cellColumnId = cell.dataset.columnId; // Use dataset to get column_id
+        // Disable editing for non-editable cells
+        if (isNonEditable) {
+            cell.contentEditable = false;
+            cell.style.pointerEvents = 'none'; // Disable pointer events to prevent input
+            cell.style.backgroundColor = '#f0f0f0'; // Optional: style to indicate non-editable
+        } else {
+            cell.contentEditable = true;
+            cell.addEventListener('blur', async function () {
+                const value = cell.textContent.trim();
+                const rowId = cell.closest('tr').dataset.rowId;
+                const cellColumnId = parseInt(cell.dataset.columnId, 10); // Convert columnId to an integer
+                const field = 'Text'; // Set the appropriate field value
     
-            // Debugging logs
-            console.log('Saving cell data:', { rowId, columnId: cellColumnId, value });
+                // Debugging logs
+                console.log('Saving cell data:', { rowId, columnId: cellColumnId, field, value });
     
-            if (!rowId || !cellColumnId) {
-                console.error('Row ID or Column ID is missing');
-                return;
-            }
-    
-            try {
-                const response = await fetch('http://127.0.0.1:3000/api/cell_data', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        row_id: rowId,
-                        column_id: cellColumnId, // Use the correct column_id
-                        value: value,
-                    }),
-                });
-    
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+                if (!rowId || isNaN(cellColumnId) || !field) {
+                    console.error('Row ID, Column ID, or Field is missing or invalid');
+                    return;
                 }
     
-                const result = await response.json();
-                console.log('Cell data saved:', result);
+                try {
+                    const response = await fetch('http://127.0.0.1:3000/api/cell_data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            row_id: rowId,
+                            column_id: cellColumnId, // Use the correct column_id
+                            field: field, // Include the field value
+                            value: value,
+                        }),
+                    });
     
-            } catch (error) {
-                console.error('Error saving cell data:', error);
-            }
-        });
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+                    }
+    
+                    const result = await response.json();
+                    console.log('Cell data saved:', result);
+    
+                } catch (error) {
+                    console.error('Error saving cell data:', error);
+                }
+            });
+        }
     
         return cell;
     }
