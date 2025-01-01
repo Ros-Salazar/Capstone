@@ -72,6 +72,30 @@
             </form>
         </div>
     </div>
+
+    <!-- Access Privileges Modal -->
+    <div id="privileges-popup" class="popup">
+        <div class="popup-content">
+            <span class="close" onclick="closePrivilegesPopup()">&times;</span>
+            <h2>Access Privileges</h2>
+            <form id="privileges-form" onsubmit="savePrivileges(event)">
+                <input type="hidden" name="privilegesUserId" id="privilegesUserId">
+                <input type="hidden" name="position" id="position"> <!-- Add hidden field for position -->
+                <div class="form-group">
+                    <label for="canViewProjects">Can View Projects:</label>
+                    <input type="checkbox" name="canViewProjects" id="canViewProjects">
+                </div>
+                <div class="form-group">
+                    <label for="canEditProjects">Can Edit Projects:</label>
+                    <input type="checkbox" name="canEditProjects" id="canEditProjects">
+                </div>
+                <!-- Add more privileges as needed -->
+                <button type="submit">Save</button>
+                <button type="button" onclick="closePrivilegesPopup()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
     <script src="/public/assets/javascript/users_scripts.js"></script>
 </body>
 </html>

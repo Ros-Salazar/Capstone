@@ -24,6 +24,7 @@ registerForm.addEventListener("submit", async (e) => {
         console.log('Invalid email domain');
         return;
     }
+
     try {
         const response = await fetch('http://127.0.0.1:3000/api/register', { 
             method: 'POST',
@@ -40,16 +41,17 @@ registerForm.addEventListener("submit", async (e) => {
         });
 
         console.log('Raw Response:', response);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
         const result = await response.json();
         console.log('Parsed JSON Response:', result);
 
         if (response.ok) {
             window.location.href = 'index.html'; 
         } else {
-            registerError.textContent = result.message || 'Registration failed. Please try again.';
+            if (result.message === 'Admin registration limit reached. Only 1 admin is allowed.') {
+                registerError.textContent = 'Only one admin user is allowed. Please choose a different position.';
+            } else {
+                registerError.textContent = result.message || 'Registration failed. Please try again.';
+            }
             console.error('Registration failed:', result.message);
         }
     } catch (error) {

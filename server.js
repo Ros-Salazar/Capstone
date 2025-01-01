@@ -13,59 +13,78 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Fetch all users endpoint
 app.get('/api/users', (req, res) => {
-    console.log('Received request to fetch users');
-    const query = 'SELECT id, first_name, last_name, email, position, created_at FROM users';
+    const query = 'SELECT id, first_name, last_name, email, position, created_at, privileges FROM users';
     db.query(query, (err, results) => {
         if (err) {
-            console.error('Database fetch error:', err);
             return res.status(500).json({ message: 'Server error during users fetch', error: err });
         }
-        console.log('Fetched users:', results);
         res.status(200).json(results);
     });
 });
+    // Update user privileges endpoint
+    app.put('/api/users/:id/privileges', (req, res) => {
+        const userId = req.params.id;
+        const { privileges } = req.body;
+    
+        const query = 'UPDATE users SET privileges = ? WHERE id = ?';
+        db.query(query, [JSON.stringify(privileges), userId], (err, results) => {
+            if (err) {
+                return res.status(500).json({ message: 'Server error during privileges update', error: err });
+            }
+            if (results.affectedRows === 0) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+            res.status(200).json({ message: 'Privileges updated successfully' });
+        });
+    });
 
 // Update user endpoint
 app.put('/api/users/:id', async (req, res) => {
     const userId = req.params.id;
     const { first_name, last_name, email, position, password } = req.body;
 
-    // Check if the new position is 'admin' and ensure only one 'admin' user exists
-    if (position === 'admin') {
-        const checkAdminQuery = 'SELECT COUNT(*) AS adminCount FROM users WHERE position = "admin" AND id != ?';
-        const [adminCheck] = await db.promise().query(checkAdminQuery, [userId]);
-        if (adminCheck[0].adminCount >= 1) {
-            return res.status(400).json({ message: 'Only one admin is allowed.' });
+    try {
+        // Check if the user is being changed to admin
+        if (position === 'admin') {
+            // Count the number of admins
+            const adminCountQuery = 'SELECT COUNT(*) AS adminCount FROM users WHERE position = "admin"';
+            const [adminCountResult] = await db.promise().query(adminCountQuery);
+            const adminCount = adminCountResult[0].adminCount;
+
+            // If there's already an admin and the user being updated is not the same user, return an error
+            const userQuery = 'SELECT position FROM users WHERE id = ?';
+            const [userResult] = await db.promise().query(userQuery, [userId]);
+            const user = userResult[0];
+
+            if (adminCount >= 1 && user.position !== 'admin') {
+                return res.status(400).json({ message: 'Only one admin is allowed.' });
+            }
         }
+
+        // Hash the password if it's provided
+        let hashedPassword = null;
+        if (password) {
+            hashedPassword = await bcrypt.hash(password, 10);
+        }
+
+        // Update the user
+        const updateUserQuery = `
+            UPDATE users 
+            SET first_name = ?, last_name = ?, email = ?, position = ?, user_password = COALESCE(?, user_password)
+            WHERE id = ?`;
+        const values = [first_name, last_name, email, position, hashedPassword, userId];
+
+        const [updateResult] = await db.promise().query(updateUserQuery, values);
+
+        if (updateResult.affectedRows === 0) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        res.json({ message: 'User updated successfully' });
+    } catch (error) {
+        console.error('Error updating user:', error);
+        res.status(500).json({ message: 'Internal server error.' });
     }
-
-    let query = 'UPDATE users SET first_name = ?, last_name = ?, email = ?, position = ?';
-    const queryParams = [first_name, last_name, email, position];
-
-    if (password) {
-        try {
-            const hashedPassword = await bcrypt.hash(password, 10);
-            query += ', user_password = ?';
-            queryParams.push(hashedPassword);
-        } catch (err) {
-            console.error('Error during password hashing:', err);
-            return res.status(500).json({ message: 'Server error during password hashing' });
-        }
-    }
-
-    query += ' WHERE id = ?';
-    queryParams.push(userId);
-
-    db.query(query, queryParams, (err, results) => {
-        if (err) {
-            console.error('Database update error:', err);
-            return res.status(500).json({ message: 'Server error during user update', error: err });
-        }
-        if (results.affectedRows === 0) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        res.status(200).json({ message: 'User updated successfully' });
-    });
 });
 
 // Delete user endpoint
@@ -221,34 +240,40 @@ app.post('/api/create_project', (req, res) => {
 
     
     // Delete project endpoint
-    app.delete('/api/projects/:id', (req, res) => {
-        const projectId = req.params.id;
-        db.query('DELETE FROM projects WHERE project_id = ?', [projectId], (err, results) => {
+    app.delete('/api/delete_project/:projectId', (req, res) => {
+        const projectId = req.params.projectId;
+        const query = 'DELETE FROM projects WHERE project_id = ?';
+
+        db.query(query, [projectId], (err, result) => {
             if (err) {
-                console.error('Database delete error:', err);
-                return res.status(500).json({ message: 'Server error during project deletion', error: err });
+                console.error('Error deleting project:', err);
+                return res.status(500).json({ message: 'Internal server error' });
             }
-            if (results.affectedRows === 0) {
+
+            if (result.affectedRows === 0) {
                 return res.status(404).json({ message: 'Project not found' });
             }
+
             res.status(200).json({ message: 'Project deleted successfully' });
         });
     });
 
     // Update project endpoint
-    app.put('/api/projects/:id', (req, res) => {
-        const projectId = req.params.id;
+    app.put('/api/update_project/:projectId', (req, res) => {
+        const projectId = req.params.projectId;
         const { project_name, project_location, project_description } = req.body;
         const query = 'UPDATE projects SET project_name = ?, project_location = ?, project_description = ? WHERE project_id = ?';
 
-        db.query(query, [project_name, project_location, project_description, projectId], (err, results) => {
+        db.query(query, [project_name, project_location, project_description, projectId], (err, result) => {
             if (err) {
-                console.error('Database update error:', err);
-                return res.status(500).json({ message: 'Server error during project update', error: err });
+                console.error('Error updating project:', err);
+                return res.status(500).json({ message: 'Internal server error' });
             }
-            if (results.affectedRows === 0) {
+
+            if (result.affectedRows === 0) {
                 return res.status(404).json({ message: 'Project not found' });
             }
+
             res.status(200).json({ message: 'Project updated successfully' });
         });
     });
