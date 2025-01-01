@@ -14,7 +14,6 @@ window.togglePassword = (id) => {
 
 // Login functionality
 const loginForm = document.getElementById("loginForm");
-const errorMessage = document.getElementById("error-message");
 
 loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -36,14 +35,19 @@ loginForm.addEventListener("submit", async (e) => {
 
         // Check if the response is OK
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error('Incorrect credentials, please try again.');
         }
 
         // Attempt to parse the response as JSON
         const result = await response.json();
         console.log('Parsed JSON Response:', result);
 
-        alert(`Welcome back, ${result.user.email}`);
+        // Welcome the user by name
+        alert(`Welcome back, ${result.user.email}!` );
+
+        // Store user role in local storage
+        localStorage.setItem('userRole', result.user.position);
+
         // Redirect based on user position
         if (result.user.position === 'admin') {
             window.location.href = "AdminPage.html";
@@ -51,7 +55,7 @@ loginForm.addEventListener("submit", async (e) => {
             window.location.href = "Dashboard.html";
         }
     } catch (error) {
-        errorMessage.textContent = error.message || 'Incorrect credentials, please try again.';
+        alert(error.message || 'Incorrect credentials, please try again.');
         console.error('Fetch error:', error);
     }
 });

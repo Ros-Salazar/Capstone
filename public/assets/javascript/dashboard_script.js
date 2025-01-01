@@ -7,6 +7,7 @@ let projectContainer;
 let noProjectsText;
 let editPopupWindow;
 let editProjectForm;
+let updateProjectBtn;
 let projectList;
 let navigationPane;
 let archiveLink;
@@ -23,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     noProjectsText = document.getElementById('noProjectsText');
     editPopupWindow = document.getElementById('editPopupWindow');
     editProjectForm = document.getElementById('editProjectForm');
+    updateProjectBtn = document.getElementById('updateProjectBtn');
     projectList = document.getElementById('projectList');
     navigationPane = document.getElementById('navigationPane');
     archiveLink = document.getElementById('archiveLink');
@@ -30,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     archivedProjectsContainer = document.getElementById('archivedProjectsContainer');
 
     // Ensure all elements are found
-    if (!newProjectBtn || !popupWindow || !projectForm || !projectContainer || !noProjectsText || !editPopupWindow || !editProjectForm || !projectList || !navigationPane || !archiveLink || !archivePopupWindow || !archivedProjectsContainer) {
+    if (!newProjectBtn || !popupWindow || !projectForm || !projectContainer || !noProjectsText || !editPopupWindow || !editProjectForm || !updateProjectBtn || !projectList || !navigationPane || !archiveLink || !archivePopupWindow || !archivedProjectsContainer) {
         console.error('One or more DOM elements are missing');
         return;
     }
@@ -193,9 +195,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add delete functionality
             projectBox.querySelector('.delete-icon').addEventListener('click', async (e) => {
                 e.stopPropagation();
+                e.preventDefault(); // Prevent default action
                 const projectId = projectBox.getAttribute('data-id');
                 console.log(`Deleting project with ID: ${projectId}`);
-    
+            
                 // Make a delete request to the server
                 try {
                     const response = await fetch(`http://127.0.0.1:3000/api/delete_project/${projectId}`, {
@@ -205,18 +208,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     console.log('Project deleted successfully');
-    
+            
                     // Remove the project from the projects array
                     projects = projects.filter((p) => p.id !== projectId);
-    
+            
                     // Remove the project element from the DOM
                     projectBox.remove();
-    
+            
                     // Update the noProjectsText display
                     if (projects.length === 0) {
                         noProjectsText.style.display = 'block';
                     }
-    
+            
                 } catch (error) {
                     console.error('Deletion error:', error);
                     alert(`Error deleting project: ${error.message}`);
@@ -226,6 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add archive functionality
             projectBox.querySelector('.archive-icon').addEventListener('click', (e) => {
                 e.stopPropagation();
+                e.preventDefault(); // Prevent default action
                 const projectId = projectBox.getAttribute('data-id');
                 console.log(`Archiving project with ID: ${projectId}`); // Add this line to confirm the event listener is working
                 archiveProject(projectId);
@@ -244,23 +248,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // Edit Project
     editProjectForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-
+    
         const updatedProjectName = document.getElementById('edit-project-name').value;
         const updatedLocation = document.getElementById('edit-location').value;
         const updatedDescription = document.getElementById('edit-description').value;
-
+    
         const projectId = currentProjectBox.getAttribute('data-id');
         const project = projects.find((p) => p.id === projectId);
-
+    
         if (project) {
             console.log('Updating project:', project);
-
+    
             project.name = updatedProjectName;
             project.location = updatedLocation;
             project.description = updatedDescription;
-
+    
             // Make an update request to the server
             try {
+                console.log('Sending update request:', {
+                    projectId,
+                    updatedProjectName,
+                    updatedLocation,
+                    updatedDescription
+                });
+    
                 const response = await fetch(`http://127.0.0.1:3000/api/update_project/${projectId}`, {
                     method: 'PUT',
                     headers: {
@@ -272,26 +283,26 @@ document.addEventListener('DOMContentLoaded', () => {
                         project_description: updatedDescription,
                     }),
                 });
-
+    
                 if (!response.ok) {
                     const errorData = await response.json();
                     throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
                 }
-
+    
                 const result = await response.json();
                 console.log('Project update response:', result);
-
+    
                 // Update the project box display
                 currentProjectBox.querySelector('h3').textContent = updatedProjectName;
                 currentProjectBox.querySelector('p').textContent = updatedLocation;
-
+    
                 // Hide the edit popup
                 editPopupWindow.style.display = 'none';
                 editProjectForm.reset();
-
+    
                 // Reload the projects to reflect the changes
                 loadProjects();
-
+    
             } catch (error) {
                 console.error('Update error:', error);
                 alert(`Error updating project: ${error.message}`);
@@ -299,25 +310,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Handle navigation pane toggle
+    document.querySelector('.header-right a[href="#projects"]').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (navigationPane.style.display === 'none' || !navigationPane.style.display) {
+            populateNavigationPane();
+            navigationPane.style.display = 'block';
+        } else {
+            navigationPane.style.display = 'none';
+        }
+    });
 
-  // Handle navigation pane toggle
-  document.querySelector('.header-right a[href="#projects"]').addEventListener('click', (e) => {
-    e.preventDefault();
-    if (navigationPane.style.display === 'none' || !navigationPane.style.display) {
-        populateNavigationPane();
-        navigationPane.style.display = 'block';
-    } else {
-        navigationPane.style.display = 'none';
-    }
-});
+    // Show archive popup when 'Archive' is clicked
+    archiveLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        archivePopupWindow.style.display = 'flex';
+        loadProjects(); // Ensure the archived projects are loaded when the popup is displayed
+    });
 
-// Show archive popup when 'Archive' is clicked
-archiveLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    archivePopupWindow.style.display = 'flex';
-    loadProjects(); // Ensure the archived projects are loaded when the popup is displayed
-});
-
-// Initial projects load
-fetchProjects();
+    // Initial projects load
+    fetchProjects();
 });

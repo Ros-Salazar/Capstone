@@ -59,14 +59,14 @@
             <form id="editProjectForm">
                 <label for="edit-project-name">Project Name:</label>
                 <input type="text" id="edit-project-name" name="edit-project-name" required><br><br>
-
+    
                 <label for="edit-location">Location:</label>
                 <input type="text" id="edit-location" name="edit-location" required><br><br>
-
+    
                 <label for="edit-description">Project Description:</label>
                 <textarea id="edit-description" name="edit-description" rows="4" cols="50" class="fixed-textarea"></textarea><br><br>
-
-                <button type="submit" class="btn">Update</button>
+    
+                <button type="submit" id="updateProjectBtn" class="btn">Update</button>
             </form>
         </div>
     </div>
@@ -79,6 +79,16 @@
         </div>
     </div>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const userRole = localStorage.getItem('userRole');
+            if (userRole === 'staff') {
+                // Hide the Add Project button for staff users
+                const newProjectBtn = document.getElementById('newProjectBtn');
+                newProjectBtn.style.display = 'none';
+            }
+        });
+    </script>
     <script type="module" src="/public/assets/javascript/dashboard_script.js"></script>
 </body>
 </html>

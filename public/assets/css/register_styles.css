@@ -69,7 +69,7 @@ h2 {
     outline: none;
     font-size: 1em;
     color: white;
-    padding: 0 70px;
+    padding: 0 10px; /* Adjusted padding */
 }
 
 .input-box select {
@@ -84,6 +84,7 @@ h2 {
     padding: 0 10px;
     appearance: none;
 }
+
 .input-box select option {
     color: black; /* Text color of options */
     background-color: white; /* Background of dropdown options */
@@ -147,6 +148,7 @@ button {
     font-size: 1.2em;
     cursor: pointer;
 }
+
 .email-domain {
     position: absolute;
     top: 50%;
@@ -156,4 +158,3 @@ button {
     color: white;
     pointer-events: none;
 }
-
