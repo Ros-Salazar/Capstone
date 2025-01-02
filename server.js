@@ -11,10 +11,13 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Fetch all users endpoint
+
+
+// Fetch all users endpoint with optional status filter
 app.get('/api/users', (req, res) => {
-    const query = 'SELECT id, first_name, last_name, email, position, created_at, privileges FROM users';
-    db.query(query, (err, results) => {
+    const status = req.query.status || 'approved';
+    const query = 'SELECT id, first_name, last_name, email, position, created_at, privileges FROM users WHERE status = ?';
+    db.query(query, [status], (err, results) => {
         if (err) {
             return res.status(500).json({ message: 'Server error during users fetch', error: err });
         }
@@ -133,20 +136,20 @@ app.post('/api/register', async (req, res) => {
                     return res.status(400).json({ message: 'Admin registration limit reached. Only 1 admin is allowed.' });
                 }
 
-                // Proceed with user registration
+                // Proceed with user registration with status 'approved'
                 try {
                     const hashedPassword = await bcrypt.hash(password, 10);
                     console.log('Password hashed successfully');
                     db.query(
-                        'INSERT INTO users (first_name, last_name, email, user_password, position) VALUES (?, ?, ?, ?, ?)',
-                        [firstName, lastName, email, hashedPassword, position],
+                        'INSERT INTO users (first_name, last_name, email, user_password, position, status) VALUES (?, ?, ?, ?, ?, ?)',
+                        [firstName, lastName, email, hashedPassword, position, 'approved'],
                         (err, results) => {
                             if (err) {
                                 console.error('Database insert error:', err);
                                 return res.status(500).json({ message: 'Server error during user registration' });
                             }
-                            console.log('User registered successfully:', email);
-                            res.status(201).json({ message: 'User registered successfully' });
+                            console.log('Admin user registered successfully:', email);
+                            res.status(201).json({ message: 'Admin user registered successfully.' });
                         }
                     );
                 } catch (error) {
@@ -155,20 +158,20 @@ app.post('/api/register', async (req, res) => {
                 }
             });
         } else {
-            // Proceed with user registration for non-admin users
+            // Proceed with user registration for non-admin users with status 'pending'
             try {
                 const hashedPassword = await bcrypt.hash(password, 10);
                 console.log('Password hashed successfully');
                 db.query(
-                    'INSERT INTO users (first_name, last_name, email, user_password, position) VALUES (?, ?, ?, ?, ?)',
-                    [firstName, lastName, email, hashedPassword, position],
+                    'INSERT INTO users (first_name, last_name, email, user_password, position, status) VALUES (?, ?, ?, ?, ?, ?)',
+                    [firstName, lastName, email, hashedPassword, position, 'pending'],
                     (err, results) => {
                         if (err) {
                             console.error('Database insert error:', err);
                             return res.status(500).json({ message: 'Server error during user registration' });
                         }
                         console.log('User registered successfully:', email);
-                        res.status(201).json({ message: 'User registered successfully' });
+                        res.status(201).json({ message: 'User registered successfully. Awaiting admin approval.' });
                     }
                 );
             } catch (error) {
@@ -179,6 +182,33 @@ app.post('/api/register', async (req, res) => {
     });
 });
 
+// Admin approval endpoint
+app.put('/api/approve-user/:id', async (req, res) => {
+    const userId = req.params.id;
+
+    try {
+        const query = 'UPDATE users SET status = ? WHERE id = ?';
+        const values = ['approved', userId];
+
+        db.query(query, values, (err, results) => {
+            if (err) {
+                console.error('Database update error:', err);
+                return res.status(500).json({ message: 'Internal server error', error: err });
+            }
+
+            if (results.affectedRows === 0) {
+                console.log(`No user found with ID: ${userId}`);
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            console.log(`User with ID: ${userId} approved successfully`);
+            res.json({ message: 'User approved successfully' });
+        });
+    } catch (error) {
+        console.error('Error approving user:', error);
+        res.status(500).json({ message: 'Internal server error', error });
+    }
+});
 
 // Login endpoint
 app.post('/api/login', async (req, res) => {
@@ -197,6 +227,12 @@ app.post('/api/login', async (req, res) => {
         }
 
         const user = results[0];
+
+        if (user.status !== 'approved') {
+            console.log('User not approved:', email);
+            return res.status(403).json({ message: 'User not approved yet. Please wait for admin approval.' });
+        }
+
         const isPasswordValid = await bcrypt.compare(password, user.user_password);
         if (!isPasswordValid) {
             console.log('Invalid password for user:', email);
@@ -402,12 +438,6 @@ app.post('/api/proj_groups', (req, res) => {
         });
     });
 
-
-
-
-
-
-
     // Fetch all groups for a project
     app.get('/api/project/:projectId/groups', (req, res) => {
         const projectId = req.params.projectId;
@@ -535,7 +565,64 @@ app.post('/api/proj_groups', (req, res) => {
             res.status(200).json({ message: 'Column name updated successfully' });
         });
     });
+// Fetch user profile endpoint
+app.get('/api/user/profile', (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
 
+    const query = 'SELECT id, first_name, last_name, email, position FROM users WHERE id = ?';
+    db.query(query, [userId], (err, results) => {
+        if (err) {
+            console.error('Error fetching user profile:', err);
+            return res.status(500).json({ message: 'Server error' });
+        }
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.status(200).json(results[0]);
+    });
+});
+
+// Update user profile endpoint
+app.put('/api/user/profile/:id', (req, res) => {
+    const userId = req.params.id;
+    const { first_name, last_name, email, position, password } = req.body;
+
+    // Hash the password if it's provided
+    let hashedPassword = null;
+    if (password) {
+        hashedPassword = bcrypt.hashSync(password, 10);
+    }
+
+    const query = `
+        UPDATE users 
+        SET first_name = ?, last_name = ?, email = ?, position = ?, user_password = COALESCE(?, user_password)
+        WHERE id = ?`;
+    const values = [first_name, last_name, email, position, hashedPassword, userId];
+
+    db.query(query, values, (err, results) => {
+        if (err) {
+            console.error('Error updating user profile:', err);
+            return res.status(500).json({ message: 'Server error' });
+        }
+        if (results.affectedRows === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.status(200).json({ message: 'Profile updated successfully' });
+    });
+});
+// Logout user endpoint
+app.post('/api/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            console.error('Error during logout:', err);
+            return res.status(500).json({ message: 'Failed to log out' });
+        }
+        res.status(200).json({ success: true, message: 'You have been logged out' });
+    });
+});
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });

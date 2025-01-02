@@ -235,3 +235,25 @@ form button:hover {
     padding: 8px;
     box-sizing: border-box;
 }
+/* Styles for the approve and reject buttons */
+.button-approve, .button-reject {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 2px;
+}
+
+.button-approve {
+    background-color: #4CAF50; /* Green */
+    color: white;
+}
+
+.button-reject {
+    background-color: #f44336; /* Red */
+    color: white;
+}
+
+.button-approve:hover, .button-reject:hover {
+    opacity: 0.8;
+}

@@ -1,5 +1,7 @@
 const registerForm = document.getElementById("registerForm");
 const registerError = document.getElementById("register-error");
+const successModal = document.getElementById("success-modal");
+const successMessage = document.getElementById("success-message");
 
 registerForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -11,17 +13,13 @@ registerForm.addEventListener("submit", async (e) => {
     const confirmPassword = document.getElementById("confirmPassword").value;
     const position = document.getElementById("position").value;
 
-    console.log('Form Data:', { firstName, lastName, email, password, confirmPassword, position });
-
     if (password !== confirmPassword) {
         registerError.textContent = "Passwords do not match.";
-        console.log('Passwords do not match');
         return;
     }
 
     if (!email.endsWith("@ceo.com")) {
         registerError.textContent = "Email must have the domain @ceo.com.";
-        console.log('Invalid email domain');
         return;
     }
 
@@ -40,25 +38,22 @@ registerForm.addEventListener("submit", async (e) => {
             }),
         });
 
-        console.log('Raw Response:', response);
         const result = await response.json();
-        console.log('Parsed JSON Response:', result);
 
         if (response.ok) {
+            alert(result.message);
             window.location.href = 'index.html'; 
         } else {
-            if (result.message === 'Admin registration limit reached. Only 1 admin is allowed.') {
-                registerError.textContent = 'Only one admin user is allowed. Please choose a different position.';
-            } else {
-                registerError.textContent = result.message || 'Registration failed. Please try again.';
-            }
-            console.error('Registration failed:', result.message);
+            registerError.textContent = result.message || 'Registration failed. Please try again.';
         }
     } catch (error) {
         registerError.textContent = 'An error occurred. Please try again.';
-        console.error('Fetch error:', error);
     }
 });
+
+function closeModal() {
+    successModal.style.display = "none";
+}
 
 window.togglePassword = (id) => {
     const input = document.getElementById(id);

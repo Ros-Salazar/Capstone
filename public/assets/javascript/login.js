@@ -33,17 +33,16 @@ loginForm.addEventListener("submit", async (e) => {
             }),
         });
 
-        // Check if the response is OK
-        if (!response.ok) {
-            throw new Error('Incorrect credentials, please try again.');
-        }
-
         // Attempt to parse the response as JSON
         const result = await response.json();
         console.log('Parsed JSON Response:', result);
 
+        if (!response.ok) {
+            throw new Error(result.message || 'Incorrect credentials, please try again.');
+        }
+
         // Welcome the user by name
-        alert(`Welcome back, ${result.user.email}!` );
+        alert(`Welcome back, ${result.user.email}!`);
 
         // Store user role in local storage
         localStorage.setItem('userRole', result.user.position);

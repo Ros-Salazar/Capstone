@@ -1,8 +1,14 @@
 document.addEventListener("DOMContentLoaded", function() {
-    fetch('http://127.0.0.1:3000/api/users')
+    fetchUsers();
+    fetchPendingUsers();
+});
+
+function fetchUsers() {
+    fetch('http://127.0.0.1:3000/api/users?status=approved')
         .then(response => response.json())
         .then(data => {
             const usersTable = document.getElementById('users-table');
+            usersTable.innerHTML = ''; // Clear the table first
             data.forEach(user => {
                 const row = document.createElement('tr');
                 
@@ -38,10 +44,69 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         })
         .catch(error => console.error('Error fetching users:', error));
-});
+}
+
+function fetchPendingUsers() {
+    fetch('http://127.0.0.1:3000/api/users?status=pending')
+        .then(response => response.json())
+        .then(data => {
+            const pendingUsersTable = document.getElementById('pending-users-table');
+            pendingUsersTable.innerHTML = ''; // Clear the table first
+            data.forEach(user => {
+                const row = document.createElement('tr');
+
+                row.innerHTML = `
+                    <td>${user.first_name}</td>
+                    <td>${user.last_name}</td>
+                    <td>${user.email}</td>
+                    <td>${user.position}</td>
+                    <td>${new Date(user.created_at).toLocaleString()}</td>
+                    <td>
+                        <button class="button-approve" onclick="approveUser('${user.id}')">Approve</button>
+                        <button class="button-reject" onclick="rejectUser('${user.id}')">Reject</button>
+                    </td>
+                `;
+                pendingUsersTable.appendChild(row);
+            });
+        })
+        .catch(error => console.error('Error fetching pending users:', error));
+}
+
+
+function approveUser(userId) {
+    fetch(`http://127.0.0.1:3000/api/approve-user/${userId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        alert('User approved successfully');
+        fetchUsers();
+        fetchPendingUsers();
+    })
+    .catch(error => console.error('Error approving user:', error));
+}
+
+function rejectUser(userId) {
+    fetch(`http://127.0.0.1:3000/api/users/${userId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert('User rejected and deleted successfully');
+        fetchPendingUsers();
+    })
+    .catch(error => console.error('Error rejecting user:', error));
+}
 
 function accessPrivileges(userId, position, encodedPrivileges) {
-    // Decode the privileges object
     let privileges = {};
     try {
         privileges = JSON.parse(decodeURIComponent(encodedPrivileges));
@@ -53,7 +118,6 @@ function accessPrivileges(userId, position, encodedPrivileges) {
         };
     }
 
-    // Check if privileges is null and set default values if necessary
     if (!privileges) {
         privileges = {
             canViewProjects: true,
@@ -61,18 +125,15 @@ function accessPrivileges(userId, position, encodedPrivileges) {
         };
     }
 
-    // Show the privileges form popup
     const popup = document.getElementById('privileges-popup');
     const form = document.getElementById('privileges-form');
     popup.style.display = 'block';
 
-    // Populate the form with the user's current privileges
     form.privilegesUserId.value = userId;
-    form.position.value = position; // Set the position field
+    form.position.value = position;
     form.canViewProjects.checked = privileges.canViewProjects;
     form.canEditProjects.checked = privileges.canEditProjects;
 
-    // Disable the checkboxes if the user's position is admin or manager
     if (position === 'admin' || position === 'manager') {
         form.canViewProjects.disabled = true;
         form.canEditProjects.disabled = true;
@@ -82,11 +143,12 @@ function accessPrivileges(userId, position, encodedPrivileges) {
     }
 }
 
+
 function closePrivilegesPopup() {
     const popup = document.getElementById('privileges-popup');
     popup.style.display = 'none';
     const form = document.getElementById('privileges-form');
-    form.reset(); // Reset the form to clear previous values
+    form.reset();
 }
 
 function savePrivileges(event) {
@@ -94,9 +156,8 @@ function savePrivileges(event) {
     const form = event.target;
 
     const userId = form.privilegesUserId.value;
-    const position = form.position.value; // Get the position from the hidden field
+    const position = form.position.value;
 
-    // Do not proceed if the user's position is admin or manager
     if (position === 'admin' || position === 'manager') {
         alert('Cannot change privileges for admin or manager.');
         return;
@@ -127,7 +188,6 @@ function updateUserPrivileges(userId, updatedPrivileges) {
     .then(data => {
         alert('Privileges updated successfully');
         closePrivilegesPopup();
-        // Optionally, refresh the user list or update the UI
     })
     .catch(error => console.error('Error updating privileges:', error));
 }
