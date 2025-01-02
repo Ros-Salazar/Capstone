@@ -136,7 +136,7 @@ app.post('/api/register', async (req, res) => {
                     return res.status(400).json({ message: 'Admin registration limit reached. Only 1 admin is allowed.' });
                 }
 
-                // Proceed with user registration with status 'approved'
+                // Proceed with admin user registration with status 'approved'
                 try {
                     const hashedPassword = await bcrypt.hash(password, 10);
                     console.log('Password hashed successfully');
@@ -211,6 +211,7 @@ app.put('/api/approve-user/:id', async (req, res) => {
 });
 
 // Login endpoint
+// Login endpoint
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     console.log('Received login request:', req.body);
@@ -228,7 +229,8 @@ app.post('/api/login', async (req, res) => {
 
         const user = results[0];
 
-        if (user.status !== 'approved') {
+        // Check if the user is approved or is an admin
+        if (user.status !== 'approved' && user.position !== 'admin') {
             console.log('User not approved:', email);
             return res.status(403).json({ message: 'User not approved yet. Please wait for admin approval.' });
         }
