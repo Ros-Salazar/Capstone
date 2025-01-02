@@ -1,4 +1,4 @@
-import { createTable, createAddRowButton } from './domManipulation.js';
+import { createTable, createAddRowButton, createHeaderCell, createCell, createActionCell } from './domManipulation.js';
 
 export async function fetchProjectDetails(projectId) {
     try {
@@ -30,7 +30,7 @@ export async function fetchAndRenderGroups(projectId) {
         for (const group of groups) {
             const table = createTable(group.id, group.name); // Pass group name to createTable
             groupContainer.appendChild(table);
-            createAddRowButton(table, group.id);
+            createAddRowButton(table, group.id, groupContainer); // Ensure groupContainer is passed
 
             // Fetch and render rows for each group
             try {

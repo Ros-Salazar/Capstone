@@ -1,4 +1,4 @@
-import { createTable, setActiveButton } from './domManipulation.js';
+import { createTable, setActiveButton, addRow } from './domManipulation.js';
 import { saveProjectDetails, addGroup } from './apiCalls.js';
 
 export function setupEventListeners({ mainTableBtn, calendarBtn, groupSection, calendarSection, addGroupBtn, groupContainer, projectNameElement, projectDescriptionElement, projectId }) {

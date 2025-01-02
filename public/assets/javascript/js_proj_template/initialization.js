@@ -1,5 +1,5 @@
 import { fetchProjectDetails, fetchAndRenderGroups } from './apiCalls.js';
-import { setActiveButton, createAddRowButton } from './domManipulation.js';
+import { setActiveButton, createAddRowButton, addRow } from './domManipulation.js';
 import { setupEventListeners } from './eventHandlers.js';
 
 document.addEventListener('DOMContentLoaded', async function() {
@@ -49,7 +49,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         groupContainer,
         projectNameElement,
         projectDescriptionElement,
-        projectId
+        projectId,
+        addRow // Pass the addRow function
     });
 
     // Set main table as the default active section on page load

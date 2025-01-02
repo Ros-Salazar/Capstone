@@ -354,7 +354,7 @@ export function createCell(columnId, isNonEditable = false) {
                 const value = cell.textContent.trim();
                 const rowId = cell.closest('tr').dataset.rowId;
                 const cellColumnId = parseInt(cell.dataset.columnId, 10); // Convert columnId to an integer
-                const field = 'Text'; // Set the appropriate field value
+                const field = cell.dataset.field || 'Text'; // Set the appropriate field value
 
                 // Debugging logs
                 console.log('Saving cell data:', { rowId, columnId: cellColumnId, field, value });
