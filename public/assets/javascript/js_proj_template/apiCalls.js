@@ -1,5 +1,4 @@
-import { createTable, createAddRowButton, createHeaderCell, createCell, createActionCell } from './domManipulation.js';
-
+import { createTable, createAddRowButton, createHeaderCell, createCell, createActionCell, addColumn, addRow} from './domManipulation.js';
 export async function fetchProjectDetails(projectId) {
     try {
         const projectResponse = await fetch(`http://127.0.0.1:3000/api/project/${projectId}`);
@@ -112,7 +111,20 @@ export async function addGroup(projectId, groupContainer) {
         const groupId = group.id;
         const table = createTable(groupId, groupName);
         groupContainer.appendChild(table);
-        createAddRowButton(table, groupId);
+        createAddRowButton(table, groupId, groupContainer);
+
+        // Initialize the group with default columns
+        const defaultColumns = ['Text', 'Numbers', 'Status', 'Key Persons', 'Timeline', 'Upload File'];
+        const headerRow = table.querySelector('tr');
+
+        for (const column of defaultColumns) {
+            await addColumn(column, table, headerRow);
+        }
+
+        // Initialize the group with 5 rows
+        for (let i = 0; i < 5; i++) {
+            await addRow(table, headerRow);
+        }
 
     } catch (error) {
         console.error('Error creating group:', error);
