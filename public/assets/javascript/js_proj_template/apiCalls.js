@@ -53,6 +53,7 @@ export async function fetchAndRenderGroups(projectId) {
 
                     table.appendChild(tr);
                 }
+                await fetchCellDataAndRender(group.id, table); // Fetch and render cell data for each row
             } catch (error) {
                 console.error('Error fetching rows:', error);
             }
@@ -167,6 +168,7 @@ export async function fetchCellDataAndRender(groupId, table) {
         const response = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/cell_data`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const cellData = await response.json();
+        
         console.log('Fetched cell data:', cellData);
 
         cellData.forEach(data => {
