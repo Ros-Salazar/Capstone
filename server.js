@@ -315,34 +315,6 @@ app.post('/api/create_project', (req, res) => {
         });
     });
 
-// Archive project route
-app.put('/api/archive_project/:id', async (req, res) => {
-    const projectId = req.params.id;
-    const { group } = req.body;
-
-    try {
-        const query = 'UPDATE projects SET project_group = ? WHERE project_id = ?';
-        const values = [group, projectId];
-
-        db.query(query, values, (err, result) => {
-            if (err) {
-                console.error('Database update error:', err);
-                return res.status(500).json({ message: 'Internal server error', error: err });
-            }
-
-            if (result.affectedRows === 0) {
-                console.log(`No project found with ID: ${projectId}`);
-                return res.status(404).json({ message: 'Project not found' });
-            }
-
-            console.log(`Project with ID: ${projectId} archived successfully`);
-            res.json({ message: 'Project archived successfully' });
-        });
-    } catch (error) {
-        console.error('Error archiving project:', error);
-        res.status(500).json({ message: 'Internal server error', error });
-    }
-});
 // Fetch project details endpoint
 app.get('/api/project/:id', (req, res) => {
     const projectId = req.params.id;
@@ -594,6 +566,33 @@ app.post('/api/proj_groups', (req, res) => {
             res.status(200).json({ message: 'Column name updated successfully' });
         });
     });
+
+
+// Archive project endpoint
+app.put('/api/archive_project/:projectId', (req, res) => {
+    const projectId = req.params.projectId;
+    const query = 'UPDATE projects SET archived = TRUE WHERE project_id = ?';
+    db.query(query, [projectId], (err, result) => {
+        if (err) {
+            console.error('Database update error:', err);
+            return res.status(500).json({ message: 'Server error during project update', error: err });
+        }
+        res.status(200).json({ message: 'Project archived successfully' });
+    });
+});
+
+// Unarchive project endpoint
+app.put('/api/unarchive_project/:projectId', (req, res) => {
+    const projectId = req.params.projectId;
+    const query = 'UPDATE projects SET archived = FALSE WHERE project_id = ?';
+    db.query(query, [projectId], (err, result) => {
+        if (err) {
+            console.error('Database update error:', err);
+            return res.status(500).json({ message: 'Server error during project update', error: err });
+        }
+        res.status(200).json({ message: 'Project unarchived successfully' });
+    });
+});
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);

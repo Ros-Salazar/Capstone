@@ -43,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch projects from the database when the page loads
     const fetchProjects = async () => {
         try {
-            console.log('Fetching projects...');
             const response = await fetch('http://127.0.0.1:3000/api/projects');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -55,9 +54,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 location: project.project_location,
                 description: project.project_description,
                 completion: project.project_completion || '0%',
-                group: 'default'
+                archived: project.archived || false
             }));
-            console.log('Projects fetched:', projects);
             loadProjects();
         } catch (error) {
             console.error('Fetch error:', error);
@@ -105,14 +103,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const result = await response.json();
-            console.log('Project creation response:', result);
 
             const project = {
                 id: result.projectId,
                 name: projectName,
                 location: location,
                 description: description,
-                group: 'default',
+                archived: false,
                 completion: '0%',
             };
 
@@ -138,35 +135,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const populateNavigationPane = () => {
         projectList.innerHTML = ''; // Clear existing items
         projects.forEach((project) => {
-            const li = document.createElement('li');
-            li.textContent = project.name;
-            li.className = project.group;
-            li.addEventListener('click', () => openProject(project.id));
-            projectList.appendChild(li);
+            if (!project.archived) {
+                const li = document.createElement('li');
+                li.textContent = project.name;
+                li.addEventListener('click', () => openProject(project.id));
+                projectList.appendChild(li);
+            }
         });
-    };
-
-    // Archive Project
-    const archiveProject = (projectId) => {
-        console.log(`Archiving project with ID: ${projectId}`); // Debugging line
-        const project = projects.find((p) => p.id === projectId);
-        if (project) {
-            project.group = 'archived';
-            console.log(`Project with ID: ${projectId} archived`); // Debugging line
-            loadProjects();
-        } else {
-            console.error(`Project with ID: ${projectId} not found`);
-        }
     };
 
     // Load Projects
     const loadProjects = () => {
         projectContainer.innerHTML = ''; // Clear existing projects
-        archivedProjectsContainer.innerHTML = ''; // Clear existing archived projects
-        
+        archivedProjectsContainer.innerHTML = ''; // Clear archived projects
+
         projects.forEach((project) => {
             const projectBox = document.createElement('div');
-            projectBox.classList.add('project-box', project.group);
+            projectBox.classList.add('project-box');
             projectBox.setAttribute('data-id', project.id);
             projectBox.innerHTML = `
                 <div class="project-options">
@@ -178,10 +163,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p class="completion-text">${project.completion} COMPLETED</p>
                 <i class="fas fa-pencil-alt edit-icon"></i>
             `;
-    
+
             // Add click event for redirecting to project template
             projectBox.addEventListener('click', () => openProject(project.id));
-    
+
             // Add click event for editing project
             projectBox.querySelector('.edit-icon').addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -191,15 +176,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('edit-description').value = project.description;
                 editPopupWindow.style.display = 'flex';
             });
-    
+
             // Add delete functionality
             projectBox.querySelector('.delete-icon').addEventListener('click', async (e) => {
                 e.stopPropagation();
-                e.preventDefault(); // Prevent default action
+                e.preventDefault();
                 const projectId = projectBox.getAttribute('data-id');
-                console.log(`Deleting project with ID: ${projectId}`);
-            
-                // Make a delete request to the server
                 try {
                     const response = await fetch(`http://127.0.0.1:3000/api/delete_project/${projectId}`, {
                         method: 'DELETE',
@@ -207,71 +189,67 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
-                    console.log('Project deleted successfully');
-            
-                    // Remove the project from the projects array
                     projects = projects.filter((p) => p.id !== projectId);
-            
-                    // Remove the project element from the DOM
                     projectBox.remove();
-            
-                    // Update the noProjectsText display
                     if (projects.length === 0) {
                         noProjectsText.style.display = 'block';
                     }
-            
                 } catch (error) {
                     console.error('Deletion error:', error);
                     alert(`Error deleting project: ${error.message}`);
                 }
             });
-    
+
             // Add archive functionality
-            projectBox.querySelector('.archive-icon').addEventListener('click', (e) => {
+            projectBox.querySelector('.archive-icon').addEventListener('click', async (e) => {
                 e.stopPropagation();
-                e.preventDefault(); // Prevent default action
+                e.preventDefault();
                 const projectId = projectBox.getAttribute('data-id');
-                console.log(`Archiving project with ID: ${projectId}`); // Add this line to confirm the event listener is working
-                archiveProject(projectId);
+                try {
+                    const response = await fetch(`http://127.0.0.1:3000/api/archive_project/${projectId}`, {
+                        method: 'PUT',
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const project = projects.find((p) => p.id === projectId);
+                    if (project) {
+                        project.archived = true;
+                        loadProjects();
+                    }
+                } catch (error) {
+                    console.error('Archive error:', error);
+                    alert(`Error archiving project: ${error.message}`);
+                }
             });
-    
-            if (project.group === 'default') {
+
+            if (!project.archived) {
                 projectContainer.appendChild(projectBox);
-            } else if (project.group === 'archived') {
+            } else {
                 archivedProjectsContainer.appendChild(projectBox);
             }
         });
-    
+
         noProjectsText.style.display = projectContainer.children.length ? 'none' : 'block';
     };
 
     // Edit Project
     editProjectForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-    
+
         const updatedProjectName = document.getElementById('edit-project-name').value;
         const updatedLocation = document.getElementById('edit-location').value;
         const updatedDescription = document.getElementById('edit-description').value;
-    
+
         const projectId = currentProjectBox.getAttribute('data-id');
         const project = projects.find((p) => p.id === projectId);
-    
+
         if (project) {
-            console.log('Updating project:', project);
-    
             project.name = updatedProjectName;
             project.location = updatedLocation;
             project.description = updatedDescription;
-    
-            // Make an update request to the server
+
             try {
-                console.log('Sending update request:', {
-                    projectId,
-                    updatedProjectName,
-                    updatedLocation,
-                    updatedDescription
-                });
-    
                 const response = await fetch(`http://127.0.0.1:3000/api/update_project/${projectId}`, {
                     method: 'PUT',
                     headers: {
@@ -283,26 +261,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         project_description: updatedDescription,
                     }),
                 });
-    
+
                 if (!response.ok) {
                     const errorData = await response.json();
                     throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
                 }
-    
-                const result = await response.json();
-                console.log('Project update response:', result);
-    
-                // Update the project box display
+
                 currentProjectBox.querySelector('h3').textContent = updatedProjectName;
                 currentProjectBox.querySelector('p').textContent = updatedLocation;
-    
-                // Hide the edit popup
                 editPopupWindow.style.display = 'none';
                 editProjectForm.reset();
-    
-                // Reload the projects to reflect the changes
                 loadProjects();
-    
             } catch (error) {
                 console.error('Update error:', error);
                 alert(`Error updating project: ${error.message}`);
