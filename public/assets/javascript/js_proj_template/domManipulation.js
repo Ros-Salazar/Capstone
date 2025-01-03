@@ -307,9 +307,7 @@ export async function addRow(table, headerRow) {
         const response = await fetch('http://127.0.0.1:3000/api/group_rows', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                group_id: groupId,
-            }),
+            body: JSON.stringify({ group_id: groupId }),
         });
 
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
