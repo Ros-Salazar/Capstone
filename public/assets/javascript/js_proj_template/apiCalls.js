@@ -1,4 +1,5 @@
-import { createTable, createAddRowButton, createHeaderCell, createCell, createActionCell, addColumn, addRow } from './domManipulation.js';
+import { createTable, createAddRowButton, createHeaderCell, createCell, createActionCell } from './domManipulation.js';
+
 export async function fetchProjectDetails(projectId) {
     try {
         const projectResponse = await fetch(`http://127.0.0.1:3000/api/project/${projectId}`);
@@ -25,7 +26,6 @@ export async function fetchAndRenderGroups(projectId) {
             throw new Error(`HTTP error! status: ${groupsResponse.status}`);
         }
         const groups = await groupsResponse.json();
-        console.log('Fetched groups:', groups);//log the fetched groups
 
         for (const group of groups) {
             const table = createTable(group.id, group.name); // Pass group name to createTable
@@ -39,7 +39,6 @@ export async function fetchAndRenderGroups(projectId) {
                     throw new Error(`HTTP error! status: ${rowsResponse.status}`);
                 }
                 const rows = await rowsResponse.json();
-                console.log('Fetched rows for group: ', group.id, rows); // Add logging
 
                 for (const row of rows) {
                     const headerRow = table.rows[0];
@@ -53,7 +52,6 @@ export async function fetchAndRenderGroups(projectId) {
 
                     table.appendChild(tr);
                 }
-                await fetchCellDataAndRender(group.id, table); // Fetch and render cell data for each row
             } catch (error) {
                 console.error('Error fetching rows:', error);
             }
@@ -114,23 +112,7 @@ export async function addGroup(projectId, groupContainer) {
         const groupId = group.id;
         const table = createTable(groupId, groupName);
         groupContainer.appendChild(table);
-        createAddRowButton(table, groupId, groupContainer);
-
-        // Initialize the group with default columns
-        const defaultColumns = ['Text', 'Numbers', 'Status', 'Key Persons', 'Timeline', 'Upload File'];
-        const headerRow = table.querySelector('tr');
-
-        for (const column of defaultColumns) {
-            await addColumn(column, table, headerRow);
-        }
-
-        // Initialize the group with 5 rows
-        for (let i = 0; i < 5; i++) {
-            await addRow(table, headerRow);
-        }
-
-        // Fetch and render cell data for the group
-        await fetchCellDataAndRender(groupId, table);
+        createAddRowButton(table, groupId);
 
     } catch (error) {
         console.error('Error creating group:', error);
@@ -168,30 +150,20 @@ export async function fetchCellDataAndRender(groupId, table) {
         const response = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/cell_data`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const cellData = await response.json();
-        
-        console.log('Fetched cell data:', cellData);
+        console.log('Fetched cell data:', cellData); // Add logging
 
         cellData.forEach(data => {
             const row = table.querySelector(`tr[data-row-id="${data.row_id}"]`);
-            if (!row) {
-                console.error(`Row with ID ${data.row_id} not found`);
-                return;
-            }
-            let cell = row.querySelector(`td[data-column-id="${data.column_id}"]`);
-            if (!cell) {
-                cell = createCell(data.column_id);
-                row.appendChild(cell);
-            }
-            if (cell.dataset.field === 'Upload') {
-                const downloadLink = document.createElement('a');
-                downloadLink.href = data.value;
-                downloadLink.textContent = 'Download';
-                cell.appendChild(downloadLink);
-                cell.contentEditable = false; // Upload cells are not editable
-            } else {
-                cell.textContent = data.value; // Set the cell data
-                cell.contentEditable = true; // Ensure the cell remains editable
-                cell.dataset.columnId = data.column_id; // Ensure the columnId is set correctly
+            const cell = row.querySelector(`td[data-column-id="${data.column_id}"]`);
+            if (cell) {
+                if (cell.dataset.field === 'Upload') {
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = data.value;
+                    downloadLink.textContent = 'Download';
+                    cell.appendChild(downloadLink);
+                } else {
+                    cell.textContent = data.value; // Set the cell data
+                }
             }
         });
     } catch (error) {
