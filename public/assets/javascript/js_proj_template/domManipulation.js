@@ -551,3 +551,4 @@ export function createInput(type, placeholder = '') {
 export function syncDateToCalendar(dateValue) {
     console.log('Synchronizing date to calendar:', dateValue);
 }
+

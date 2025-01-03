@@ -25,6 +25,7 @@ export async function fetchAndRenderGroups(projectId) {
             throw new Error(`HTTP error! status: ${groupsResponse.status}`);
         }
         const groups = await groupsResponse.json();
+        console.log('Fetched groups:', groups);//log the fetched groups
 
         for (const group of groups) {
             const table = createTable(group.id, group.name); // Pass group name to createTable
@@ -38,6 +39,7 @@ export async function fetchAndRenderGroups(projectId) {
                     throw new Error(`HTTP error! status: ${rowsResponse.status}`);
                 }
                 const rows = await rowsResponse.json();
+                console.log('Fetched rows for group: ', group.id, rows); // Add logging
 
                 for (const row of rows) {
                     const headerRow = table.rows[0];
