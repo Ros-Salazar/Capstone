@@ -110,12 +110,20 @@ export function createHeaderRow(table, groupId, groupName) {
     plusHeader.appendChild(columnDropdownMenu);
     headerRow.appendChild(plusHeader);
 
-    // Disable input for the plus-header column cells
-    table.querySelectorAll('tr').forEach((row, index) => {
-        if (index === 0) return; // Skip the header row
-        const cell = row.insertCell(-1); // Add a new cell at the end of each row
-        cell.style.pointerEvents = 'none'; // Disable input for this cell
-    });
+    // Hide the fixed column and plus header for staff users
+    const userRole = localStorage.getItem('userRole');
+    if (userRole === 'staff') {
+        fixedColumnHeader.style.display = 'none';
+        plusHeader.style.cursor = 'not-allowed'; // Change cursor to indicate no action
+        // Hide plus-header column cells for staff users
+        table.querySelectorAll('tr').forEach((row, index) => {
+            if (index === 0) return; // Skip the header row
+            const plusColumnCell = row.querySelector('.plus-header');
+            if (plusColumnCell) {
+                plusColumnCell.style.display = 'none';
+            }
+        });
+    }
 
     return headerRow;
 }
@@ -159,6 +167,13 @@ export function createActionCell(row) {
     dropdownMenu.appendChild(deleteOption);
     cell.appendChild(dropdownBtn);
     cell.appendChild(dropdownMenu);
+
+    // Hide the fixed column for staff users
+    const userRole = localStorage.getItem('userRole');
+    if (userRole === 'staff') {
+        cell.style.display = 'none';
+    }
+
     return cell;
 }
 
@@ -246,6 +261,15 @@ export async function addColumn(option, table, headerRow) {
             row.insertBefore(newCell, row.lastChild);
         });
 
+        // Hide the plus-header column and its cells for staff users
+        const userRole = localStorage.getItem('userRole');
+        if (userRole === 'staff') {
+            newHeader.style.display = 'none';
+            Array.from(table.rows).forEach(row => {
+                row.cells[row.cells.length - 1].style.display = 'none';
+            });
+        }
+
     } catch (error) {
         console.error('Error adding column:', error);
     }
@@ -264,6 +288,15 @@ export async function addTimelineColumns(table, headerRow) {
             const dateInput = dateCell.querySelector('input[type="date"]');
             dateInput.addEventListener('change', () => syncDateToCalendar(dateInput.value));
         });
+
+        // Hide the plus-header column and its cells for staff users
+        const userRole = localStorage.getItem('userRole');
+        if (userRole === 'staff') {
+            newHeader.style.display = 'none';
+            Array.from(table.rows).forEach(row => {
+                row.cells[row.cells.length - 1].style.display = 'none';
+            });
+        }
     });
 }
 
@@ -293,6 +326,16 @@ export async function addRow(table, headerRow) {
 
         table.appendChild(tr);
 
+        // Hide the plus-header column and its cells for staff users
+        const userRole = localStorage.getItem('userRole');
+        if (userRole === 'staff') {
+            Array.from(tr.cells).forEach(cell => {
+                if (cell.className === 'plus-column') {
+                    cell.style.display = 'none';
+                }
+            });
+        }
+
     } catch (error) {
         console.error('Error adding row:', error);
     }
@@ -302,132 +345,19 @@ export function createCell(columnId, isNonEditable = false) {
     const cell = document.createElement('td');
     cell.dataset.columnId = columnId; // Ensure columnId is stored as a data attribute
 
-    // Map the columnId to the corresponding field type
-    const fieldTypeMap = {
-        1: 'Text', // Update these mappings according to your schema
-        2: 'Numbers',
-        3: 'Status',
-        4: 'Key Persons',
-        5: 'Timeline',
-        6: 'Upload File'
-    };
-
-    // Set the data-field attribute based on columnId
-    cell.dataset.field = fieldTypeMap[columnId] || 'Text';
-
-    // Disable editing for non-editable cells
     if (isNonEditable) {
         cell.contentEditable = false;
-        cell.style.pointerEvents = 'none'; // Disable pointer events to prevent input
-        cell.style.backgroundColor = '#f0f0f0'; // Optional: style to indicate non-editable
+        cell.style.pointerEvents = 'none';
+        cell.style.backgroundColor = '#f0f0f0';
     } else {
         const userRole = localStorage.getItem('userRole');
-        if (userRole === 'staff' && columnId !== 1 && columnId !== 6) { // Assuming text columnId is 1 and upload columnId is 6
+        if (userRole === 'staff' && columnId !== 'Text' && columnId !== 'Upload') {
             cell.contentEditable = false;
-            cell.style.pointerEvents = 'none'; // Disable pointer events to prevent input
-            cell.style.backgroundColor = '#f0f0f0'; // Optional: style to indicate non-editable
+            cell.style.pointerEvents = 'none';
+            cell.style.backgroundColor = '#f0f0f0';
         } else {
-            if (columnId === 3) { // Assuming status columnId is 3
-                const select = document.createElement('select');
-                const options = ['Not started', 'In progress', 'Done'];
-                options.forEach(option => {
-                    const optionElement = document.createElement('option');
-                    optionElement.value = option;
-                    optionElement.textContent = option;
-                    select.appendChild(optionElement);
-                });
-                cell.appendChild(select);
-
-                select.addEventListener('change', async function () {
-                    const value = select.value;
-                    const rowId = cell.closest('tr').dataset.rowId;
-                    const cellColumnId = parseInt(cell.dataset.columnId, 10);
-                    const field = cell.dataset.field;
-
-                    console.log('Saving cell data:', { rowId, columnId: cellColumnId, field, value });
-
-                    if (!rowId || isNaN(cellColumnId) || !field) {
-                        console.error('Row ID, Column ID, or Field is missing or invalid');
-                        return;
-                    }
-
-                    try {
-                        const response = await fetch('http://127.0.0.1:3000/api/cell_data', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                row_id: rowId,
-                                column_id: cellColumnId,
-                                field: field,
-                                value: value,
-                            }),
-                        });
-
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
-                        }
-
-                        const result = await response.json();
-                        console.log('Cell data saved:', result);
-                    } catch (error) {
-                        console.error('Error saving cell data:', error);
-                    }
-                });
-            } else if (columnId === 5) { // Assuming timeline columnId is 5
-                const startDateInput = document.createElement('input');
-                startDateInput.type = 'date';
-                startDateInput.placeholder = 'Start Date';
-
-                const dueDateInput = document.createElement('input');
-                dueDateInput.type = 'date';
-                dueDateInput.placeholder = 'Due Date';
-
-                cell.appendChild(startDateInput);
-                cell.appendChild(dueDateInput);
-
-                startDateInput.addEventListener('change', saveTimeline);
-                dueDateInput.addEventListener('change', saveTimeline);
-
-                async function saveTimeline() {
-                    const startDate = startDateInput.value;
-                    const dueDate = dueDateInput.value;
-                    const rowId = cell.closest('tr').dataset.rowId;
-                    const cellColumnId = parseInt(cell.dataset.columnId, 10);
-                    const field = cell.dataset.field;
-
-                    console.log('Saving timeline data:', { rowId, columnId: cellColumnId, field, startDate, dueDate });
-
-                    if (!rowId || isNaN(cellColumnId) || !field) {
-                        console.error('Row ID, Column ID, or Field is missing or invalid');
-                        return;
-                    }
-
-                    try {
-                        const response = await fetch('http://127.0.0.1:3000/api/cell_data', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                row_id: rowId,
-                                column_id: cellColumnId,
-                                field: field,
-                                start_date: startDate,
-                                due_date: dueDate,
-                            }),
-                        });
-
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
-                        }
-
-                        const result = await response.json();
-                        console.log('Timeline data saved:', result);
-                    } catch (error) {
-                        console.error('Error saving timeline data:', error);
-                    }
-                }
-            } else if (columnId === 6) { // Assuming upload columnId is 6
+            cell.contentEditable = true;
+            if (columnId === 'Upload') {
                 const inputFile = document.createElement('input');
                 inputFile.type = 'file';
                 cell.appendChild(inputFile);
@@ -458,22 +388,11 @@ export function createCell(columnId, isNonEditable = false) {
                     }
                 });
             } else {
-                cell.contentEditable = true;
                 cell.addEventListener('blur', async function () {
-                    let value = cell.textContent.trim();
+                    const value = cell.textContent.trim();
                     const rowId = cell.closest('tr').dataset.rowId;
-                    const cellColumnId = parseInt(cell.dataset.columnId, 10);
-                    const field = cell.dataset.field; 
-
-                    // Input validation for Numbers field
-                    if (field === 'Numbers') {
-                        if (!/^\d+$/.test(value)) {
-                            alert("Please enter a valid integer.");
-                            cell.textContent = ''; // Clear the invalid input
-                            return;
-                        }
-                        value = parseInt(value, 10); // Ensure value is an integer
-                    }
+                    const cellColumnId = parseInt(cell.dataset.columnId, 10); // Convert columnId to an integer
+                    const field = cell.dataset.field || 'Text'; // Set the appropriate field value
 
                     console.log('Saving cell data:', { rowId, columnId: cellColumnId, field, value });
 
@@ -488,8 +407,8 @@ export function createCell(columnId, isNonEditable = false) {
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 row_id: rowId,
-                                column_id: cellColumnId,
-                                field: field,
+                                column_id: cellColumnId, // Use the correct column_id
+                                field: field, // Include the field value
                                 value: value,
                             }),
                         });
@@ -501,6 +420,7 @@ export function createCell(columnId, isNonEditable = false) {
 
                         const result = await response.json();
                         console.log('Cell data saved:', result);
+
                     } catch (error) {
                         console.error('Error saving cell data:', error);
                     }

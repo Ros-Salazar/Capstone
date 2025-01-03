@@ -188,6 +188,7 @@ function updateUserPrivileges(userId, updatedPrivileges) {
     .then(data => {
         alert('Privileges updated successfully');
         closePrivilegesPopup();
+        location.reload();
     })
     .catch(error => console.error('Error updating privileges:', error));
 }
@@ -239,12 +240,13 @@ function saveEdits(event) {
     .then(data => {
         alert('User updated successfully');
         closePopup();
-        location.reload();
     })
     .catch(error => {
         console.error('Error updating user:', error);
         alert(error.message);
     });
+    
+    location.reload();
 }
 
 function deleteAccount(userId) {
@@ -255,8 +257,8 @@ function deleteAccount(userId) {
         .then(response => response.json())
         .then(data => {
             alert('User deleted successfully');
-            location.reload();
         })
         .catch(error => console.error('Error deleting user:', error));
     }
+    location.reload();
 }

@@ -11,8 +11,6 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Middleware to parse JSON bodies
-app.use(express.json());
 
 // Fetch all users endpoint with optional status filter
 app.get('/api/users', (req, res) => {
@@ -263,17 +261,17 @@ app.post('/api/create_project', (req, res) => {
     });
 });
 
-    // Fetch projects endpoint
-    app.get('/api/projects', (req, res) => {
-        const query = 'SELECT project_id, project_name, project_location, project_description, project_completion, created_at FROM projects';
-        db.query(query, (err, results) => {
-            if (err) {
-                console.error('Database fetch error:', err);
-                return res.status(500).json({ message: 'Server error during project fetch', error: err });
-            }
-            res.status(200).json(results);
-        });
+// Fetch projects endpoint
+app.get('/api/projects', (req, res) => {
+    const query = 'SELECT project_id, project_name, project_location, project_description, project_completion, archived, created_at FROM projects';
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Database fetch error:', err);
+            return res.status(500).json({ message: 'Server error during project fetch', error: err });
+        }
+        res.status(200).json(results);
     });
+});
 
     
     // Delete project endpoint
@@ -330,6 +328,39 @@ app.get('/api/project/:id', (req, res) => {
         res.status(200).json(results[0]);
     });
 });
+// Archive project endpoint
+app.put('/api/archive_project/:projectId', (req, res) => {
+    const projectId = req.params.projectId;
+    const query = 'UPDATE projects SET archived = TRUE WHERE project_id = ?';
+    db.query(query, [projectId], (err, result) => {
+        if (err) {
+            console.error('Database update error:', err); // Log the error
+            return res.status(500).json({ message: 'Server error during project update', error: err });
+        }
+        if (result.affectedRows === 0) {
+            console.error('No project found with the given ID.'); // Log if no project is found
+            return res.status(404).json({ message: 'Project not found.' });
+        }
+        res.status(200).json({ message: 'Project archived successfully' });
+    });
+});
+// Unarchive project endpoint
+app.put('/api/unarchive_project/:projectId', (req, res) => {
+    const projectId = req.params.projectId;
+    const query = 'UPDATE projects SET archived = FALSE WHERE project_id = ?';
+    db.query(query, [projectId], (err, result) => {
+        if (err) {
+            console.error('Database update error:', err); // Log the error
+            return res.status(500).json({ message: 'Server error during project update', error: err });
+        }
+        if (result.affectedRows === 0) {
+            console.error('No project found with the given ID.'); // Log if no project is found
+            return res.status(404).json({ message: 'Project not found.' });
+        }
+        res.status(200).json({ message: 'Project unarchived successfully' });
+    });
+});
+
 // Create a group
 app.post('/api/proj_groups', (req, res) => {
     const { project_id, name } = req.body;
@@ -390,12 +421,12 @@ app.post('/api/proj_groups', (req, res) => {
     app.post('/api/cell_data', (req, res) => {
         const { row_id, column_id, field, value } = req.body;
         console.log('Received cell data save request:', { row_id, column_id, field, value }); // Debug log
-    
+
         if (!row_id || !column_id || !field || value === undefined) {
             console.error('Missing parameters:', { row_id, column_id, field, value }); // Debug log
             return res.status(400).json({ message: 'Row ID, column ID, field, and value are required' });
         }
-    
+
         const query = `
             INSERT INTO cell_data (row_id, column_id, field, value)
             VALUES (?, ?, ?, ?)
@@ -407,32 +438,6 @@ app.post('/api/proj_groups', (req, res) => {
                 return res.status(500).json({ message: 'Server error during cell data save', error: err });
             }
             console.log('Cell data saved successfully:', results); // Debug log
-            res.status(200).json({ message: 'Cell data saved successfully' });
-        });
-    });
-
-    // Endpoint to save cell data
-    app.post('/api/cell_data', (req, res) => {
-        const { row_id, column_id, field, value, start_date, due_date } = req.body;
-        console.log('Received cell data save request:', { row_id, column_id, field, value, start_date, due_date });
-
-        if (!row_id || !column_id || !field || (value === undefined && !start_date && !due_date)) {
-            console.error('Missing parameters:', { row_id, column_id, field, value, start_date, due_date });
-            return res.status(400).json({ message: 'Row ID, column ID, field, and value/start_date/due_date are required' });
-        }
-
-        const query = `
-            INSERT INTO cell_data (row_id, column_id, field, value, start_date, due_date)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE value = VALUES(value), start_date = VALUES(start_date), due_date = VALUES(due_date), field = VALUES(field)
-        `;
-
-        db.query(query, [row_id, column_id, field, value, start_date, due_date], (err, results) => {
-            if (err) {
-                console.error('Database insert/update error:', err);
-                return res.status(500).json({ message: 'Server error during cell data save', error: err });
-            }
-            console.log('Cell data saved successfully:', results);
             res.status(200).json({ message: 'Cell data saved successfully' });
         });
     });
@@ -568,29 +573,21 @@ app.post('/api/proj_groups', (req, res) => {
     });
 
 
-// Archive project endpoint
-app.put('/api/archive_project/:projectId', (req, res) => {
-    const projectId = req.params.projectId;
-    const query = 'UPDATE projects SET archived = TRUE WHERE project_id = ?';
-    db.query(query, [projectId], (err, result) => {
+// Fetch user profile endpoint
+app.get('/api/user/profile', (req, res) => {
+    const userEmail = req.query.email; // Assume email is passed as a query parameter
+    if (!userEmail) {
+        return res.status(400).json({ message: 'Email is required' });
+    }
+    const query = 'SELECT first_name, last_name, email, position FROM users WHERE email = ?';
+    db.query(query, [userEmail], (err, results) => {
         if (err) {
-            console.error('Database update error:', err);
-            return res.status(500).json({ message: 'Server error during project update', error: err });
+            return res.status(500).json({ message: 'Server error during user profile fetch', error: err });
         }
-        res.status(200).json({ message: 'Project archived successfully' });
-    });
-});
-
-// Unarchive project endpoint
-app.put('/api/unarchive_project/:projectId', (req, res) => {
-    const projectId = req.params.projectId;
-    const query = 'UPDATE projects SET archived = FALSE WHERE project_id = ?';
-    db.query(query, [projectId], (err, result) => {
-        if (err) {
-            console.error('Database update error:', err);
-            return res.status(500).json({ message: 'Server error during project update', error: err });
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
         }
-        res.status(200).json({ message: 'Project unarchived successfully' });
+        res.status(200).json(results[0]);
     });
 });
 
