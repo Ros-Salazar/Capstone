@@ -1,6 +1,7 @@
-import { fetchProjectDetails, fetchAndRenderGroups } from './apiCalls.js';
-import { setActiveButton, createAddRowButton, addRow } from './domManipulation.js';
+import { fetchProjectDetails, fetchAndRenderGroups, addGroup } from './apiCalls.js';
+import { setActiveButton, createTable, createAddRowButton } from './domManipulation.js';
 import { setupEventListeners } from './eventHandlers.js';
+import { fetchAndRenderRows } from './apiCalls.js'; 
 
 document.addEventListener('DOMContentLoaded', async function() {
     // Initialize buttons and sections
@@ -9,7 +10,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const groupSection = document.querySelector('.group-section');
     const calendarSection = document.querySelector('.calendar-section');
     const addGroupBtn = document.getElementById('addGroupBtn');
-    const groupContainer = document.querySelector('.group-container');
+    const groupContainer = document.querySelector('.group-container'); // Ensure this selector matches your HTML
     const projectNameElement = document.getElementById('projectName');
     const projectDescriptionElement = document.getElementById('projectDescription');
 
@@ -39,6 +40,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     await fetchProjectDetails(projectId);
     await fetchAndRenderGroups(projectId);
 
+    // Ensure the default group and rows are created
+    await ensureDefaultGroupAndRows(projectId, groupContainer);
+
     // Setup event listeners
     setupEventListeners({
         mainTableBtn,
@@ -49,8 +53,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         groupContainer,
         projectNameElement,
         projectDescriptionElement,
-        projectId,
-        addRow // Pass the addRow function
+        projectId
     });
 
     // Set main table as the default active section on page load
@@ -58,3 +61,26 @@ document.addEventListener('DOMContentLoaded', async function() {
     calendarSection.classList.remove('active-section');
     setActiveButton('mainTableBtn');
 });
+
+// Function to ensure default group and rows are created
+async function ensureDefaultGroupAndRows(projectId, groupContainer) {
+    try {
+        const response = await fetch(`http://127.0.0.1:3000/api/project/${projectId}/default_group`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const group = await response.json();
+
+        if (group) {
+            console.log('Default group already exists:', group);
+            // Render the existing group and its rows
+            const table = createTable(group.id, group.name);
+            groupContainer.appendChild(table);
+            createAddRowButton(table, group.id, groupContainer);
+            await fetchAndRenderRows(group.id, table);
+        } else {
+            console.log('Creating default group...');
+            await addGroup(projectId, groupContainer, 'Sample Group');
+        }
+    } catch (error) {
+        console.error('Error ensuring default group and rows:', error);
+    }
+}

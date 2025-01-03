@@ -92,11 +92,8 @@ export async function saveProjectDetails(projectId) {
     }
 }
 
-export async function addGroup(projectId, groupContainer) {
+export async function addGroup(projectId, groupContainer, groupName = 'New Group') {
     try {
-        const groupName = prompt("Enter group name:");
-        if (!groupName) return;
-
         const response = await fetch('http://127.0.0.1:3000/api/proj_groups', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -113,12 +110,37 @@ export async function addGroup(projectId, groupContainer) {
         const table = createTable(groupId, groupName);
         groupContainer.appendChild(table);
         createAddRowButton(table, groupId);
+        // Fetch and render the new rows immediately
+        await fetchAndRenderRows(groupId, table);
 
     } catch (error) {
         console.error('Error creating group:', error);
     }
 }
+export async function fetchAndRenderRows(groupId, table) {
+    try {
+        const rowsResponse = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/rows`);
+        if (!rowsResponse.ok) {
+            throw new Error(`HTTP error! status: ${rowsResponse.status}`);
+        }
+        const rows = await rowsResponse.json();
 
+        const headerRow = table.rows[0];
+        for (const row of rows) {
+            const tr = document.createElement('tr');
+            tr.dataset.rowId = row.id;
+
+            Array.from(headerRow.cells).forEach((header, index) => {
+                const cell = index === 0 ? createActionCell(tr) : createCell(header.textContent);
+                tr.appendChild(cell);
+            });
+
+            table.appendChild(tr);
+        }
+    } catch (error) {
+        console.error('Error fetching rows:', error);
+    }
+}
 export async function fetchColumnsAndRender(groupId, table, headerRow) {
     try {
         const response = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/columns`);

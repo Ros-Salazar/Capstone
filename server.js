@@ -11,7 +11,32 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Endpoint to check and create default group and rows
+app.get('/api/project/:projectId/default_group', async (req, res) => {
+    const projectId = req.params.projectId;
+    try {
+        const checkGroupQuery = 'SELECT * FROM proj_groups WHERE project_id = ? AND name = "Sample Group"';
+        const [groupResult] = await db.promise().query(checkGroupQuery, [projectId]);
+        
+        if (groupResult.length > 0) {
+            return res.status(200).json(groupResult[0]);
+        } else {
+            const createGroupQuery = 'INSERT INTO proj_groups (project_id, name) VALUES (?, "Sample Group")';
+            const [newGroupResult] = await db.promise().query(createGroupQuery, [projectId]);
+            const newGroupId = newGroupResult.insertId;
 
+            const createRowQuery = 'INSERT INTO group_rows (group_id) VALUES (?)';
+            await db.promise().query(createRowQuery, [newGroupId]);
+            await db.promise().query(createRowQuery, [newGroupId]);
+
+            const [newGroup] = await db.promise().query(checkGroupQuery, [projectId]);
+            return res.status(201).json(newGroup[0]);
+        }
+    } catch (error) {
+        console.error('Error checking or creating default group:', error);
+        return res.status(500).json({ message: 'Server error checking or creating default group', error });
+    }
+});
 // Fetch all users endpoint with optional status filter
 app.get('/api/users', (req, res) => {
     const status = req.query.status || 'approved';

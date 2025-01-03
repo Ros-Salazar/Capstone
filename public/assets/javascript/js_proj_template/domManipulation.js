@@ -30,7 +30,7 @@ export function createAddRowButton(table, groupId, groupContainer) {
     const userRole = localStorage.getItem('userRole');
     if (userRole === 'staff') {
         addRowBtn.disabled = true;
-        addRowBtn.style.cursor = 'not-allowed'; // Change cursor to indicate action is not allowed
+        addRowBtn.style.cursor = 'not-allowed';
     } else {
         addRowBtn.addEventListener('click', () => addRow(table, table.rows[0]));
     }
