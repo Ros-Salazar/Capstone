@@ -287,7 +287,7 @@ export async function addRow(table, headerRow) {
         tr.dataset.rowId = rowId;
 
         Array.from(headerRow.cells).forEach((header, index) => {
-            const cell = index === 0 ? createActionCell(tr) : createCell(header.textContent);
+            const cell = index === 0 ? createActionCell(tr) : createCell(header.dataset.columnId);
             tr.appendChild(cell);
         });
 
@@ -302,92 +302,210 @@ export function createCell(columnId, isNonEditable = false) {
     const cell = document.createElement('td');
     cell.dataset.columnId = columnId; // Ensure columnId is stored as a data attribute
 
+    // Map the columnId to the corresponding field type
+    const fieldTypeMap = {
+        1: 'Text', // Update these mappings according to your schema
+        2: 'Numbers',
+        3: 'Status',
+        4: 'Key Persons',
+        5: 'Timeline',
+        6: 'Upload File'
+    };
+
+    // Set the data-field attribute based on columnId
+    cell.dataset.field = fieldTypeMap[columnId] || 'Text';
+
     // Disable editing for non-editable cells
     if (isNonEditable) {
         cell.contentEditable = false;
         cell.style.pointerEvents = 'none'; // Disable pointer events to prevent input
         cell.style.backgroundColor = '#f0f0f0'; // Optional: style to indicate non-editable
     } else {
-        // Check user role
         const userRole = localStorage.getItem('userRole');
-        if (userRole === 'staff') {
-            if (columnId !== 'Text' && columnId !== 'Upload') {
-                cell.contentEditable = false;
-                cell.style.pointerEvents = 'none'; // Disable pointer events to prevent input
-                cell.style.backgroundColor = '#f0f0f0'; // Optional: style to indicate non-editable
-            } else {
-                cell.contentEditable = true;
-                if (columnId === 'Upload') {
-                    const inputFile = createInput('file');
-                    cell.appendChild(inputFile);
-                    inputFile.addEventListener('change', async function () {
-                        const file = inputFile.files[0];
-                        if (file) {
-                            const formData = new FormData();
-                            formData.append('file', file);
-                            formData.append('column_id', columnId);
-                            formData.append('row_id', cell.closest('tr').dataset.rowId);
-
-                            try {
-                                const response = await fetch('http://127.0.0.1:3000/api/upload_file', {
-                                    method: 'POST',
-                                    body: formData
-                                });
-
-                                if (!response.ok) {
-                                    const errorData = await response.json();
-                                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
-                                }
-
-                                const result = await response.json();
-                                console.log('File uploaded:', result);
-                            } catch (error) {
-                                console.error('Error uploading file:', error);
-                            }
-                        }
-                    });
-                }
-            }
+        if (userRole === 'staff' && columnId !== 1 && columnId !== 6) { // Assuming text columnId is 1 and upload columnId is 6
+            cell.contentEditable = false;
+            cell.style.pointerEvents = 'none'; // Disable pointer events to prevent input
+            cell.style.backgroundColor = '#f0f0f0'; // Optional: style to indicate non-editable
         } else {
-            cell.contentEditable = true;
-            cell.addEventListener('blur', async function () {
-                const value = cell.textContent.trim();
-                const rowId = cell.closest('tr').dataset.rowId;
-                const cellColumnId = parseInt(cell.dataset.columnId, 10); // Convert columnId to an integer
-                const field = cell.dataset.field || 'Text'; // Set the appropriate field value
+            if (columnId === 3) { // Assuming status columnId is 3
+                const select = document.createElement('select');
+                const options = ['Not started', 'In progress', 'Done'];
+                options.forEach(option => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option;
+                    optionElement.textContent = option;
+                    select.appendChild(optionElement);
+                });
+                cell.appendChild(select);
 
-                // Debugging logs
-                console.log('Saving cell data:', { rowId, columnId: cellColumnId, field, value });
+                select.addEventListener('change', async function () {
+                    const value = select.value;
+                    const rowId = cell.closest('tr').dataset.rowId;
+                    const cellColumnId = parseInt(cell.dataset.columnId, 10);
+                    const field = cell.dataset.field;
 
-                if (!rowId || isNaN(cellColumnId) || !field) {
-                    console.error('Row ID, Column ID, or Field is missing or invalid');
-                    return;
-                }
+                    console.log('Saving cell data:', { rowId, columnId: cellColumnId, field, value });
 
-                try {
-                    const response = await fetch('http://127.0.0.1:3000/api/cell_data', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            row_id: rowId,
-                            column_id: cellColumnId, // Use the correct column_id
-                            field: field, // Include the field value
-                            value: value,
-                        }),
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+                    if (!rowId || isNaN(cellColumnId) || !field) {
+                        console.error('Row ID, Column ID, or Field is missing or invalid');
+                        return;
                     }
 
-                    const result = await response.json();
-                    console.log('Cell data saved:', result);
+                    try {
+                        const response = await fetch('http://127.0.0.1:3000/api/cell_data', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                row_id: rowId,
+                                column_id: cellColumnId,
+                                field: field,
+                                value: value,
+                            }),
+                        });
 
-                } catch (error) {
-                    console.error('Error saving cell data:', error);
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+                        }
+
+                        const result = await response.json();
+                        console.log('Cell data saved:', result);
+                    } catch (error) {
+                        console.error('Error saving cell data:', error);
+                    }
+                });
+            } else if (columnId === 5) { // Assuming timeline columnId is 5
+                const startDateInput = document.createElement('input');
+                startDateInput.type = 'date';
+                startDateInput.placeholder = 'Start Date';
+
+                const dueDateInput = document.createElement('input');
+                dueDateInput.type = 'date';
+                dueDateInput.placeholder = 'Due Date';
+
+                cell.appendChild(startDateInput);
+                cell.appendChild(dueDateInput);
+
+                startDateInput.addEventListener('change', saveTimeline);
+                dueDateInput.addEventListener('change', saveTimeline);
+
+                async function saveTimeline() {
+                    const startDate = startDateInput.value;
+                    const dueDate = dueDateInput.value;
+                    const rowId = cell.closest('tr').dataset.rowId;
+                    const cellColumnId = parseInt(cell.dataset.columnId, 10);
+                    const field = cell.dataset.field;
+
+                    console.log('Saving timeline data:', { rowId, columnId: cellColumnId, field, startDate, dueDate });
+
+                    if (!rowId || isNaN(cellColumnId) || !field) {
+                        console.error('Row ID, Column ID, or Field is missing or invalid');
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch('http://127.0.0.1:3000/api/cell_data', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                row_id: rowId,
+                                column_id: cellColumnId,
+                                field: field,
+                                start_date: startDate,
+                                due_date: dueDate,
+                            }),
+                        });
+
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+                        }
+
+                        const result = await response.json();
+                        console.log('Timeline data saved:', result);
+                    } catch (error) {
+                        console.error('Error saving timeline data:', error);
+                    }
                 }
-            });
+            } else if (columnId === 6) { // Assuming upload columnId is 6
+                const inputFile = document.createElement('input');
+                inputFile.type = 'file';
+                cell.appendChild(inputFile);
+                inputFile.addEventListener('change', async function () {
+                    const file = inputFile.files[0];
+                    if (file) {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        formData.append('column_id', columnId);
+                        formData.append('row_id', cell.closest('tr').dataset.rowId);
+
+                        try {
+                            const response = await fetch('/api/upload_file', {
+                                method: 'POST',
+                                body: formData
+                            });
+
+                            if (!response.ok) {
+                                const errorData = await response.json();
+                                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+                            }
+
+                            const result = await response.json();
+                            console.log('File uploaded:', result);
+                        } catch (error) {
+                            console.error('Error uploading file:', error);
+                        }
+                    }
+                });
+            } else {
+                cell.contentEditable = true;
+                cell.addEventListener('blur', async function () {
+                    let value = cell.textContent.trim();
+                    const rowId = cell.closest('tr').dataset.rowId;
+                    const cellColumnId = parseInt(cell.dataset.columnId, 10);
+                    const field = cell.dataset.field; 
+
+                    // Input validation for Numbers field
+                    if (field === 'Numbers') {
+                        if (!/^\d+$/.test(value)) {
+                            alert("Please enter a valid integer.");
+                            cell.textContent = ''; // Clear the invalid input
+                            return;
+                        }
+                        value = parseInt(value, 10); // Ensure value is an integer
+                    }
+
+                    console.log('Saving cell data:', { rowId, columnId: cellColumnId, field, value });
+
+                    if (!rowId || isNaN(cellColumnId) || !field) {
+                        console.error('Row ID, Column ID, or Field is missing or invalid');
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch('http://127.0.0.1:3000/api/cell_data', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                row_id: rowId,
+                                column_id: cellColumnId,
+                                field: field,
+                                value: value,
+                            }),
+                        });
+
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+                        }
+
+                        const result = await response.json();
+                        console.log('Cell data saved:', result);
+                    } catch (error) {
+                        console.error('Error saving cell data:', error);
+                    }
+                });
+            }
         }
     }
     return cell;

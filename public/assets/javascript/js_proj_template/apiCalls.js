@@ -1,4 +1,4 @@
-import { createTable, createAddRowButton, createHeaderCell, createCell, createActionCell, addColumn, addRow} from './domManipulation.js';
+import { createTable, createAddRowButton, createHeaderCell, createCell, createActionCell, addColumn, addRow } from './domManipulation.js';
 export async function fetchProjectDetails(projectId) {
     try {
         const projectResponse = await fetch(`http://127.0.0.1:3000/api/project/${projectId}`);
@@ -126,6 +126,9 @@ export async function addGroup(projectId, groupContainer) {
             await addRow(table, headerRow);
         }
 
+        // Fetch and render cell data for the group
+        await fetchCellDataAndRender(groupId, table);
+
     } catch (error) {
         console.error('Error creating group:', error);
     }
@@ -162,20 +165,29 @@ export async function fetchCellDataAndRender(groupId, table) {
         const response = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/cell_data`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const cellData = await response.json();
-        console.log('Fetched cell data:', cellData); // Add logging
+        console.log('Fetched cell data:', cellData);
 
         cellData.forEach(data => {
             const row = table.querySelector(`tr[data-row-id="${data.row_id}"]`);
-            const cell = row.querySelector(`td[data-column-id="${data.column_id}"]`);
-            if (cell) {
-                if (cell.dataset.field === 'Upload') {
-                    const downloadLink = document.createElement('a');
-                    downloadLink.href = data.value;
-                    downloadLink.textContent = 'Download';
-                    cell.appendChild(downloadLink);
-                } else {
-                    cell.textContent = data.value; // Set the cell data
-                }
+            if (!row) {
+                console.error(`Row with ID ${data.row_id} not found`);
+                return;
+            }
+            let cell = row.querySelector(`td[data-column-id="${data.column_id}"]`);
+            if (!cell) {
+                cell = createCell(data.column_id);
+                row.appendChild(cell);
+            }
+            if (cell.dataset.field === 'Upload') {
+                const downloadLink = document.createElement('a');
+                downloadLink.href = data.value;
+                downloadLink.textContent = 'Download';
+                cell.appendChild(downloadLink);
+                cell.contentEditable = false; // Upload cells are not editable
+            } else {
+                cell.textContent = data.value; // Set the cell data
+                cell.contentEditable = true; // Ensure the cell remains editable
+                cell.dataset.columnId = data.column_id; // Ensure the columnId is set correctly
             }
         });
     } catch (error) {

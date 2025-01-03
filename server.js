@@ -11,7 +11,8 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-
+// Middleware to parse JSON bodies
+app.use(express.json());
 
 // Fetch all users endpoint with optional status filter
 app.get('/api/users', (req, res) => {
@@ -136,7 +137,7 @@ app.post('/api/register', async (req, res) => {
                     return res.status(400).json({ message: 'Admin registration limit reached. Only 1 admin is allowed.' });
                 }
 
-                // Proceed with admin user registration with status 'approved'
+                // Proceed with user registration with status 'approved'
                 try {
                     const hashedPassword = await bcrypt.hash(password, 10);
                     console.log('Password hashed successfully');
@@ -211,7 +212,6 @@ app.put('/api/approve-user/:id', async (req, res) => {
 });
 
 // Login endpoint
-// Login endpoint
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     console.log('Received login request:', req.body);
@@ -229,8 +229,7 @@ app.post('/api/login', async (req, res) => {
 
         const user = results[0];
 
-        // Check if the user is approved or is an admin
-        if (user.status !== 'approved' && user.position !== 'admin') {
+        if (user.status !== 'approved') {
             console.log('User not approved:', email);
             return res.status(403).json({ message: 'User not approved yet. Please wait for admin approval.' });
         }
@@ -415,16 +414,16 @@ app.post('/api/proj_groups', (req, res) => {
         });
     });
 
-    // Save cell data
+    // Endpoint to save cell data
     app.post('/api/cell_data', (req, res) => {
-        const { row_id, column_id, field, value } = req.body; // Include field in the request body
+        const { row_id, column_id, field, value } = req.body;
         console.log('Received cell data save request:', { row_id, column_id, field, value }); // Debug log
-
+    
         if (!row_id || !column_id || !field || value === undefined) {
             console.error('Missing parameters:', { row_id, column_id, field, value }); // Debug log
             return res.status(400).json({ message: 'Row ID, column ID, field, and value are required' });
         }
-
+    
         const query = `
             INSERT INTO cell_data (row_id, column_id, field, value)
             VALUES (?, ?, ?, ?)
@@ -439,6 +438,34 @@ app.post('/api/proj_groups', (req, res) => {
             res.status(200).json({ message: 'Cell data saved successfully' });
         });
     });
+
+    // Endpoint to save cell data
+    app.post('/api/cell_data', (req, res) => {
+        const { row_id, column_id, field, value, start_date, due_date } = req.body;
+        console.log('Received cell data save request:', { row_id, column_id, field, value, start_date, due_date });
+
+        if (!row_id || !column_id || !field || (value === undefined && !start_date && !due_date)) {
+            console.error('Missing parameters:', { row_id, column_id, field, value, start_date, due_date });
+            return res.status(400).json({ message: 'Row ID, column ID, field, and value/start_date/due_date are required' });
+        }
+
+        const query = `
+            INSERT INTO cell_data (row_id, column_id, field, value, start_date, due_date)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE value = VALUES(value), start_date = VALUES(start_date), due_date = VALUES(due_date), field = VALUES(field)
+        `;
+
+        db.query(query, [row_id, column_id, field, value, start_date, due_date], (err, results) => {
+            if (err) {
+                console.error('Database insert/update error:', err);
+                return res.status(500).json({ message: 'Server error during cell data save', error: err });
+            }
+            console.log('Cell data saved successfully:', results);
+            res.status(200).json({ message: 'Cell data saved successfully' });
+        });
+    });
+
+
 
     // Fetch all groups for a project
     app.get('/api/project/:projectId/groups', (req, res) => {
@@ -567,64 +594,7 @@ app.post('/api/proj_groups', (req, res) => {
             res.status(200).json({ message: 'Column name updated successfully' });
         });
     });
-// Fetch user profile endpoint
-app.get('/api/user/profile', (req, res) => {
-    const userId = req.session.userId;
-    if (!userId) {
-        return res.status(401).json({ message: 'Unauthorized' });
-    }
 
-    const query = 'SELECT id, first_name, last_name, email, position FROM users WHERE id = ?';
-    db.query(query, [userId], (err, results) => {
-        if (err) {
-            console.error('Error fetching user profile:', err);
-            return res.status(500).json({ message: 'Server error' });
-        }
-        if (results.length === 0) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        res.status(200).json(results[0]);
-    });
-});
-
-// Update user profile endpoint
-app.put('/api/user/profile/:id', (req, res) => {
-    const userId = req.params.id;
-    const { first_name, last_name, email, position, password } = req.body;
-
-    // Hash the password if it's provided
-    let hashedPassword = null;
-    if (password) {
-        hashedPassword = bcrypt.hashSync(password, 10);
-    }
-
-    const query = `
-        UPDATE users 
-        SET first_name = ?, last_name = ?, email = ?, position = ?, user_password = COALESCE(?, user_password)
-        WHERE id = ?`;
-    const values = [first_name, last_name, email, position, hashedPassword, userId];
-
-    db.query(query, values, (err, results) => {
-        if (err) {
-            console.error('Error updating user profile:', err);
-            return res.status(500).json({ message: 'Server error' });
-        }
-        if (results.affectedRows === 0) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        res.status(200).json({ message: 'Profile updated successfully' });
-    });
-});
-// Logout user endpoint
-app.post('/api/logout', (req, res) => {
-    req.session.destroy(err => {
-        if (err) {
-            console.error('Error during logout:', err);
-            return res.status(500).json({ message: 'Failed to log out' });
-        }
-        res.status(200).json({ success: true, message: 'You have been logged out' });
-    });
-});
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
