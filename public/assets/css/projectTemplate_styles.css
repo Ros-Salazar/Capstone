@@ -98,13 +98,56 @@ body {
 }
 
 .group-table th.fixed-column {
-  width: 30px; /* Match this width with the .fixed-column class */
+  width: 30px; /* Adjust width as needed */
   text-align: center;
+  position: sticky;
+  right: 0; /* Align to the right side */
+  z-index: 1;
+}
+
+.group-table th.fixed-column .dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: auto; /* Ensure it stays aligned to the right */
+  right: -100px; /* Align dropdown menu to the right side */
+  background: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  display: none;
+  z-index: 1000;
+  border-radius: 5px; /* Rounded borders */
+}
+.group-table td.fixed-column .dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: auto; /* Ensure it stays aligned to the right */
+  right: -80px; /* Align dropdown menu to the right side */
+  background: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  display: none;
+  z-index: 1000;
+  border-radius: 5px; /* Rounded borders */
+}
+.group-table th.plus-header {
+  width: 40px; /* Adjust width as needed */
+  text-align: center;
+  position: relative; /* Ensure positioning context for dropdown */
+
 }
 
 .group-table td.fixed-column {
   width: 30px; /* Match this width with the .fixed-column class */
   text-align: center; /* Center-align the dots */
+  border-radius: 5px; /* Optional: Rounded borders */
+}
+
+.group-table td.plus-column {
+  width: 40px; /* Adjust width as needed */
+  text-align: center; /* Center-align the plus (+) */
+  border-radius: 5px; /* Rounded borders */
 }
 
 .group-table td {
@@ -154,10 +197,17 @@ body {
 /* Fixed Option Button Styling */
 .fixed-column {
   position: sticky;
-  left: 0;
+  right: 0;
   background-color: white;
   z-index: 1;
+}
 
+/* Plus Column Styling */
+.plus-column {
+  position: sticky;
+  right: 0;
+  background-color: white;
+  z-index: 1;
 }
 
 /* Styling for group containers */
@@ -180,12 +230,15 @@ body {
 /* Dropdown Styles */
 .dropdown-menu {
   position: absolute;
+  top: 100%;
+  left: -90px; /* Position left of the plus column */
   background: #fff;
   border: 1px solid #ddd;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   padding: 5px;
   display: none;
   z-index: 1000;
+  border-radius: 5px; /* Rounded borders */
 }
 
 .dropdown-item {
@@ -220,7 +273,6 @@ body {
   font-size: 1.2em;
   color: #555;
   cursor: pointer;
-
 }
 
 .group-section, .calendar-section {
@@ -231,16 +283,16 @@ body {
   display: block; /* This class will be used to show sections */
 }
 
-
 .project-header h1.editable:hover,
 .project-header p.editable:hover {
   background-color: #f1faff;
   border-bottom: 1px dashed #077d03;
 }
-.editable {
 
+.editable {
   padding: 5px;
 }
+
 .editable:focus {
   outline: none;
   border-color: green;
@@ -265,6 +317,7 @@ body {
   font-size: 1em;
   cursor: pointer;
 }
+
 .main-table-btn.active,
 .calendar-btn.active,
 .kanban-btn {

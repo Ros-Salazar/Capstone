@@ -236,6 +236,8 @@ export function createDropdownMenu(options, onSelect) {
 
 export async function addColumn(option, table, headerRow) {
     const groupId = table.dataset.id;
+    const enumFields = ['TEXT', 'Numbers', 'Status', 'Key Persons', 'Timeline', 'Upload File'];
+
     try {
         const response = await fetch('http://127.0.0.1:3000/api/group_columns', {
             method: 'POST',
@@ -251,13 +253,30 @@ export async function addColumn(option, table, headerRow) {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const column = await response.json();
 
-        const newHeader = createHeaderCell(option, '', true, column.id, column.field); // Pass column.id and column.field
+        // Ensure the field value matches the MySQL ENUM values
+        const field = enumFields.includes(option) ? option : 'TEXT';
+
+        const newHeader = createHeaderCell(option, '', true, column.id, field); // Pass column.id and field
         newHeader.dataset.columnId = column.id;
+        newHeader.dataset.field = field;
         headerRow.insertBefore(newHeader, headerRow.lastChild);
 
         Array.from(table.rows).forEach((row, index) => {
             if (index === 0) return;
-            const newCell = createCell(column.id, column.field === 'Upload'); // Determine if it's the upload field
+            let newCell;
+            if (field === 'Numbers') {
+                newCell = createNumberCell(column.id); // Use the function for Numbers field
+            } else if (field === 'Status') {
+                newCell = createStatusCell(column.id); // Use the function for Status field
+            } else if (field === 'Timeline') {
+                newCell = createDateCell(column.id, field);
+            } else if (field === 'Key Persons') {
+                newCell = createKeyPersonsCell(column.id); // Use the function for Key Persons field
+            } else if (field === 'Upload File') {
+                newCell = createUploadFileCell(column.id); // Use the function for Upload File field
+            } else {
+                newCell = createCell(column.id, field === 'Upload File'); // Determine if it's the upload field
+            }
             row.insertBefore(newCell, row.lastChild);
         });
 
@@ -274,32 +293,113 @@ export async function addColumn(option, table, headerRow) {
         console.error('Error adding column:', error);
     }
 }
-
 export async function addTimelineColumns(table, headerRow) {
-    ['Start Date', 'Due Date'].forEach(async dateColumn => {
-        const newHeader = createHeaderCell(dateColumn, '', true);
-        headerRow.insertBefore(newHeader, headerRow.lastChild);
+    const groupId = table.dataset.id;
+    const dateFields = [
+        { name: 'Start Date', field: 'start_date' },
+        { name: 'Due Date', field: 'due_date' }
+    ];
 
-        Array.from(table.rows).forEach((row, index) => {
-            if (index === 0) return;
-            const dateCell = createDateCell();
-            row.insertBefore(dateCell, row.lastChild);
-
-            const dateInput = dateCell.querySelector('input[type="date"]');
-            dateInput.addEventListener('change', () => syncDateToCalendar(dateInput.value));
-        });
-
-        // Hide the plus-header column and its cells for staff users
-        const userRole = localStorage.getItem('userRole');
-        if (userRole === 'staff') {
-            newHeader.style.display = 'none';
-            Array.from(table.rows).forEach(row => {
-                row.cells[row.cells.length - 1].style.display = 'none';
+    for (let { name, field } of dateFields) {
+        try {
+            // Add the column to the group_columns table
+            const response = await fetch('http://127.0.0.1:3000/api/group_columns', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    group_id: groupId,
+                    name: name,
+                    type: 'Timeline',
+                    field: field
+                }),
             });
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const column = await response.json();
+
+            const newHeader = createHeaderCell(name, '', true, column.id, field);
+            headerRow.insertBefore(newHeader, headerRow.lastChild);
+
+            Array.from(table.rows).forEach((row, rowIndex) => {
+                if (rowIndex === 0) return;
+                const dateCell = createDateCell(column.id, field);
+                row.insertBefore(dateCell, row.lastChild);
+            });
+
+            // Hide the plus-header column and its cells for staff users
+            const userRole = localStorage.getItem('userRole');
+            if (userRole === 'staff') {
+                newHeader.style.display = 'none';
+                Array.from(table.rows).forEach(row => {
+                    row.cells[row.cells.length - 1].style.display = 'none';
+                });
+            }
+
+        } catch (error) {
+            console.error('Error adding timeline column:', error);
+        }
+    }
+}
+// Create a cell with an input for file uploads and a link to download the file
+export function createUploadFileCell(columnId, existingFilePath = null, originalFileName = null) {
+    const cell = document.createElement('td');
+    cell.dataset.columnId = columnId;
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+
+    const fileLink = document.createElement('a');
+    fileLink.style.display = 'none';
+    fileLink.target = '_blank';
+    
+    if (existingFilePath && originalFileName) {
+        fileLink.href = existingFilePath;
+        fileLink.textContent = originalFileName;
+        fileLink.style.display = 'block';
+    }
+
+    fileInput.addEventListener('change', async function () {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const rowId = cell.closest('tr').dataset.rowId;
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('row_id', rowId);
+        formData.append('column_id', columnId);
+        formData.append('field', 'Upload File');
+
+        try {
+            const response = await fetch('http://127.0.0.1:3000/api/upload_file', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+            }
+
+            const result = await response.json();
+            console.log('File uploaded:', result);
+
+            // Update the cell to show the file path or URL
+            fileLink.href = result.filePath;
+            fileLink.textContent = result.originalFileName;
+            fileLink.style.display = 'block';
+            cell.appendChild(fileLink);
+
+        } catch (error) {
+            console.error('Error uploading file:', error);
         }
     });
-}
 
+    cell.appendChild(fileInput);
+    if (existingFilePath && originalFileName) {
+        cell.appendChild(fileLink);
+    }
+    return cell;
+}
 export async function addRow(table, headerRow) {
     const groupId = table.dataset.id;
 
@@ -318,8 +418,37 @@ export async function addRow(table, headerRow) {
         tr.dataset.rowId = rowId;
 
         Array.from(headerRow.cells).forEach((header, index) => {
-            const cell = index === 0 ? createActionCell(tr) : createCell(header.dataset.columnId);
-            tr.appendChild(cell);
+            let newCell;
+            const columnId = header.dataset.columnId;
+            const field = header.dataset.field;
+
+            if (index === 0) {
+                newCell = createActionCell(tr);
+            } else {
+                switch (field) {
+                    case 'Numbers':
+                        newCell = createNumberCell(columnId);
+                        break;
+                    case 'Status':
+                        newCell = createStatusCell(columnId);
+                        break;
+                    case 'Key Persons':
+                        newCell = createKeyPersonsCell(columnId);
+                        break;
+                    case 'start_date':
+                        newCell = createDateCell(columnId, 'start_date');
+                        break;
+                    case 'due_date':
+                        newCell = createDateCell(columnId, 'due_date');
+                        break;
+                    case 'Upload File':
+                        newCell = createUploadFileCell(columnId);
+                        break;
+                    default:
+                        newCell = createCell(columnId);
+                }
+            }
+            tr.appendChild(newCell);
         });
 
         table.appendChild(tr);
@@ -341,110 +470,281 @@ export async function addRow(table, headerRow) {
 
 export function createCell(columnId, isNonEditable = false) {
     const cell = document.createElement('td');
-    cell.dataset.columnId = columnId; // Ensure columnId is stored as a data attribute
+    cell.dataset.columnId = columnId;
 
     if (isNonEditable) {
         cell.contentEditable = false;
         cell.style.pointerEvents = 'none';
         cell.style.backgroundColor = '#f0f0f0';
     } else {
-        const userRole = localStorage.getItem('userRole');
-        if (userRole === 'staff' && columnId !== 'Text' && columnId !== 'Upload') {
-            cell.contentEditable = false;
-            cell.style.pointerEvents = 'none';
-            cell.style.backgroundColor = '#f0f0f0';
-        } else {
-            cell.contentEditable = true;
-            if (columnId === 'Upload') {
-                const inputFile = document.createElement('input');
-                inputFile.type = 'file';
-                cell.appendChild(inputFile);
-                inputFile.addEventListener('change', async function () {
-                    const file = inputFile.files[0];
-                    if (file) {
-                        const formData = new FormData();
-                        formData.append('file', file);
-                        formData.append('column_id', columnId);
-                        formData.append('row_id', cell.closest('tr').dataset.rowId);
+        cell.contentEditable = true;
+        cell.addEventListener('blur', async function () {
+            const value = cell.textContent.trim();
+            const rowId = cell.closest('tr').dataset.rowId;
+            const cellColumnId = parseInt(cell.dataset.columnId, 10);
+            let field = cell.closest('table').querySelector(`th[data-column-id="${cellColumnId}"]`).dataset.field || 'TEXT';
 
-                        try {
-                            const response = await fetch('/api/upload_file', {
-                                method: 'POST',
-                                body: formData
-                            });
+            console.log('Saving cell data:', { rowId, columnId: cellColumnId, field, value });
 
-                            if (!response.ok) {
-                                const errorData = await response.json();
-                                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
-                            }
-
-                            const result = await response.json();
-                            console.log('File uploaded:', result);
-                        } catch (error) {
-                            console.error('Error uploading file:', error);
-                        }
-                    }
-                });
-            } else {
-                cell.addEventListener('blur', async function () {
-                    const value = cell.textContent.trim();
-                    const rowId = cell.closest('tr').dataset.rowId;
-                    const cellColumnId = parseInt(cell.dataset.columnId, 10); // Convert columnId to an integer
-                    const field = cell.dataset.field || 'Text'; // Set the appropriate field value
-
-                    console.log('Saving cell data:', { rowId, columnId: cellColumnId, field, value });
-
-                    if (!rowId || isNaN(cellColumnId) || !field) {
-                        console.error('Row ID, Column ID, or Field is missing or invalid');
-                        return;
-                    }
-
-                    try {
-                        const response = await fetch('http://127.0.0.1:3000/api/cell_data', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                row_id: rowId,
-                                column_id: cellColumnId, // Use the correct column_id
-                                field: field, // Include the field value
-                                value: value,
-                            }),
-                        });
-
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
-                        }
-
-                        const result = await response.json();
-                        console.log('Cell data saved:', result);
-
-                    } catch (error) {
-                        console.error('Error saving cell data:', error);
-                    }
-                });
+            if (!rowId || isNaN(cellColumnId) || !field) {
+                console.error('Row ID, Column ID, or Field is missing or invalid');
+                return;
             }
-        }
+
+            const enumFields = ['TEXT', 'Numbers', 'Status', 'Key Persons', 'Timeline', 'Upload File'];
+            if (!enumFields.includes(field)) {
+                console.error('Invalid field value');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://127.0.0.1:3000/api/cell_data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        row_id: rowId,
+                        column_id: cellColumnId,
+                        field: field,
+                        value: value,
+                    }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+                }
+
+                const result = await response.json();
+                console.log('Cell data saved:', result);
+
+            } catch (error) {
+                console.error('Error saving cell data:', error);
+            }
+        });
     }
     return cell;
 }
-
-export function createDateCell() {
+// Create a cell for numeric input, restricted to integers
+export function createNumberCell(columnId) {
     const cell = document.createElement('td');
-    const dateInput = createInput('date');
+    cell.dataset.columnId = columnId;
+
+    const numberInput = document.createElement('input');
+    numberInput.type = 'text';
+    numberInput.pattern = '\\d*';
+    numberInput.title = 'Please enter a valid integer';
+    numberInput.placeholder = 'Enter a number';
+
+    numberInput.addEventListener('input', function () {
+        numberInput.value = numberInput.value.replace(/\D/g, ''); // Remove non-digit characters
+    });
+
+    numberInput.addEventListener('blur', async function () {
+        const value = numberInput.value;
+        const rowId = cell.closest('tr').dataset.rowId;
+
+        if (!columnId || !rowId) {
+            console.error('Invalid columnId or rowId:', { columnId, rowId });
+            return;
+        }
+
+        console.log('Saving cell data:', { rowId, columnId, field: 'Numbers', value });
+
+        try {
+            const response = await fetch('http://127.0.0.1:3000/api/cell_data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    row_id: rowId,
+                    column_id: columnId,
+                    field: 'Numbers',
+                    value: value
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+            }
+
+            const result = await response.json();
+            console.log('Cell data saved:', result);
+
+        } catch (error) {
+            console.error('Error saving cell data:', error);
+        }
+    });
+
+    cell.appendChild(numberInput);
+    return cell;
+}
+// Create a cell with a dropdown menu for status options
+export function createStatusCell(columnId) {
+    const cell = document.createElement('td');
+    cell.dataset.columnId = columnId;
+
+    const statusSelect = document.createElement('select');
+    const options = ["Not Started", "In Progress", "Done"];
+
+    options.forEach(option => {
+        const statusOption = document.createElement('option');
+        statusOption.value = option;
+        statusOption.textContent = option;
+        statusSelect.appendChild(statusOption);
+    });
+
+    statusSelect.addEventListener('change', async function () {
+        const value = statusSelect.value;
+        const rowId = cell.closest('tr').dataset.rowId;
+
+        if (!columnId || !rowId) {
+            console.error('Invalid columnId or rowId:', { columnId, rowId });
+            return;
+        }
+
+        console.log('Saving cell data:', { rowId, columnId, field: 'Status', value });
+
+        try {
+            const response = await fetch('http://127.0.0.1:3000/api/cell_data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    row_id: rowId,
+                    column_id: columnId,
+                    field: 'Status',
+                    value: value
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+            }
+
+            const result = await response.json();
+            console.log('Cell data saved:', result);
+
+        } catch (error) {
+            console.error('Error saving cell data:', error);
+        }
+    });
+
+    cell.appendChild(statusSelect);
+    return cell;
+}
+// Create a cell with an input for Gmail addresses
+export function createKeyPersonsCell(columnId, existingValue = '') {
+    const cell = document.createElement('td');
+    cell.dataset.columnId = columnId;
+
+    const input = document.createElement('input');
+    input.type = 'email';
+    input.value = existingValue;
+    input.placeholder = 'Enter Gmail address';
+    input.pattern = '[a-zA-Z0-9._%+-]+@gmail.com';
+
+    input.addEventListener('blur', async function () {
+        const value = input.value;
+        const rowId = cell.closest('tr').dataset.rowId;
+
+        if (!columnId || !rowId) {
+            console.error('Invalid columnId or rowId:', { columnId, rowId });
+            return;
+        }
+
+        // Validate Gmail address
+        const gmailPattern = /^[a-zA-Z0-9._%+-]+@gmail.com$/;
+        if (!gmailPattern.test(value)) {
+            alert('Please enter a valid Gmail address.');
+            input.focus();
+            return;
+        }
+
+        console.log('Saving cell data:', { rowId, columnId, field: 'Key Persons', value });
+
+        try {
+            const response = await fetch('http://127.0.0.1:3000/api/cell_data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    row_id: rowId,
+                    column_id: columnId,
+                    field: 'Key Persons',
+                    value: value
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+            }
+
+            const result = await response.json();
+            console.log('Cell data saved:', result);
+
+        } catch (error) {
+            console.error('Error saving cell data:', error);
+        }
+    });
+
+    cell.appendChild(input);
+    return cell;
+}
+//Date cell
+export function createDateCell(columnId, field) {
+    const cell = document.createElement('td');
+    cell.dataset.columnId = columnId;
+    cell.dataset.field = field;
+
+    const dateInput = document.createElement('input');
+    dateInput.type = 'date';
     const dateDisplay = document.createElement('span');
     dateDisplay.className = 'formatted-date';
     dateDisplay.style.cursor = 'pointer';
     dateDisplay.style.display = 'none';
 
-    dateInput.addEventListener('change', () => {
+    dateInput.addEventListener('change', async function () {
         const date = new Date(dateInput.value);
         if (!isNaN(date)) {
-            dateDisplay.textContent = date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+            dateDisplay.textContent = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             dateInput.style.display = 'none';
             dateDisplay.style.display = 'block';
 
-            syncDateToCalendar(dateInput.value);
+            const rowId = cell.closest('tr').dataset.rowId;
+            const value = dateInput.value;
+
+            if (!columnId || !rowId) {
+                console.error('Invalid columnId or rowId:', { columnId, rowId });
+                return;
+            }
+
+            console.log('Saving cell data:', { rowId, columnId, field, value });
+
+            try {
+                const response = await fetch('http://127.0.0.1:3000/api/cell_data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        row_id: rowId,
+                        column_id: columnId,
+                        field: 'Timeline',
+                        value: value,
+                        start_date: field === 'start_date' ? value : null,
+                        due_date: field === 'due_date' ? value : null
+                    }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+                }
+
+                const result = await response.json();
+                console.log('Cell data saved:', result);
+
+            } catch (error) {
+                console.error('Error saving cell data:', error);
+            }
         }
     });
 
@@ -469,4 +769,3 @@ export function createInput(type, placeholder = '') {
 export function syncDateToCalendar(dateValue) {
     console.log('Synchronizing date to calendar:', dateValue);
 }
-

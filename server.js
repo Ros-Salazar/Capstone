@@ -3,13 +3,118 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const db = require('./db');
-
+const multer = require('multer');
+const path = require('path');
 const app = express();
 const port = 3000;
+const nodemailer = require('nodemailer');
 
 app.use(cors());
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: true })); 
+
+// Function to create transporter dynamically
+const createTransporter = (user, pass) => {
+    return nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user, pass }
+    });
+};
+
+// Define the email options
+const generateMailOptions = (from, to) => {
+    return {
+        from: from, // Sender address
+        to: to, // List of recipients
+        subject: 'Test Email from City Engineering Office', // Subject line
+        text: 'You have been assigned by your manager, check your CEO account.' // Plain text body
+    };
+};
+
+// Function to send email
+const sendEmail = async (user, pass, to) => {
+    try {
+        const transporter = createTransporter(user, pass);
+        const mailOptions = generateMailOptions(user, to);
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email sent:', info.response);
+    } catch (error) {
+        console.error('Error occurred:', error);
+    }
+};
+
+// Endpoint to retrieve the logged-in user's email and send an email
+app.post('/send-email', (req, res) => {
+    const loggedInUser = req.body.loggedInUser; // Assuming the logged-in user's identifier is sent in the request body
+
+    // Query the database to get the logged-in user's email and password
+    const query = 'SELECT email, user_password FROM users WHERE username = ?';
+    db.query(query, [loggedInUser], (err, results) => {
+        if (err) {
+            console.error('Database query error:', err);
+            return res.status(500).json({ message: 'Server error during data retrieval', error: err });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const user = results[0].email;
+        const pass = results[0].user_password;
+
+        // Define recipient email
+        const recipientEmail = 'CEO@gmail.com'; // Replace with the actual recipient email
+
+        // Send the email
+        sendEmail(user, pass, recipientEmail);
+        res.status(200).json({ message: 'Email sent successfully' });
+    });
+});
+
+// Configure multer for file uploads !NEEDS FIXING
+const upload = multer({
+    dest: 'uploads/', // Directory to save uploaded files
+    limits: { fileSize: 50 * 1024 * 1024 }, // Limit file size to 50MB
+    fileFilter: (req, file, cb) => {
+        // Accept only certain file types (e.g., DOCX, PPT, images, PDFs)
+        const filetypes = /jpeg|jpg|png|pdf|docx|ppt|pptx|doc/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error('File upload only supports the following filetypes - ' + filetypes));
+    }
+});
+
+// Endpoint for file uploads
+app.post('/api/upload_file', upload.single('file'), (req, res) => {
+    const { row_id, column_id, field } = req.body;
+    const filePath = `/uploads/${req.file.filename}`;
+    const originalFileName = req.file.originalname;
+
+    if (!row_id || !column_id || !field || !filePath) {
+        return res.status(400).json({ message: 'Row ID, column ID, field, and file path are required' });
+    }
+
+    const query = `
+        INSERT INTO cell_data (row_id, column_id, field, value, original_file_name)
+        VALUES (?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE value = VALUES(value), original_file_name = VALUES(original_file_name)
+    `;
+    db.query(query, [row_id, column_id, field, filePath, originalFileName], (err, results) => {
+        if (err) {
+            console.error('Database insert/update error:', err);
+            return res.status(500).json({ message: 'Server error during file upload', error: err });
+        }
+        res.status(200).json({ message: 'File uploaded successfully', filePath: filePath, originalFileName: originalFileName });
+    });
+});
+// Serve static files from the uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 // Endpoint to check and create default group and rows
 app.get('/api/project/:projectId/default_group', async (req, res) => {
@@ -408,7 +513,7 @@ app.post('/api/proj_groups', (req, res) => {
     });
 });
 
-    // Add a column to a group
+    //   a column to a group
     app.post('/api/group_columns', (req, res) => {
         const { group_id, name, type } = req.body;
         if (!group_id || !name || !type) {
@@ -442,31 +547,47 @@ app.post('/api/proj_groups', (req, res) => {
         });
     });
 
-    // Endpoint to save cell data
+    // Endpoint for saving cell data and sending notification emails
     app.post('/api/cell_data', (req, res) => {
-        const { row_id, column_id, field, value } = req.body;
-        console.log('Received cell data save request:', { row_id, column_id, field, value }); // Debug log
+        const { row_id, column_id, field, value, email, password } = req.body;
 
-        if (!row_id || !column_id || !field || value === undefined) {
-            console.error('Missing parameters:', { row_id, column_id, field, value }); // Debug log
-            return res.status(400).json({ message: 'Row ID, column ID, field, and value are required' });
+        if (!row_id || !column_id || !field || !value || !email || !password) {
+            return res.status(400).json({ message: 'Row ID, column ID, field, value, email, and password are required' });
         }
 
         const query = `
             INSERT INTO cell_data (row_id, column_id, field, value)
             VALUES (?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE value = VALUES(value), field = VALUES(field)
+            ON DUPLICATE KEY UPDATE value = VALUES(value)
         `;
         db.query(query, [row_id, column_id, field, value], (err, results) => {
             if (err) {
-                console.error('Database insert/update error:', err); // Debug log
-                return res.status(500).json({ message: 'Server error during cell data save', error: err });
+                console.error('Database insert/update error:', err);
+                return res.status(500).json({ message: 'Server error during data save', error: err });
             }
-            console.log('Cell data saved successfully:', results); // Debug log
-            res.status(200).json({ message: 'Cell data saved successfully' });
+
+            // Send email notification if the field is "Key Persons" and the email is a Gmail address
+            if (field === 'Key Persons' && /^[a-zA-Z0-9._%+-]+@gmail.com$/.test(value)) {
+                const transporter = createTransporter(email, password);
+                const mailOptions = {
+                    from: email,                     // Sender address
+                    to: value,                       // List of recipients
+                    subject: 'Notification from Your Website', // Subject line
+                    text: `You have been added as a key person on our website by ${email}.` // Plain text body
+                };
+
+                transporter.sendMail(mailOptions, (error, info) => {
+                    if (error) {
+                        console.error('Error sending email:', error);
+                        return res.status(500).json({ message: 'Error sending email', error: error });
+                    }
+                    console.log('Email sent:', info.response);
+                });
+            }
+
+            res.status(200).json({ message: 'Data saved successfully' });
         });
     });
-
 
 
     // Fetch all groups for a project
@@ -564,7 +685,7 @@ app.post('/api/proj_groups', (req, res) => {
     app.get('/api/group/:groupId/cell_data', (req, res) => {
         const groupId = req.params.groupId;
         const query = `
-            SELECT cd.row_id, cd.column_id, cd.value 
+            SELECT cd.row_id, cd.column_id, cd.field, cd.value, cd.start_date, cd.due_date
             FROM cell_data cd
             JOIN group_rows gr ON cd.row_id = gr.id
             WHERE gr.group_id = ?

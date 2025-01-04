@@ -1,4 +1,5 @@
-import { createTable, createAddRowButton, createHeaderCell, createCell, createActionCell } from './domManipulation.js';
+import { createTable, createAddRowButton, createHeaderCell, createCell, createActionCell} from './domManipulation.js';
+
 
 export async function fetchProjectDetails(projectId) {
     try {
@@ -39,7 +40,7 @@ export async function fetchAndRenderGroups(projectId) {
                     throw new Error(`HTTP error! status: ${rowsResponse.status}`);
                 }
                 const rows = await rowsResponse.json();
-
+                console.log('Fetched rows for group: ', group.id, rows);
                 for (const row of rows) {
                     const headerRow = table.rows[0];
                     const tr = document.createElement('tr');
@@ -92,8 +93,10 @@ export async function saveProjectDetails(projectId) {
     }
 }
 
-export async function addGroup(projectId, groupContainer, groupName = 'New Group') {
+export async function addGroup(projectId, groupContainer) {
     try {
+        const groupName = prompt("Enter group name:");
+        if (!groupName) return;
         const response = await fetch('http://127.0.0.1:3000/api/proj_groups', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -102,17 +105,15 @@ export async function addGroup(projectId, groupContainer, groupName = 'New Group
                 name: groupName,
             }),
         });
-
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const group = await response.json();
-
         const groupId = group.id;
         const table = createTable(groupId, groupName);
         groupContainer.appendChild(table);
-        createAddRowButton(table, groupId);
-        // Fetch and render the new rows immediately
-        await fetchAndRenderRows(groupId, table);
+        createAddRowButton(table, groupId, groupContainer);
 
+        // Fetch and render cell data for the group
+        await fetchCellDataAndRender(groupId, table);
     } catch (error) {
         console.error('Error creating group:', error);
     }
