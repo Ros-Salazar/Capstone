@@ -724,3 +724,28 @@ app.get('/api/user/profile', (req, res) => {
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
+
+// Endpoint to delete a column
+app.delete('/api/group_column/:columnId', (req, res) => {
+    const columnId = req.params.columnId;
+
+    // First, delete the associated cell data for this column
+    const deleteCellDataQuery = 'DELETE FROM cell_data WHERE column_id = ?';
+    const deleteColumnQuery = 'DELETE FROM group_columns WHERE id = ?';
+
+    db.query(deleteCellDataQuery, [columnId], (err, results) => {
+        if (err) {
+            console.error('Database delete error (cell data):', err);
+            return res.status(500).json({ message: 'Server error during cell data deletion', error: err });
+        }
+
+        db.query(deleteColumnQuery, [columnId], (err, results) => {
+            if (err) {
+                console.error('Database delete error (column):', err);
+                return res.status(500).json({ message: 'Server error during column deletion', error: err });
+            }
+
+            res.status(200).json({ message: 'Column deleted successfully' });
+        });
+    });
+});
