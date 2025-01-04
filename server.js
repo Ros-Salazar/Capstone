@@ -547,47 +547,31 @@ app.post('/api/proj_groups', (req, res) => {
         });
     });
 
-    // Endpoint for saving cell data and sending notification emails
+ // Endpoint for saving cell data and sending notification emails
     app.post('/api/cell_data', (req, res) => {
-        const { row_id, column_id, field, value, email, password } = req.body;
+        const { row_id, column_id, field, value, start_date, due_date } = req.body;
+        console.log('Received cell data save request:', { row_id, column_id, field, value, start_date, due_date }); // Debug log
 
-        if (!row_id || !column_id || !field || !value || !email || !password) {
-            return res.status(400).json({ message: 'Row ID, column ID, field, value, email, and password are required' });
+        if (!row_id || !column_id || !field || value === undefined) {
+            console.error('Missing parameters:', { row_id, column_id, field, value, start_date, due_date }); // Debug log
+            return res.status(400).json({ message: 'Row ID, column ID, field, and value are required' });
         }
 
         const query = `
-            INSERT INTO cell_data (row_id, column_id, field, value)
-            VALUES (?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE value = VALUES(value)
+            INSERT INTO cell_data (row_id, column_id, field, value, start_date, due_date)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE value = VALUES(value), field = VALUES(field), start_date = VALUES(start_date), due_date = VALUES(due_date)
         `;
-        db.query(query, [row_id, column_id, field, value], (err, results) => {
+        db.query(query, [row_id, column_id, field, value, start_date, due_date], (err, results) => {
             if (err) {
-                console.error('Database insert/update error:', err);
-                return res.status(500).json({ message: 'Server error during data save', error: err });
+                console.error('Database insert/update error:', err); // Debug log
+                return res.status(500).json({ message: 'Server error during cell data save', error: err });
             }
-
-            // Send email notification if the field is "Key Persons" and the email is a Gmail address
-            if (field === 'Key Persons' && /^[a-zA-Z0-9._%+-]+@gmail.com$/.test(value)) {
-                const transporter = createTransporter(email, password);
-                const mailOptions = {
-                    from: email,                     // Sender address
-                    to: value,                       // List of recipients
-                    subject: 'Notification from Your Website', // Subject line
-                    text: `You have been added as a key person on our website by ${email}.` // Plain text body
-                };
-
-                transporter.sendMail(mailOptions, (error, info) => {
-                    if (error) {
-                        console.error('Error sending email:', error);
-                        return res.status(500).json({ message: 'Error sending email', error: error });
-                    }
-                    console.log('Email sent:', info.response);
-                });
-            }
-
-            res.status(200).json({ message: 'Data saved successfully' });
+            console.log('Cell data saved successfully:', results); // Debug log
+            res.status(200).json({ message: 'Cell data saved successfully' });
         });
     });
+
 
 
     // Fetch all groups for a project

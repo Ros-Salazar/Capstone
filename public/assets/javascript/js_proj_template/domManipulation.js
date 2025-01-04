@@ -16,9 +16,78 @@ export function createTable(groupId, groupName) {
     const headerRow = createHeaderRow(table, groupId, groupName);
     table.appendChild(headerRow);
 
-    fetchColumnsAndRender(groupId, table, headerRow);
-
+    fetchColumnsAndRender(groupId, table, headerRow).then(() => {
+        addInitialRow(table, headerRow);
+    });
     return table;
+}
+
+export async function addInitialRow(table, headerRow) {
+    const groupId = table.dataset.id;
+
+    try {
+        const response = await fetch('http://127.0.0.1:3000/api/group_rows', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ group_id: groupId }),
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const row = await response.json();
+
+        const rowId = row.id;
+        const tr = document.createElement('tr');
+        tr.dataset.rowId = rowId;
+
+        Array.from(headerRow.cells).forEach((header, index) => {
+            let newCell;
+            const columnId = header.dataset.columnId;
+            const field = header.dataset.field;
+
+            if (index === 0) {
+                newCell = createActionCell(tr);
+            } else {
+                switch (field) {
+                    case 'Numbers':
+                        newCell = createNumberCell(columnId);
+                        break;
+                    case 'Status':
+                        newCell = createStatusCell(columnId);
+                        break;
+                    case 'Key Persons':
+                        newCell = createKeyPersonsCell(columnId);
+                        break;
+                    case 'start_date':
+                        newCell = createDateCell(columnId, 'start_date');
+                        break;
+                    case 'due_date':
+                        newCell = createDateCell(columnId, 'due_date');
+                        break;
+                    case 'Upload File':
+                        newCell = createUploadFileCell(columnId);
+                        break;
+                    default:
+                        newCell = createCell(columnId);
+                }
+            }
+            tr.appendChild(newCell);
+        });
+
+        table.appendChild(tr);
+
+        // Hide the plus-header column and its cells for staff users
+        const userRole = localStorage.getItem('userRole');
+        if (userRole === 'staff') {
+            Array.from(tr.cells).forEach(cell => {
+                if (cell.className === 'plus-column') {
+                    cell.style.display = 'none';
+                }
+            });
+        }
+
+    } catch (error) {
+        console.error('Error adding initial row:', error);
+    }
 }
 
 export function createAddRowButton(table, groupId, groupContainer) {
@@ -293,6 +362,7 @@ export async function addColumn(option, table, headerRow) {
         console.error('Error adding column:', error);
     }
 }
+
 export async function addTimelineColumns(table, headerRow) {
     const groupId = table.dataset.id;
     const dateFields = [
@@ -467,7 +537,6 @@ export async function addRow(table, headerRow) {
         console.error('Error adding row:', error);
     }
 }
-
 export function createCell(columnId, isNonEditable = false) {
     const cell = document.createElement('td');
     cell.dataset.columnId = columnId;
@@ -524,6 +593,7 @@ export function createCell(columnId, isNonEditable = false) {
     }
     return cell;
 }
+
 // Create a cell for numeric input, restricted to integers
 export function createNumberCell(columnId) {
     const cell = document.createElement('td');
@@ -579,6 +649,7 @@ export function createNumberCell(columnId) {
     return cell;
 }
 // Create a cell with a dropdown menu for status options
+
 export function createStatusCell(columnId) {
     const cell = document.createElement('td');
     cell.dataset.columnId = columnId;
@@ -632,6 +703,7 @@ export function createStatusCell(columnId) {
     cell.appendChild(statusSelect);
     return cell;
 }
+
 // Create a cell with an input for Gmail addresses
 export function createKeyPersonsCell(columnId, existingValue = '') {
     const cell = document.createElement('td');
@@ -690,7 +762,6 @@ export function createKeyPersonsCell(columnId, existingValue = '') {
     cell.appendChild(input);
     return cell;
 }
-//Date cell
 export function createDateCell(columnId, field) {
     const cell = document.createElement('td');
     cell.dataset.columnId = columnId;
@@ -757,7 +828,6 @@ export function createDateCell(columnId, field) {
     cell.appendChild(dateDisplay);
     return cell;
 }
-
 export function createInput(type, placeholder = '') {
     const input = document.createElement('input');
     input.type = type;
