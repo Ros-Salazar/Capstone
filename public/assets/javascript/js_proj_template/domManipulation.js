@@ -17,7 +17,8 @@ export function createTable(groupId, groupName) {
     table.appendChild(headerRow);
 
     fetchColumnsAndRender(groupId, table, headerRow).then(() => {
-        addInitialRow(table, headerRow);
+        // rows dumadagdag if refresh
+        //addInitialRow(table, headerRow);
     });
     return table;
 }
