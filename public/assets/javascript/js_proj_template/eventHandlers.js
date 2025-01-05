@@ -1,5 +1,6 @@
 import { createTable, setActiveButton, addRow } from './domManipulation.js';
-import { saveProjectDetails, addGroup } from './apiCalls.js';
+import { saveProjectDetails, addGroup, fetchAndRenderGroups } from './apiCalls.js';
+import { fetchAndRenderCalendar } from './domManipulation.js';
 
 export function setupEventListeners({ 
     mainTableBtn, 

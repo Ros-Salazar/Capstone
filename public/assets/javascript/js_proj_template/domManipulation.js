@@ -952,8 +952,8 @@ export function syncDateToCalendar(dateValue) {
 }
 
 export async function fetchAndRenderCalendar(projectId) {
-    const groupData = await fetchGroupDataWithTimeline(projectId);
-    if (!groupData) return;
+    const projectData = await fetchProjectData(projectId);
+    if (!projectData) return;
 
     const calendarGrid = document.querySelector('.calendar-grid');
     calendarGrid.innerHTML = ''; // Clear existing calendar items
