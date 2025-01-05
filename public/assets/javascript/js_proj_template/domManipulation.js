@@ -675,21 +675,20 @@ export function createCell(columnId, isNonEditable = false) {
 export function createNumberCell(columnId) {
     const cell = document.createElement('td');
     cell.dataset.columnId = columnId;
+    cell.contentEditable = true;
 
-    const numberInput = document.createElement('input');
-    numberInput.type = 'text';
-    numberInput.pattern = '\\d*';
-    numberInput.title = 'Please enter a valid integer';
-    numberInput.placeholder = 'Enter a number';
+    // Validate and save the number input on blur event
+    cell.addEventListener('blur', async function () {
+        let value = cell.textContent.trim();
 
-    numberInput.addEventListener('input', function () {
-        numberInput.value = numberInput.value.replace(/\D/g, ''); // Remove non-digit characters
-    });
+        // Ensure the input is a valid integer
+        if (!/^\d+$/.test(value)) {
+            alert('Please enter a valid integer.');
+            cell.textContent = ''; // Clear invalid input
+            return;
+        }
 
-    numberInput.addEventListener('blur', async function () {
-        const value = numberInput.value;
         const rowId = cell.closest('tr').dataset.rowId;
-
         if (!columnId || !rowId) {
             console.error('Invalid columnId or rowId:', { columnId, rowId });
             return;
@@ -722,11 +721,14 @@ export function createNumberCell(columnId) {
         }
     });
 
-    cell.appendChild(numberInput);
+    // Validate input to ensure only digits are entered
+    cell.addEventListener('input', function () {
+        cell.textContent = cell.textContent.replace(/\D/g, ''); // Remove non-digit characters
+    });
+
     return cell;
 }
 // Create a cell with a dropdown menu for status options
-
 export function createStatusCell(columnId) {
     const cell = document.createElement('td');
     cell.dataset.columnId = columnId;
@@ -782,30 +784,26 @@ export function createStatusCell(columnId) {
 }
 
 // Create a cell with an input for Gmail addresses
-export function createKeyPersonsCell(columnId, existingValue = '') {
+export function createKeyPersonsCell(columnId) {
     const cell = document.createElement('td');
     cell.dataset.columnId = columnId;
+    cell.contentEditable = true;
 
-    const input = document.createElement('input');
-    input.type = 'email';
-    input.value = existingValue;
-    input.placeholder = 'Enter Gmail address';
-    input.pattern = '[a-zA-Z0-9._%+-]+@gmail.com';
-
-    input.addEventListener('blur', async function () {
-        const value = input.value;
+    // Validate and save the email input on blur event
+    cell.addEventListener('blur', async function () {
+        const value = cell.textContent.trim();
         const rowId = cell.closest('tr').dataset.rowId;
-
-        if (!columnId || !rowId) {
-            console.error('Invalid columnId or rowId:', { columnId, rowId });
-            return;
-        }
 
         // Validate Gmail address
         const gmailPattern = /^[a-zA-Z0-9._%+-]+@gmail.com$/;
         if (!gmailPattern.test(value)) {
             alert('Please enter a valid Gmail address.');
-            input.focus();
+            cell.textContent = ''; // Clear invalid input
+            return;
+        }
+
+        if (!columnId || !rowId) {
+            console.error('Invalid columnId or rowId:', { columnId, rowId });
             return;
         }
 
@@ -836,7 +834,6 @@ export function createKeyPersonsCell(columnId, existingValue = '') {
         }
     });
 
-    cell.appendChild(input);
     return cell;
 }
 export function createDateCell(columnId, field) {
