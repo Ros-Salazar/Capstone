@@ -949,3 +949,31 @@ export function createInput(type, placeholder = '') {
 export function syncDateToCalendar(dateValue) {
     console.log('Synchronizing date to calendar:', dateValue);
 }
+
+export async function fetchAndRenderCalendar(projectId) {
+    const projectData = await fetchProjectData(projectId);
+    if (!projectData) return;
+
+    const calendarGrid = document.querySelector('.calendar-grid');
+    calendarGrid.innerHTML = ''; // Clear existing calendar items
+
+    projectData.forEach(project => {
+        const startDate = new Date(project.start_date);
+        const dueDate = new Date(project.due_date);
+
+        const startDay = document.createElement('div');
+        startDay.className = 'calendar-day pinned';
+        startDay.textContent = `${project.project_name} (Start)`;
+        startDay.style.gridColumn = startDate.getDay() + 1;
+        startDay.dataset.date = project.start_date;
+
+        const endDay = document.createElement('div');
+        endDay.className = 'calendar-day pinned';
+        endDay.textContent = `${project.project_name} (Due)`;
+        endDay.style.gridColumn = dueDate.getDay() + 1;
+        endDay.dataset.date = project.due_date;
+
+        calendarGrid.appendChild(startDay);
+        calendarGrid.appendChild(endDay);
+    });
+}

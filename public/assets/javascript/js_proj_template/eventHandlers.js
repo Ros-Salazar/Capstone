@@ -8,10 +8,11 @@ export function setupEventListeners({ mainTableBtn, calendarBtn, groupSection, c
         setActiveButton('mainTableBtn');
     });
 
-    calendarBtn.addEventListener('click', function() {
+    calendarBtn.addEventListener('click', async () => {
         groupSection.classList.remove('active-section');
         calendarSection.classList.add('active-section');
         setActiveButton('calendarBtn');
+        await fetchAndRenderCalendar(projectId);
     });
 
     addGroupBtn.addEventListener('click', async function() {

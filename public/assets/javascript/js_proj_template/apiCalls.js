@@ -193,3 +193,15 @@ export async function fetchCellDataAndRender(groupId, table) {
         console.error('Error fetching cell data:', error);
     }
 }
+
+export async function fetchProjectData(projectId) {
+    try {
+        const response = await fetch(`http://127.0.0.1:3000/api/project/${projectId}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const projectData = await response.json();
+        return projectData;
+    } catch (error) {
+        console.error('Error fetching project data:', error);
+        return null;
+    }
+}
