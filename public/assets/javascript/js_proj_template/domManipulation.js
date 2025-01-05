@@ -1,4 +1,5 @@
 import { fetchColumnsAndRender, fetchGroupDataWithTimeline } from './apiCalls.js';
+import { fetchGroupDataWithTimeline } from './apiCalls.js';
 
 export function setActiveButton(buttonId) {
     const mainTableBtn = document.getElementById('mainTableBtn');

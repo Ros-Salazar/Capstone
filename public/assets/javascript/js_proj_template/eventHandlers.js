@@ -1,7 +1,17 @@
 import { createTable, setActiveButton, addRow } from './domManipulation.js';
 import { saveProjectDetails, addGroup } from './apiCalls.js';
 
-export function setupEventListeners({ mainTableBtn, calendarBtn, groupSection, calendarSection, addGroupBtn, groupContainer, projectNameElement, projectDescriptionElement, projectId }) {
+export function setupEventListeners({ 
+    mainTableBtn, 
+    calendarBtn, 
+    groupSection, 
+    calendarSection, 
+    addGroupBtn, 
+    groupContainer, 
+    projectNameElement, 
+    projectDescriptionElement, 
+    projectId 
+}) {
     mainTableBtn.addEventListener('click', function() {
         groupSection.classList.add('active-section');
         calendarSection.classList.remove('active-section');
