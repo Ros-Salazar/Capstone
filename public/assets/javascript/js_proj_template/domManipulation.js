@@ -22,7 +22,6 @@ export function createTable(groupId, groupName) {
     });
     return table;
 }
-
 export async function addInitialRow(table, headerRow) {
     const groupId = table.dataset.id;
 
@@ -45,8 +44,14 @@ export async function addInitialRow(table, headerRow) {
             const columnId = header.dataset.columnId;
             const field = header.dataset.field;
 
-            if (index === 0) {
+            if (header.id === 'fixedColumnHeader') {
                 newCell = createActionCell(tr);
+                newCell.className = 'fixed-column'; // Assign class for the fixed column
+            } else if (header.id === 'plusHeader') {
+                newCell = document.createElement('td');
+                newCell.className = 'plus-header'; // Assign class for the plus header
+                newCell.dataset.columnId = 'plusHeader';
+                newCell.contentEditable = false;
             } else {
                 switch (field) {
                     case 'Numbers':
@@ -71,6 +76,7 @@ export async function addInitialRow(table, headerRow) {
                         newCell = createCell(columnId);
                 }
             }
+
             tr.appendChild(newCell);
         });
 
@@ -79,8 +85,11 @@ export async function addInitialRow(table, headerRow) {
         // Hide the plus-header column and its cells for staff users
         const userRole = localStorage.getItem('userRole');
         if (userRole === 'staff') {
-            Array.from(tr.cells).forEach(cell => {
-                if (cell.className === 'plus-column') {
+            const fixedColumnIndex = Array.from(headerRow.children).findIndex(header => header.id === 'fixedColumnHeader');
+            const plusColumnIndex = Array.from(headerRow.children).findIndex(header => header.id === 'plusHeader');
+
+            Array.from(tr.cells).forEach((cell, index) => {
+                if (index === fixedColumnIndex || index === plusColumnIndex) {
                     cell.style.display = 'none';
                 }
             });
@@ -88,6 +97,84 @@ export async function addInitialRow(table, headerRow) {
 
     } catch (error) {
         console.error('Error adding initial row:', error);
+    }
+}
+
+export async function addRow(table, headerRow) {
+    const groupId = table.dataset.id;
+
+    try {
+        const response = await fetch('http://127.0.0.1:3000/api/group_rows', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ group_id: groupId }),
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const row = await response.json();
+
+        const rowId = row.id;
+        const tr = document.createElement('tr');
+        tr.dataset.rowId = rowId;
+
+        Array.from(headerRow.cells).forEach((header, index) => {
+            let newCell;
+            const columnId = header.dataset.columnId;
+            const field = header.dataset.field;
+
+            if (header.id === 'fixedColumnHeader') {
+                newCell = createActionCell(tr);
+                newCell.className = 'fixed-column'; // Assign class for the fixed column
+            } else if (header.id === 'plusHeader') {
+                newCell = document.createElement('td');
+                newCell.className = 'plus-header'; // Assign class for the plus header
+                newCell.dataset.columnId = 'plusHeader';
+                newCell.contentEditable = false;
+            } else {
+                switch (field) {
+                    case 'Numbers':
+                        newCell = createNumberCell(columnId);
+                        break;
+                    case 'Status':
+                        newCell = createStatusCell(columnId);
+                        break;
+                    case 'Key Persons':
+                        newCell = createKeyPersonsCell(columnId);
+                        break;
+                    case 'start_date':
+                        newCell = createDateCell(columnId, 'start_date');
+                        break;
+                    case 'due_date':
+                        newCell = createDateCell(columnId, 'due_date');
+                        break;
+                    case 'Upload File':
+                        newCell = createUploadFileCell(columnId);
+                        break;
+                    default:
+                        newCell = createCell(columnId);
+                }
+            }
+
+            tr.appendChild(newCell);
+        });
+
+        table.appendChild(tr);
+
+        // Hide the plus-header column and its cells for staff users
+        const userRole = localStorage.getItem('userRole');
+        if (userRole === 'staff') {
+            const fixedColumnIndex = Array.from(headerRow.children).findIndex(header => header.id === 'fixedColumnHeader');
+            const plusColumnIndex = Array.from(headerRow.children).findIndex(header => header.id === 'plusHeader');
+
+            Array.from(tr.cells).forEach((cell, index) => {
+                if (index === fixedColumnIndex || index === plusColumnIndex) {
+                    cell.style.display = 'none';
+                }
+            });
+        }
+
+    } catch (error) {
+        console.error('Error adding row:', error);
     }
 }
 
@@ -146,6 +233,7 @@ export function createHeaderRow(table, groupId, groupName) {
     // Fixed Column Header
     const fixedColumnHeader = document.createElement('th');
     fixedColumnHeader.className = 'fixed-column';
+    fixedColumnHeader.id = 'fixedColumnHeader'; // Assigning a dedicated ID
     const dropdownBtn = document.createElement('button');
     dropdownBtn.textContent = '⋮';
     dropdownBtn.className = 'dropdown-btn';
@@ -190,6 +278,7 @@ export function createHeaderRow(table, groupId, groupName) {
 
     // Plus Header for Adding Columns
     const plusHeader = createHeaderCell('+', 'plus-header');
+    plusHeader.id = 'plusHeader'; // Assigning a dedicated ID
     plusHeader.style.cursor = 'pointer';
 
     const columnDropdownMenu = createDropdownMenu(
@@ -215,13 +304,18 @@ export function createHeaderRow(table, groupId, groupName) {
     const userRole = localStorage.getItem('userRole');
     if (userRole === 'staff') {
         fixedColumnHeader.style.display = 'none';
-        plusHeader.style.cursor = 'not-allowed'; // Change cursor to indicate no action
-        // Hide plus-header column cells for staff users
-        table.querySelectorAll('tr').forEach((row, index) => {
-            if (index === 0) return; // Skip the header row
-            const plusColumnCell = row.querySelector('.plus-header');
-            if (plusColumnCell) {
-                plusColumnCell.style.display = 'none';
+        plusHeader.style.display = 'none'; // Hide the plus header itself
+
+        // Hide the columns associated with fixed-column header and plus-header
+        const fixedColumnIndex = Array.from(headerRow.children).indexOf(fixedColumnHeader);
+        const plusColumnIndex = Array.from(headerRow.children).indexOf(plusHeader);
+
+        table.querySelectorAll('tr').forEach((row) => {
+            if (row.children[fixedColumnIndex]) {
+                row.children[fixedColumnIndex].style.display = 'none';
+            }
+            if (row.children[plusColumnIndex]) {
+                row.children[plusColumnIndex].style.display = 'none';
             }
         });
     }
@@ -361,6 +455,15 @@ export function createHeaderCell(text, className = '', editable = false, columnI
             header.appendChild(container);
         }
     }
+
+    // Hide dropdown buttons for staff users
+    const userRole = localStorage.getItem('userRole');
+    if (userRole === 'staff') {
+        Array.from(header.querySelectorAll('.dropdown-btn')).forEach(button => {
+            button.style.display = 'none'; // Hide the three-dot buttons
+        });
+    }
+
     return header;
 }
 
@@ -546,73 +649,6 @@ export function createUploadFileCell(columnId, existingFilePath = null, original
         cell.appendChild(fileLink);
     }
     return cell;
-}
-export async function addRow(table, headerRow) {
-    const groupId = table.dataset.id;
-
-    try {
-        const response = await fetch('http://127.0.0.1:3000/api/group_rows', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ group_id: groupId }),
-        });
-
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const row = await response.json();
-
-        const rowId = row.id;
-        const tr = document.createElement('tr');
-        tr.dataset.rowId = rowId;
-
-        Array.from(headerRow.cells).forEach((header, index) => {
-            let newCell;
-            const columnId = header.dataset.columnId;
-            const field = header.dataset.field;
-
-            if (index === 0) {
-                newCell = createActionCell(tr);
-            } else {
-                switch (field) {
-                    case 'Numbers':
-                        newCell = createNumberCell(columnId);
-                        break;
-                    case 'Status':
-                        newCell = createStatusCell(columnId);
-                        break;
-                    case 'Key Persons':
-                        newCell = createKeyPersonsCell(columnId);
-                        break;
-                    case 'start_date':
-                        newCell = createDateCell(columnId, 'start_date');
-                        break;
-                    case 'due_date':
-                        newCell = createDateCell(columnId, 'due_date');
-                        break;
-                    case 'Upload File':
-                        newCell = createUploadFileCell(columnId);
-                        break;
-                    default:
-                        newCell = createCell(columnId);
-                }
-            }
-            tr.appendChild(newCell);
-        });
-
-        table.appendChild(tr);
-
-        // Hide the plus-header column and its cells for staff users
-        const userRole = localStorage.getItem('userRole');
-        if (userRole === 'staff') {
-            Array.from(tr.cells).forEach(cell => {
-                if (cell.className === 'plus-column') {
-                    cell.style.display = 'none';
-                }
-            });
-        }
-
-    } catch (error) {
-        console.error('Error adding row:', error);
-    }
 }
 export function createCell(columnId, isNonEditable = false) {
     const cell = document.createElement('td');
