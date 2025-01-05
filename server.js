@@ -745,3 +745,44 @@ app.delete('/api/group_column/:columnId', (req, res) => {
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
+
+// Endpoint to get group table data
+app.get('/api/project/:projectId/groups', (req, res) => {
+    const projectId = req.params.projectId;
+
+    const query = `
+        SELECT g.name AS group_name, kp.name AS key_person
+        FROM groups g
+        JOIN key_persons kp ON g.id = kp.group_id
+        WHERE g.project_id = ?
+    `;
+
+    db.query(query, [projectId], (err, results) => {
+        if (err) {
+            console.error('Database query error:', err);
+            return res.status(500).json({ message: 'Server error during fetching group data', error: err });
+        }
+        res.status(200).json(results);
+    });
+});
+
+// Endpoint to get group table data with timeline
+app.get('/api/project/:projectId/groups_with_timeline', (req, res) => {
+    const projectId = req.params.projectId;
+
+    const query = `
+        SELECT g.name AS group_name, kp.name AS key_person, cd.start_date, cd.due_date
+        FROM proj_groups g
+        JOIN key_persons kp ON g.id = kp.group_id
+        JOIN cell_data cd ON g.id = cd.group_id
+        WHERE g.project_id = ?
+    `;
+
+    db.query(query, [projectId], (err, results) => {
+        if (err) {
+            console.error('Database query error:', err);
+            return res.status(500).json({ message: 'Server error during fetching group data', error: err });
+        }
+        res.status(200).json(results);
+    });
+});

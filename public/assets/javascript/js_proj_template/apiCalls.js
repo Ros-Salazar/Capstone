@@ -205,3 +205,15 @@ export async function fetchProjectData(projectId) {
         return null;
     }
 }
+// function to fetch group data
+export async function fetchGroupDataWithTimeline(projectId) {
+    try {
+        const response = await fetch(`http://127.0.0.1:3000/api/project/${projectId}/groups_with_timeline`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const groupData = await response.json();
+        return groupData;
+    } catch (error) {
+        console.error('Error fetching group data:', error);
+        return null;
+    }
+}

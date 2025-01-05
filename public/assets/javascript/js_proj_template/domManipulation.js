@@ -1,4 +1,4 @@
-import { fetchColumnsAndRender } from './apiCalls.js';
+import { fetchColumnsAndRender, fetchGroupDataWithTimeline } from './apiCalls.js';
 
 export function setActiveButton(buttonId) {
     const mainTableBtn = document.getElementById('mainTableBtn');
@@ -951,29 +951,31 @@ export function syncDateToCalendar(dateValue) {
 }
 
 export async function fetchAndRenderCalendar(projectId) {
-    const projectData = await fetchProjectData(projectId);
-    if (!projectData) return;
+    const groupData = await fetchGroupDataWithTimeline(projectId);
+    if (!groupData) return;
 
     const calendarGrid = document.querySelector('.calendar-grid');
     calendarGrid.innerHTML = ''; // Clear existing calendar items
 
-    projectData.forEach(project => {
-        const startDate = new Date(project.start_date);
-        const dueDate = new Date(project.due_date);
+    groupData.forEach(project => {
+        const groupName = group.group_name;
+        const keyPerson = group.key_person;
+        const startDate = new Date(group.start_date);
+        const dueDate = new Date(group.due_date);
 
         const startDay = document.createElement('div');
         startDay.className = 'calendar-day pinned';
-        startDay.textContent = `${project.project_name} (Start)`;
+        startDay.textContent = `${groupName} - ${keyPerson} (Start)`;
         startDay.style.gridColumn = startDate.getDay() + 1;
-        startDay.dataset.date = project.start_date;
+        startDay.dataset.date = group.start_date;
 
-        const endDay = document.createElement('div');
-        endDay.className = 'calendar-day pinned';
-        endDay.textContent = `${project.project_name} (Due)`;
-        endDay.style.gridColumn = dueDate.getDay() + 1;
-        endDay.dataset.date = project.due_date;
+        const dueDay = document.createElement('div');
+        dueDay.className = 'calendar-day pinned';
+        dueDay.textContent = `${groupName} - ${keyPerson} (Due)`;
+        dueDay.style.gridColumn = dueDate.getDay() + 1;
+        dueDay.dataset.date = group.due_date;
 
         calendarGrid.appendChild(startDay);
-        calendarGrid.appendChild(endDay);
+        calendarGrid.appendChild(dueDay);
     });
 }
