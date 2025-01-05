@@ -91,6 +91,37 @@ export async function addInitialRow(table, headerRow) {
     }
 }
 
+async function deleteColumn(header, columnId) {
+    if (!columnId) {
+        console.error('Invalid columnId:', columnId);
+        return;
+    }
+
+    try {
+        const response = await fetch(`http://127.0.0.1:3000/api/group_column/${columnId}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+        }
+
+        // Remove the column from the table
+        const table = header.closest('table');
+        const columnIndex = Array.from(header.parentElement.children).indexOf(header);
+
+        Array.from(table.rows).forEach(row => {
+            row.deleteCell(columnIndex);
+        });
+
+        console.log('Column deleted successfully');
+    } catch (error) {
+        console.error('Error deleting column:', error);
+    }
+}
+
 export function createAddRowButton(table, groupId, groupContainer) {
     const addRowBtn = document.createElement('button');
     addRowBtn.className = 'add-item-btn';
@@ -251,30 +282,16 @@ export function createHeaderCell(text, className = '', editable = false, columnI
     const header = document.createElement('th');
     header.textContent = text;
     header.className = className;
-    header.dataset.field = field; // Add field as a data attribute
-
-    // attach context menu for column deletion
-    if (columnId) {
-        attachContextMenu(header);
-    }
+    header.dataset.field = field;
 
     // Ensure the "plus-header" column is not editable
     if (text === '+') {
         header.contentEditable = false;
-        header.style.cursor = 'default'; // Change cursor to indicate no action
+        header.style.cursor = 'default';
     } else if (editable) {
         header.contentEditable = true;
-        header.dataset.columnId = columnId; // Ensure columnId is stored as a data attribute
-
-        // Make header editable on double-click
-        header.addEventListener('dblclick', function () {
-            header.contentEditable = true;
-            header.focus();
-        });
-
-        // save changes on blur
+        header.dataset.columnId = columnId;
         header.addEventListener('blur', async function () {
-            header.contentEditable = false;
             const newName = header.textContent.trim();
 
             if (columnId) {
@@ -298,6 +315,51 @@ export function createHeaderCell(text, className = '', editable = false, columnI
                 }
             }
         });
+
+        // Add three-dot button and dropdown for deleting the column only for specific fields
+        const fieldsWithThreeDots = ['Text', 'Numbers', 'Status', 'Key Persons', 'Timeline', 'Upload File', 'Start Date', 'Due Date'];
+        if (fieldsWithThreeDots.includes(text)) {
+            // Create a container to hold the text and the button
+            const container = document.createElement('div');
+            container.style.display = 'flex';
+            container.style.justifyContent = 'space-between';
+            container.style.alignItems = 'center';
+            container.style.width = '100%';
+
+            const textNode = document.createElement('span');
+            textNode.textContent = text;
+
+            const dropdownContainer = document.createElement('div');
+            dropdownContainer.style.position = 'relative';
+
+            const dropdownBtn = document.createElement('button');
+            dropdownBtn.textContent = '⋮';
+            dropdownBtn.className = 'dropdown-btn header-dropdown-btn';  // Added class for header dropdown
+
+            const dropdownMenu = document.createElement('div');
+            dropdownMenu.className = 'dropdown-menu';
+            dropdownMenu.style.display = 'none';
+
+            const deleteOption = document.createElement('div');
+            deleteOption.textContent = 'Delete Column';
+            deleteOption.className = 'dropdown-item';
+            deleteOption.addEventListener('click', async () => {
+                await deleteColumn(header, columnId);
+            });
+
+            dropdownBtn.addEventListener('click', () => {
+                dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
+            });
+
+            dropdownMenu.appendChild(deleteOption);
+            dropdownContainer.appendChild(dropdownBtn);
+            dropdownContainer.appendChild(dropdownMenu);
+
+            container.appendChild(textNode);
+            container.appendChild(dropdownContainer);
+            header.textContent = ''; // Clear the original text content
+            header.appendChild(container);
+        }
     }
     return header;
 }
@@ -854,65 +916,3 @@ export function createInput(type, placeholder = '') {
 export function syncDateToCalendar(dateValue) {
     console.log('Synchronizing date to calendar:', dateValue);
 }
-
-// Create a context menu for deleting columns
-export function createContextMenu() {
-    const menu = document.createElement('div');
-    menu.className = 'context-menu';
-    menu.style.display = 'none';
-
-    const deleteOption = document.createElement('div');
-    deleteOption.className = 'context-menu-item';
-    deleteOption.textContent = 'Delete Column';
-    deleteOption.addEventListener('click', handleDeleteColumn);
-
-    menu.appendChild(deleteOption);
-    document.body.appendChild(menu);
-
-    return menu;
-}
-
-function handleDeleteColumn(event) {
-    const headerCell = event.target.contextMenuHeader;
-    const columnId = headerCell.dataset.columnId;
-
-    fetch(`http://127.0.0.1:3000/api/group_column/${columnId}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-    })
-    .then(response => {
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        // Remove the column from the table
-        const table = headerCell.closest('table');
-        const columnIndex = headerCell.cellIndex;
-
-        table.querySelectorAll('tr').forEach(row => {
-            row.deleteCell(columnIndex);
-        });
-
-        console.log('Column deleted successfully');
-    })
-    .catch(error => {
-        console.error('Error deleting column:', error);
-    });
-}
-
-// Add event listeners to show the context menu on right-click
-export function attachContextMenu(headerCell) {
-    headerCell.addEventListener('contextmenu', (event) => {
-        event.preventDefault();
-        const contextMenu = document.querySelector('.context-menu');
-        contextMenu.style.display = 'block';
-        contextMenu.style.left = `${event.pageX}px`;
-        contextMenu.style.top = `${event.pageY}px`;
-        contextMenu.contextMenuHeader = headerCell;
-    });
-}
-
-// Hide context menu on click elsewhere
-document.addEventListener('click', () => {
-    const contextMenu = document.querySelector('.context-menu');
-    if (contextMenu) {
-        contextMenu.style.display = 'none';
-    }
-});

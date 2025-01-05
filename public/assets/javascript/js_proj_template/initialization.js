@@ -1,12 +1,9 @@
 // initialization.js
 import { fetchProjectDetails, fetchAndRenderGroups } from './apiCalls.js';
-import { setActiveButton, createContextMenu } from './domManipulation.js';
+import { setActiveButton } from './domManipulation.js';
 import { setupEventListeners } from './eventHandlers.js';
 
 document.addEventListener('DOMContentLoaded', async function() {
-    // initialize the context menu
-    createContextMenu();
-
     // Initialize buttons and sections
     const mainTableBtn = document.getElementById('mainTableBtn');
     const calendarBtn = document.getElementById('calendarBtn');

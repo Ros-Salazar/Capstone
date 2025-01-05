@@ -537,3 +537,30 @@ input[type="date"] {
 .context-menu-item:hover {
   background-color: #f0f0f0;
 }
+
+/* Adjust the dropdown button and menu styles */
+.group-table th .dropdown-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: white;
+    margin: 0;
+}
+
+.group-table th .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 10px; /* Position close to the button */
+    background: #fff;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    padding: 5px;
+    display: none;
+    z-index: 1000;
+    border-radius: 5px; /* Rounded borders */
+}
