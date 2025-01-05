@@ -1,11 +1,23 @@
 import { createTable, setActiveButton, addRow } from './domManipulation.js';
-import { saveProjectDetails, addGroup } from './apiCalls.js';
+import { saveProjectDetails, addGroup, fetchAndRenderGroups } from './apiCalls.js';
+import { fetchAndRenderCalendar } from './domManipulation.js';
 
-export function setupEventListeners({ mainTableBtn, calendarBtn, groupSection, calendarSection, addGroupBtn, groupContainer, projectNameElement, projectDescriptionElement, projectId }) {
+export function setupEventListeners({ 
+    mainTableBtn, 
+    calendarBtn, 
+    groupSection, 
+    calendarSection, 
+    addGroupBtn, 
+    groupContainer, 
+    projectNameElement, 
+    projectDescriptionElement, 
+    projectId 
+}) {
     mainTableBtn.addEventListener('click', function() {
         groupSection.classList.add('active-section');
         calendarSection.classList.remove('active-section');
         setActiveButton('mainTableBtn');
+        fetchAndRenderGroups(projectId);
     });
 
     calendarBtn.addEventListener('click', async () => {

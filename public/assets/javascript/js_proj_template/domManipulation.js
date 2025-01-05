@@ -950,7 +950,7 @@ export function syncDateToCalendar(dateValue) {
     console.log('Synchronizing date to calendar:', dateValue);
 }
 
-export async function fetchAndRenderCalendar(projectId) {
+export async function fetchAndRenderProject(projectId) {
     const projectData = await fetchProjectData(projectId);
     if (!projectData) return;
 
