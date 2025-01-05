@@ -16,6 +16,7 @@ export function setupEventListeners({
         groupSection.classList.add('active-section');
         calendarSection.classList.remove('active-section');
         setActiveButton('mainTableBtn');
+        fetchAndRenderGroups(projectId);
     });
 
     calendarBtn.addEventListener('click', async () => {
