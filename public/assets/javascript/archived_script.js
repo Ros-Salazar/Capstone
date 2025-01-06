@@ -44,6 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadArchivedProjects = () => {
         archivedProjectsContainer.innerHTML = ''; // Clear existing archived projects
 
+        const userRole = localStorage.getItem('userRole');
+
         projects.forEach((project) => {
             const projectBox = document.createElement('div');
             projectBox.classList.add('project-box');
@@ -57,6 +59,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p>${project.location}</p>
                 <p class="completion-text">${project.completion} COMPLETED</p>
             `;
+
+            // Hide delete icon for staff users
+            if (userRole === 'staff') {
+                projectBox.querySelector('.delete-icon').style.display = 'none';
+            }
 
             // Add delete functionality
             projectBox.querySelector('.delete-icon').addEventListener('click', async (e) => {

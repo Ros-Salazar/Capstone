@@ -168,7 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (userRole === 'staff') {
                     projectBox.querySelector('.edit-icon').style.display = 'none';
                     projectBox.querySelector('.delete-icon').style.display = 'none';
-                    projectBox.querySelector('.archive-icon').style.display = 'none';
                 }
 
                 // Add click event for editing project

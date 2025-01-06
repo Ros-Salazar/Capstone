@@ -33,91 +33,32 @@ export async function fetchAndRenderGroups(projectId) {
             groupContainer.appendChild(table);
             createAddRowButton(table, group.id, groupContainer); // Ensure groupContainer is passed
 
-            // Fetch and render columns, rows, and cell data for each group
-            await fetchColumnsAndRender(group.id, table, table.rows[0]);
+            // Fetch and render rows for each group
+            try {
+                const rowsResponse = await fetch(`http://127.0.0.1:3000/api/group/${group.id}/rows`);
+                if (!rowsResponse.ok) {
+                    throw new Error(`HTTP error! status: ${rowsResponse.status}`);
+                }
+                const rows = await rowsResponse.json();
+                console.log('Fetched rows for group: ', group.id, rows);
+                for (const row of rows) {
+                    const headerRow = table.rows[0];
+                    const tr = document.createElement('tr');
+                    tr.dataset.rowId = row.id; // Set the row ID
+
+                    Array.from(headerRow.cells).forEach((header, index) => {
+                        const cell = index === 0 ? createActionCell(tr) : createCell(header.textContent);
+                        tr.appendChild(cell);
+                    });
+
+                    table.appendChild(tr);
+                }
+            } catch (error) {
+                console.error('Error fetching rows:', error);
+            }
         }
     } catch (error) {
         console.error('Error fetching groups:', error);
-    }
-}
-
-export async function fetchColumnsAndRender(groupId, table, headerRow) {
-    try {
-        const response = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/columns`);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const columns = await response.json();
-        console.log('Fetched columns:', columns); // Add logging
-
-        columns.forEach(column => {
-            const newHeader = createHeaderCell(column.name, '', true, column.id, column.field); // Pass column.id and column.field
-            newHeader.dataset.columnId = column.id;
-            headerRow.insertBefore(newHeader, headerRow.lastChild);
-
-            Array.from(table.rows).forEach((row, index) => {
-                if (index === 0) return; // Skip header row
-                const newCell = createCell(column.id, column.name, column.field === 'Upload'); // Determine if it's the upload field
-                row.insertBefore(newCell, row.lastChild);
-            });
-        });
-
-        // Fetch and render rows
-        await fetchAndRenderRows(groupId, table);
-
-        // Fetch and render cell data
-        await fetchCellDataAndRender(groupId, table);
-    } catch (error) {
-        console.error('Error fetching columns:', error);
-    }
-}
-
-export async function fetchAndRenderRows(groupId, table) {
-    try {
-        const rowsResponse = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/rows`);
-        if (!rowsResponse.ok) {
-            throw new Error(`HTTP error! status: ${rowsResponse.status}`);
-        }
-        const rows = await rowsResponse.json();
-
-        const headerRow = table.rows[0];
-        for (const row of rows) {
-            const tr = document.createElement('tr');
-            tr.dataset.rowId = row.id;
-
-            Array.from(headerRow.cells).forEach((header, index) => {
-                const cell = index === 0 ? createActionCell(tr) : createCell(header.textContent);
-                tr.appendChild(cell);
-            });
-
-            table.appendChild(tr);
-        }
-    } catch (error) {
-        console.error('Error fetching rows:', error);
-    }
-}
-
-export async function fetchCellDataAndRender(groupId, table) {
-    try {
-        const response = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/cell_data`);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const cellData = await response.json();
-        console.log('Fetched cell data:', cellData); // Add logging
-
-        cellData.forEach(data => {
-            const row = table.querySelector(`tr[data-row-id="${data.row_id}"]`);
-            const cell = row.querySelector(`td[data-column-id="${data.column_id}"]`);
-            if (cell) {
-                if (cell.dataset.field === 'Upload') {
-                    const downloadLink = document.createElement('a');
-                    downloadLink.href = data.value;
-                    downloadLink.textContent = 'Download';
-                    cell.appendChild(downloadLink);
-                } else {
-                    cell.textContent = data.value; // Set the cell data
-                }
-            }
-        });
-    } catch (error) {
-        console.error('Error fetching cell data:', error);
     }
 }
 
@@ -175,6 +116,81 @@ export async function addGroup(projectId, groupContainer) {
         await fetchCellDataAndRender(groupId, table);
     } catch (error) {
         console.error('Error creating group:', error);
+    }
+}
+export async function fetchAndRenderRows(groupId, table) {
+    try {
+        const rowsResponse = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/rows`);
+        if (!rowsResponse.ok) {
+            throw new Error(`HTTP error! status: ${rowsResponse.status}`);
+        }
+        const rows = await rowsResponse.json();
+
+        const headerRow = table.rows[0];
+        for (const row of rows) {
+            const tr = document.createElement('tr');
+            tr.dataset.rowId = row.id;
+
+            Array.from(headerRow.cells).forEach((header, index) => {
+                const cell = index === 0 ? createActionCell(tr) : createCell(header.textContent);
+                tr.appendChild(cell);
+            });
+
+            table.appendChild(tr);
+        }
+    } catch (error) {
+        console.error('Error fetching rows:', error);
+    }
+}
+export async function fetchColumnsAndRender(groupId, table, headerRow) {
+    try {
+        const response = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/columns`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const columns = await response.json();
+        console.log('Fetched columns:', columns); // Add logging
+
+        columns.forEach(column => {
+            const newHeader = createHeaderCell(column.name, '', true, column.id, column.field); // Pass column.id and column.field
+            newHeader.dataset.columnId = column.id;
+            headerRow.insertBefore(newHeader, headerRow.lastChild);
+
+            Array.from(table.rows).forEach((row, index) => {
+                if (index === 0) return; // Skip header row
+                const newCell = createCell(column.id, column.name, column.field === 'Upload'); // Determine if it's the upload field
+                row.insertBefore(newCell, row.lastChild);
+            });
+        });
+
+        // Fetch and render cell data
+        await fetchCellDataAndRender(groupId, table);
+    } catch (error) {
+        console.error('Error fetching columns:', error);
+    }
+}
+
+export async function fetchCellDataAndRender(groupId, table) {
+    try {
+        const response = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/cell_data`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const cellData = await response.json();
+        console.log('Fetched cell data:', cellData); // Add logging
+
+        cellData.forEach(data => {
+            const row = table.querySelector(`tr[data-row-id="${data.row_id}"]`);
+            const cell = row.querySelector(`td[data-column-id="${data.column_id}"]`);
+            if (cell) {
+                if (cell.dataset.field === 'Upload') {
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = data.value;
+                    downloadLink.textContent = 'Download';
+                    cell.appendChild(downloadLink);
+                } else {
+                    cell.textContent = data.value; // Set the cell data
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching cell data:', error);
     }
 }
 

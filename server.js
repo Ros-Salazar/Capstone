@@ -241,74 +241,50 @@ app.post('/api/register', async (req, res) => {
     const { firstName, lastName, email, password, position } = req.body;
     console.log('Received registration request:', req.body);
 
-    // Check if email already exists
-    db.query('SELECT * FROM users WHERE email = ?', [email], async (err, results) => {
-        if (err) {
-            console.error('Database query error during email check:', err);
-            return res.status(500).json({ message: 'Server error during email check' });
+    try {
+        // Check the current number of users
+        const userCountQuery = 'SELECT COUNT(*) AS userCount FROM users';
+        const [userCountResult] = await db.promise().query(userCountQuery);
+        const userCount = userCountResult[0].userCount;
+
+        if (userCount >= 25) {
+            console.log('User registration limit reached');
+            return res.status(400).json({ message: 'User registration limit reached. Only 25 users are allowed.' });
         }
-        if (results.length > 0) {
+
+        // Check if email already exists
+        const emailCheckQuery = 'SELECT * FROM users WHERE email = ?';
+        const [emailCheckResult] = await db.promise().query(emailCheckQuery, [email]);
+        if (emailCheckResult.length > 0) {
             console.log('User already exists:', email);
             return res.status(400).json({ message: 'User already exists' });
         }
 
         // Check the number of existing admin users
         if (position === 'admin') {
-            db.query('SELECT COUNT(*) AS adminCount FROM users WHERE position = "admin"', async (err, countResults) => {
-                if (err) {
-                    console.error('Database query error during admin count check:', err);
-                    return res.status(500).json({ message: 'Server error during admin count check' });
-                }
-                const adminCount = countResults[0].adminCount;
-                if (adminCount >= 1) {
-                    console.log('Admin registration limit reached');
-                    return res.status(400).json({ message: 'Admin registration limit reached. Only 1 admin is allowed.' });
-                }
+            const adminCountQuery = 'SELECT COUNT(*) AS adminCount FROM users WHERE position = "admin"';
+            const [adminCountResult] = await db.promise().query(adminCountQuery);
+            const adminCount = adminCountResult[0].adminCount;
 
-                // Proceed with user registration with status 'approved'
-                try {
-                    const hashedPassword = await bcrypt.hash(password, 10);
-                    console.log('Password hashed successfully');
-                    db.query(
-                        'INSERT INTO users (first_name, last_name, email, user_password, position, status) VALUES (?, ?, ?, ?, ?, ?)',
-                        [firstName, lastName, email, hashedPassword, position, 'approved'],
-                        (err, results) => {
-                            if (err) {
-                                console.error('Database insert error:', err);
-                                return res.status(500).json({ message: 'Server error during user registration' });
-                            }
-                            console.log('Admin user registered successfully:', email);
-                            res.status(201).json({ message: 'Admin user registered successfully.' });
-                        }
-                    );
-                } catch (error) {
-                    console.error('Error during password hashing:', error);
-                    res.status(500).json({ message: 'Server error during password hashing' });
-                }
-            });
-        } else {
-            // Proceed with user registration for non-admin users with status 'pending'
-            try {
-                const hashedPassword = await bcrypt.hash(password, 10);
-                console.log('Password hashed successfully');
-                db.query(
-                    'INSERT INTO users (first_name, last_name, email, user_password, position, status) VALUES (?, ?, ?, ?, ?, ?)',
-                    [firstName, lastName, email, hashedPassword, position, 'pending'],
-                    (err, results) => {
-                        if (err) {
-                            console.error('Database insert error:', err);
-                            return res.status(500).json({ message: 'Server error during user registration' });
-                        }
-                        console.log('User registered successfully:', email);
-                        res.status(201).json({ message: 'User registered successfully. Awaiting admin approval.' });
-                    }
-                );
-            } catch (error) {
-                console.error('Error during password hashing:', error);
-                res.status(500).json({ message: 'Server error during password hashing' });
+            if (adminCount >= 1) {
+                console.log('Admin registration limit reached');
+                return res.status(400).json({ message: 'Admin registration limit reached. Only 1 admin is allowed.' });
             }
         }
-    });
+
+        // Proceed with user registration
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const registrationQuery = 'INSERT INTO users (first_name, last_name, email, user_password, position, status) VALUES (?, ?, ?, ?, ?, ?)';
+        const registrationValues = [firstName, lastName, email, hashedPassword, position, position === 'admin' ? 'approved' : 'pending'];
+        await db.promise().query(registrationQuery, registrationValues);
+
+        const successMessage = position === 'admin' ? 'Admin user registered successfully.' : 'User registered successfully. Awaiting admin approval.';
+        console.log(successMessage);
+        res.status(201).json({ message: successMessage });
+    } catch (error) {
+        console.error('Error during registration:', error);
+        res.status(500).json({ message: 'Server error during registration', error });
+    }
 });
 
 // Admin approval endpoint
