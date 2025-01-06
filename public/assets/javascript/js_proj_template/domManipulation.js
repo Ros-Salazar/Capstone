@@ -1,5 +1,5 @@
 import { fetchColumnsAndRender, fetchGroupDataWithTimeline } from './apiCalls.js';
-import { fetchGroupDataWithTimeline } from './apiCalls.js';
+
 
 export function setActiveButton(buttonId) {
     const mainTableBtn = document.getElementById('mainTableBtn');
@@ -17,10 +17,10 @@ export function createTable(groupId, groupName) {
     const headerRow = createHeaderRow(table, groupId, groupName);
     table.appendChild(headerRow);
 
-    fetchColumnsAndRender(groupId, table, headerRow).then(() => {
-        // rows dumadagdag if refresh
-        //addInitialRow(table, headerRow);
-    });
+    //fetchColumnsAndRender(groupId, table, headerRow).then(() => {
+        // Ensure table is not duplicated
+    //});
+
     return table;
 }
 export async function addInitialRow(table, headerRow) {
