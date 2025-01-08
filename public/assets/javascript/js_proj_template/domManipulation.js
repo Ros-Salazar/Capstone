@@ -336,6 +336,7 @@ export function createActionCell(row) {
     dropdownMenu.style.display = 'none';
 
     const deleteOption = document.createElement('div');
+    deleteOption.textContent = 'Delete Row';
     deleteOption.className = 'dropdown-item';
     deleteOption.addEventListener('click', async () => {
         const rowId = row.dataset.rowId;
@@ -373,19 +374,27 @@ export function createActionCell(row) {
 
 export function createHeaderCell(text, className = '', editable = false, columnId = null, field = '') {
     const header = document.createElement('th');
-    header.textContent = text;
     header.className = className;
     header.dataset.field = field;
 
-    // Ensure the "plus-header" column is not editable
     if (text === '+') {
+        header.textContent = text;
         header.contentEditable = false;
         header.style.cursor = 'default';
     } else if (editable) {
-        header.contentEditable = true;
-        header.dataset.columnId = columnId;
-        header.addEventListener('blur', async function () {
-            const newName = header.textContent.trim();
+        const container = document.createElement('div');
+        container.style.display = 'flex';
+        container.style.justifyContent = 'space-between';
+        container.style.alignItems = 'center';
+        container.style.width = '100%';
+
+        const textNode = document.createElement('span');
+        textNode.textContent = text;
+        textNode.contentEditable = true; // Make the textNode itself editable
+        textNode.dataset.columnId = columnId;
+
+        textNode.addEventListener('blur', async function () {
+            const newName = textNode.textContent.trim();
 
             if (columnId) {
                 try {
@@ -409,61 +418,53 @@ export function createHeaderCell(text, className = '', editable = false, columnI
             }
         });
 
-        // Add three-dot button and dropdown for deleting the column only for specific fields
-        const fieldsWithThreeDots = ['Text', 'Numbers', 'Status', 'Key Persons', 'Timeline', 'Upload File', 'Start Date', 'Due Date'];
-        if (fieldsWithThreeDots.includes(text)) {
-            // Create a container to hold the text and the button
-            const container = document.createElement('div');
-            container.style.display = 'flex';
-            container.style.justifyContent = 'space-between';
-            container.style.alignItems = 'center';
-            container.style.width = '100%';
+        const dropdownContainer = document.createElement('div');
+        dropdownContainer.style.position = 'relative';
 
-            const textNode = document.createElement('span');
-            textNode.textContent = text;
+        const dropdownBtn = document.createElement('button');
+        dropdownBtn.textContent = '⋮';
+        dropdownBtn.className = 'dropdown-btn header-dropdown-btn'; 
 
-            const dropdownContainer = document.createElement('div');
-            dropdownContainer.style.position = 'relative';
+        const dropdownMenu = document.createElement('div');
+        dropdownMenu.className = 'dropdown-menu';
+        dropdownMenu.style.display = 'none';
 
-            const dropdownBtn = document.createElement('button');
-            dropdownBtn.textContent = '⋮';
-            dropdownBtn.className = 'dropdown-btn header-dropdown-btn';
-
-            const dropdownMenu = document.createElement('div');
-            dropdownMenu.className = 'dropdown-menu';
-            dropdownMenu.style.display = 'none';
-
-            const deleteOption = document.createElement('div');
-            deleteOption.className = 'dropdown-item';
-            deleteOption.addEventListener('click', async () => {
-                await deleteColumn(header, columnId);
-            });
-
-            dropdownBtn.addEventListener('click', () => {
-                dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
-            });
-
-            dropdownMenu.appendChild(deleteOption);
-            dropdownContainer.appendChild(dropdownBtn);
-            dropdownContainer.appendChild(dropdownMenu);
-
-            container.appendChild(textNode);
-            container.appendChild(dropdownContainer);
-            header.textContent = '';
-            header.appendChild(container);
-        }
-    }
-
-    // Hide dropdown buttons for staff users
-    const userRole = localStorage.getItem('userRole');
-    if (userRole === 'staff') {
-        Array.from(header.querySelectorAll('.dropdown-btn')).forEach(button => {
-            button.style.display = 'none'; // Hide the three-dot buttons
+        const deleteOption = document.createElement('div');
+        deleteOption.textContent = 'Delete Column';
+        deleteOption.className = 'dropdown-item';
+        deleteOption.addEventListener('click', async () => {
+            await deleteColumn(header, columnId);
         });
+
+        dropdownBtn.addEventListener('click', () => {
+            dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
+        });
+
+        dropdownMenu.appendChild(deleteOption);
+        dropdownContainer.appendChild(dropdownBtn);
+        dropdownContainer.appendChild(dropdownMenu);
+
+        container.appendChild(textNode);
+        container.appendChild(dropdownContainer);
+        header.appendChild(container);
+
+        // Hide dropdown buttons for staff users
+        const userRole = localStorage.getItem('userRole');
+        if (userRole === 'staff') {
+            Array.from(header.querySelectorAll('.dropdown-btn')).forEach(button => {
+                button.style.display = 'none'; // Hide the three-dot buttons
+            });
+        }
+    } else {
+        header.textContent = text;
     }
 
     return header;
 }
+
+
+
+
 
 export function createDropdownMenu(options, onSelect) {
     const menu = document.createElement('div');
@@ -492,7 +493,7 @@ export async function addColumn(option, table, headerRow) {
             body: JSON.stringify({
                 group_id: groupId,
                 name: option,
-                type: option,
+                type: option, // Assuming type and field are the same for simplicity
                 field: option
             }),
         });
@@ -503,7 +504,7 @@ export async function addColumn(option, table, headerRow) {
         // Ensure the field value matches the MySQL ENUM values
         const field = enumFields.includes(option) ? option : 'TEXT';
 
-        const newHeader = createHeaderCell(option, 'plus-header', true, column.id, field);
+        const newHeader = createHeaderCell(option, '', true, column.id, field); // Pass column.id and field
         newHeader.dataset.columnId = column.id;
         newHeader.dataset.field = field;
         headerRow.insertBefore(newHeader, headerRow.lastChild);
