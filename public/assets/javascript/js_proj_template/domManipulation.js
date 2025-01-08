@@ -336,7 +336,6 @@ export function createActionCell(row) {
     dropdownMenu.style.display = 'none';
 
     const deleteOption = document.createElement('div');
-    deleteOption.textContent = 'Delete Row';
     deleteOption.className = 'dropdown-item';
     deleteOption.addEventListener('click', async () => {
         const rowId = row.dataset.rowId;
@@ -428,14 +427,13 @@ export function createHeaderCell(text, className = '', editable = false, columnI
 
             const dropdownBtn = document.createElement('button');
             dropdownBtn.textContent = '⋮';
-            dropdownBtn.className = 'dropdown-btn header-dropdown-btn';  // Added class for header dropdown
+            dropdownBtn.className = 'dropdown-btn header-dropdown-btn';
 
             const dropdownMenu = document.createElement('div');
             dropdownMenu.className = 'dropdown-menu';
             dropdownMenu.style.display = 'none';
 
             const deleteOption = document.createElement('div');
-            deleteOption.textContent = 'Delete Column';
             deleteOption.className = 'dropdown-item';
             deleteOption.addEventListener('click', async () => {
                 await deleteColumn(header, columnId);
@@ -451,7 +449,7 @@ export function createHeaderCell(text, className = '', editable = false, columnI
 
             container.appendChild(textNode);
             container.appendChild(dropdownContainer);
-            header.textContent = ''; // Clear the original text content
+            header.textContent = '';
             header.appendChild(container);
         }
     }
@@ -494,7 +492,7 @@ export async function addColumn(option, table, headerRow) {
             body: JSON.stringify({
                 group_id: groupId,
                 name: option,
-                type: option, // Assuming type and field are the same for simplicity
+                type: option,
                 field: option
             }),
         });
@@ -505,7 +503,7 @@ export async function addColumn(option, table, headerRow) {
         // Ensure the field value matches the MySQL ENUM values
         const field = enumFields.includes(option) ? option : 'TEXT';
 
-        const newHeader = createHeaderCell(option, '', true, column.id, field); // Pass column.id and field
+        const newHeader = createHeaderCell(option, 'plus-header', true, column.id, field);
         newHeader.dataset.columnId = column.id;
         newHeader.dataset.field = field;
         headerRow.insertBefore(newHeader, headerRow.lastChild);
