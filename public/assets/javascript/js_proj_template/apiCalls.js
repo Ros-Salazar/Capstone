@@ -38,7 +38,6 @@ export async function fetchGroupDataWithTimeline(projectId) {
         return null;
     }
 }
-
 export async function addGroup(projectId, groupContainer) {
     try {
         const groupName = prompt("Enter name:");
@@ -81,7 +80,6 @@ export async function addGroup(projectId, groupContainer) {
         console.error('Error creating group:', error);
     }
 }
-
 export async function saveProjectDetails(projectId) {
     const projectNameElement = document.getElementById('projectName');
     const projectDescriptionElement = document.getElementById('projectDescription');
@@ -135,7 +133,6 @@ export async function fetchAndRenderGroups(projectId) {
         console.error('Error fetching groups:', error);
     }
 }
-
 export async function fetchAndRenderRows(groupId, table) { // fetch and display
     try {
         const rowsResponse = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/rows`);
@@ -187,7 +184,6 @@ export async function fetchColumnsAndRender(groupId, table, headerRow) { //fetch
         console.error('Error fetching columns:', error);
     }
 }
-
 //function to fetch all cell data
 export async function fetchCellDataAndRender(groupId, table) {
     try {
