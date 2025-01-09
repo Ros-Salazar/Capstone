@@ -8,7 +8,7 @@ export function setActiveButton(buttonId) {
     document.getElementById(buttonId).classList.add('active');
 }
 
-export function createTable(groupId, groupName) {
+export function createTable(groupId, groupName) { //creation of table
     const table = document.createElement('table');
     table.className = 'group-table';
     table.dataset.id = groupId;
@@ -16,91 +16,12 @@ export function createTable(groupId, groupName) {
     const headerRow = createHeaderRow(table, groupId, groupName);
     table.appendChild(headerRow);
 
-    fetchColumnsAndRender(groupId, table, headerRow).then(() => {
-        // rows dumadagdag if refresh
-        //addInitialRow(table, headerRow);
+    fetchColumnsAndRender(groupId, table, headerRow).then(() => { //fetching of displayed fields
     });
     return table;
 }
-export async function addInitialRow(table, headerRow) {
-    const groupId = table.dataset.id;
 
-    try {
-        const response = await fetch('http://127.0.0.1:3000/api/group_rows', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ group_id: groupId }),
-        });
-
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const row = await response.json();
-
-        const rowId = row.id;
-        const tr = document.createElement('tr');
-        tr.dataset.rowId = rowId;
-
-        Array.from(headerRow.cells).forEach((header, index) => {
-            let newCell;
-            const columnId = header.dataset.columnId;
-            const field = header.dataset.field;
-
-            if (header.id === 'fixedColumnHeader') {
-                newCell = createActionCell(tr);
-                newCell.className = 'fixed-column'; // Assign class for the fixed column
-            } else if (header.id === 'plusHeader') {
-                newCell = document.createElement('td');
-                newCell.className = 'plus-header'; // Assign class for the plus header
-                newCell.dataset.columnId = 'plusHeader';
-                newCell.contentEditable = false;
-            } else {
-                switch (field) {
-                    case 'Numbers':
-                        newCell = createNumberCell(columnId);
-                        break;
-                    case 'Status':
-                        newCell = createStatusCell(columnId);
-                        break;
-                    case 'Key Persons':
-                        newCell = createKeyPersonsCell(columnId);
-                        break;
-                    case 'start_date':
-                        newCell = createDateCell(columnId, 'start_date');
-                        break;
-                    case 'due_date':
-                        newCell = createDateCell(columnId, 'due_date');
-                        break;
-                    case 'Upload File':
-                        newCell = createUploadFileCell(columnId);
-                        break;
-                    default:
-                        newCell = createCell(columnId);
-                }
-            }
-
-            tr.appendChild(newCell);
-        });
-
-        table.appendChild(tr);
-
-        // Hide the plus-header column and its cells for staff users
-        const userRole = localStorage.getItem('userRole');
-        if (userRole === 'staff') {
-            const fixedColumnIndex = Array.from(headerRow.children).findIndex(header => header.id === 'fixedColumnHeader');
-            const plusColumnIndex = Array.from(headerRow.children).findIndex(header => header.id === 'plusHeader');
-
-            Array.from(tr.cells).forEach((cell, index) => {
-                if (index === fixedColumnIndex || index === plusColumnIndex) {
-                    cell.style.display = 'none';
-                }
-            });
-        }
-
-    } catch (error) {
-        console.error('Error adding initial row:', error);
-    }
-}
-
-export async function addRow(table, headerRow) {
+export async function addRow(table, headerRow) { // creation rows
     const groupId = table.dataset.id;
 
     try {
@@ -178,7 +99,7 @@ export async function addRow(table, headerRow) {
     }
 }
 
-async function deleteColumn(header, columnId) {
+async function deleteColumn(header, columnId) { // options for deleting columns
     if (!columnId) {
         console.error('Invalid columnId:', columnId);
         return;
@@ -209,11 +130,11 @@ async function deleteColumn(header, columnId) {
     }
 }
 
-export function createAddRowButton(table, groupId, groupContainer) {
+export function createAddRowButton(table, groupId, groupContainer) { // Assign task by creating another row
     const addRowBtn = document.createElement('button');
     addRowBtn.className = 'add-item-btn';
     addRowBtn.dataset.id = groupId;
-    addRowBtn.textContent = 'Add Item';
+    addRowBtn.textContent = 'Assign Task';
 
     const userRole = localStorage.getItem('userRole');
     if (userRole === 'staff') {
@@ -227,7 +148,7 @@ export function createAddRowButton(table, groupId, groupContainer) {
     return addRowBtn;
 }
 
-export function createHeaderRow(table, groupId, groupName) {
+export function createHeaderRow(table, groupId, groupName) { //headers in the table with the plus header and fixed column header
     const headerRow = document.createElement('tr');
 
     // Fixed Column Header
@@ -323,7 +244,7 @@ export function createHeaderRow(table, groupId, groupName) {
     return headerRow;
 }
 
-export function createActionCell(row) {
+export function createActionCell(row) { // the options for the deletiong of row
     const cell = document.createElement('td');
     cell.className = 'fixed-column';
 
@@ -462,27 +383,7 @@ export function createHeaderCell(text, className = '', editable = false, columnI
     return header;
 }
 
-
-
-
-
-export function createDropdownMenu(options, onSelect) {
-    const menu = document.createElement('div');
-    menu.className = 'dropdown-menu';
-    menu.style.display = 'none';
-
-    options.forEach(option => {
-        const item = document.createElement('div');
-        item.textContent = option;
-        item.className = 'dropdown-item';
-        item.addEventListener('click', () => onSelect(option));
-        menu.appendChild(item);
-    });
-
-    return menu;
-}
-
-export async function addColumn(option, table, headerRow) {
+export async function addColumn(option, table, headerRow) { //dynamically adds the fields (Text, Numbers, etc.)
     const groupId = table.dataset.id;
     const enumFields = ['TEXT', 'Numbers', 'Status', 'Key Persons', 'Timeline', 'Upload File'];
 
@@ -542,112 +443,25 @@ export async function addColumn(option, table, headerRow) {
     }
 }
 
-export async function addTimelineColumns(table, headerRow) {
-    const groupId = table.dataset.id;
-    const dateFields = [
-        { name: 'Start Date', field: 'start_date' },
-        { name: 'Due Date', field: 'due_date' }
-    ];
 
-    for (let { name, field } of dateFields) {
-        try {
-            // Add the column to the group_columns table
-            const response = await fetch('http://127.0.0.1:3000/api/group_columns', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    group_id: groupId,
-                    name: name,
-                    type: 'Timeline',
-                    field: field
-                }),
-            });
 
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const column = await response.json();
 
-            const newHeader = createHeaderCell(name, '', true, column.id, field);
-            headerRow.insertBefore(newHeader, headerRow.lastChild);
 
-            Array.from(table.rows).forEach((row, rowIndex) => {
-                if (rowIndex === 0) return;
-                const dateCell = createDateCell(column.id, field);
-                row.insertBefore(dateCell, row.lastChild);
-            });
 
-            // Hide the plus-header column and its cells for staff users
-            const userRole = localStorage.getItem('userRole');
-            if (userRole === 'staff') {
-                newHeader.style.display = 'none';
-                Array.from(table.rows).forEach(row => {
-                    row.cells[row.cells.length - 1].style.display = 'none';
-                });
-            }
+export function createDropdownMenu(options, onSelect) {
+    const menu = document.createElement('div');
+    menu.className = 'dropdown-menu';
+    menu.style.display = 'none';
 
-        } catch (error) {
-            console.error('Error adding timeline column:', error);
-        }
-    }
-}
-// Create a cell with an input for file uploads and a link to download the file
-export function createUploadFileCell(columnId, existingFilePath = null, originalFileName = null) {
-    const cell = document.createElement('td');
-    cell.dataset.columnId = columnId;
-
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-
-    const fileLink = document.createElement('a');
-    fileLink.style.display = 'none';
-    fileLink.target = '_blank';
-    
-    if (existingFilePath && originalFileName) {
-        fileLink.href = existingFilePath;
-        fileLink.textContent = originalFileName;
-        fileLink.style.display = 'block';
-    }
-
-    fileInput.addEventListener('change', async function () {
-        const file = fileInput.files[0];
-        if (!file) return;
-
-        const rowId = cell.closest('tr').dataset.rowId;
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('row_id', rowId);
-        formData.append('column_id', columnId);
-        formData.append('field', 'Upload File');
-
-        try {
-            const response = await fetch('http://127.0.0.1:3000/api/upload_file', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
-            }
-
-            const result = await response.json();
-            console.log('File uploaded:', result);
-
-            // Update the cell to show the file path or URL
-            fileLink.href = result.filePath;
-            fileLink.textContent = result.originalFileName;
-            fileLink.style.display = 'block';
-            cell.appendChild(fileLink);
-
-        } catch (error) {
-            console.error('Error uploading file:', error);
-        }
+    options.forEach(option => {
+        const item = document.createElement('div');
+        item.textContent = option;
+        item.className = 'dropdown-item';
+        item.addEventListener('click', () => onSelect(option));
+        menu.appendChild(item);
     });
 
-    cell.appendChild(fileInput);
-    if (existingFilePath && originalFileName) {
-        cell.appendChild(fileLink);
-    }
-    return cell;
+    return menu;
 }
 export function createCell(columnId, isNonEditable = false) {
     const cell = document.createElement('td');
@@ -705,7 +519,6 @@ export function createCell(columnId, isNonEditable = false) {
     }
     return cell;
 }
-
 // Create a cell for numeric input, restricted to integers
 export function createNumberCell(columnId) {
     const cell = document.createElement('td');
@@ -817,7 +630,6 @@ export function createStatusCell(columnId) {
     cell.appendChild(statusSelect);
     return cell;
 }
-
 // Create a cell with an input for Gmail addresses
 export function createKeyPersonsCell(columnId) {
     const cell = document.createElement('td');
@@ -944,12 +756,118 @@ export function createInput(type, placeholder = '') {
     if (placeholder) input.placeholder = placeholder;
     return input;
 }
+export async function addTimelineColumns(table, headerRow) {
+    const groupId = table.dataset.id;
+    const dateFields = [
+        { name: 'Start Date', field: 'start_date' },
+        { name: 'Due Date', field: 'due_date' }
+    ];
 
+    for (let { name, field } of dateFields) {
+        try {
+            // Add the column to the group_columns table
+            const response = await fetch('http://127.0.0.1:3000/api/group_columns', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    group_id: groupId,
+                    name: name,
+                    type: 'Timeline',
+                    field: field
+                }),
+            });
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const column = await response.json();
+
+            const newHeader = createHeaderCell(name, '', true, column.id, field);
+            headerRow.insertBefore(newHeader, headerRow.lastChild);
+
+            Array.from(table.rows).forEach((row, rowIndex) => {
+                if (rowIndex === 0) return;
+                const dateCell = createDateCell(column.id, field);
+                row.insertBefore(dateCell, row.lastChild);
+            });
+
+            // Hide the plus-header column and its cells for staff users
+            const userRole = localStorage.getItem('userRole');
+            if (userRole === 'staff') {
+                newHeader.style.display = 'none';
+                Array.from(table.rows).forEach(row => {
+                    row.cells[row.cells.length - 1].style.display = 'none';
+                });
+            }
+
+        } catch (error) {
+            console.error('Error adding timeline column:', error);
+        }
+    }
+}
+// Create a cell with an input for file uploads and a link to download the file
+export function createUploadFileCell(columnId, existingFilePath = null, originalFileName = null) {
+    const cell = document.createElement('td');
+    cell.dataset.columnId = columnId;
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+
+    const fileLink = document.createElement('a');
+    fileLink.style.display = 'none';
+    fileLink.target = '_blank';
+    
+    if (existingFilePath && originalFileName) {
+        fileLink.href = existingFilePath;
+        fileLink.textContent = originalFileName;
+        fileLink.style.display = 'block';
+    }
+
+    fileInput.addEventListener('change', async function () {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const rowId = cell.closest('tr').dataset.rowId;
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('row_id', rowId);
+        formData.append('column_id', columnId);
+        formData.append('field', 'Upload File');
+
+        try {
+            const response = await fetch('http://127.0.0.1:3000/api/upload_file', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+            }
+
+            const result = await response.json();
+            console.log('File uploaded:', result);
+
+            // Update the cell to show the file path or URL
+            fileLink.href = result.filePath;
+            fileLink.textContent = result.originalFileName;
+            fileLink.style.display = 'block';
+            cell.appendChild(fileLink);
+
+        } catch (error) {
+            console.error('Error uploading file:', error);
+        }
+    });
+
+    cell.appendChild(fileInput);
+    if (existingFilePath && originalFileName) {
+        cell.appendChild(fileLink);
+    }
+    return cell;
+}
 export function syncDateToCalendar(dateValue) {
     console.log('Synchronizing date to calendar:', dateValue);
 }
 
-export async function fetchAndRenderCalendar(projectId) {
+/*export async function fetchAndRenderCalendar(projectId) {
     const projectData = await fetchProjectData(projectId);
     if (!projectData) return;
 
@@ -977,4 +895,4 @@ export async function fetchAndRenderCalendar(projectId) {
         calendarGrid.appendChild(startDay);
         calendarGrid.appendChild(dueDay);
     });
-}
+}*/

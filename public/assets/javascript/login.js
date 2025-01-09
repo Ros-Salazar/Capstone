@@ -27,6 +27,7 @@ loginForm.addEventListener("submit", async (e) => {
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'include', // Ensure credentials are included
             body: JSON.stringify({
                 email,
                 password,

@@ -1,4 +1,4 @@
-import { createTable, createAddRowButton, createHeaderCell, createCell, createActionCell} from './domManipulation.js';
+import { createTable, createAddRowButton, createHeaderCell, createCell, createActionCell, addRow} from './domManipulation.js';
 
 
 export async function fetchProjectDetails(projectId) {
@@ -95,7 +95,7 @@ export async function saveProjectDetails(projectId) {
 
 export async function addGroup(projectId, groupContainer) {
     try {
-        const groupName = prompt("Enter group name:");
+        const groupName = prompt("Enter name:");
         if (!groupName) return;
         const response = await fetch('http://127.0.0.1:3000/api/proj_groups', {
             method: 'POST',
@@ -112,12 +112,19 @@ export async function addGroup(projectId, groupContainer) {
         groupContainer.appendChild(table);
         createAddRowButton(table, groupId, groupContainer);
 
+
+        // Add three rows to the table as a template
+        for (let i = 0; i < 3; i++) {
+            await addRow(table, table.rows[0]);
+        }
+
         // Fetch and render cell data for the group
         await fetchCellDataAndRender(groupId, table);
     } catch (error) {
         console.error('Error creating group:', error);
     }
 }
+
 export async function fetchAndRenderRows(groupId, table) {
     try {
         const rowsResponse = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/rows`);

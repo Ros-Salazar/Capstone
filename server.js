@@ -8,10 +8,113 @@ const path = require('path');
 const app = express();
 const port = 3000;
 const nodemailer = require('nodemailer');
+const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
+const sessionStore = new MySQLStore({}, db);
 
-app.use(cors());
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true })); 
+app.use(bodyParser.urlencoded({ extended: true }));
+
+
+// Middleware to handle CORS
+app.use(cors({
+    origin: 'http://127.0.0.1:5500',
+    credentials: true
+}));
+
+// Middleware to handle sessions
+app.use(session({
+    name: 'my_session_cookie',
+    secret: 'a_random_secret_key',
+    resave: false,
+    saveUninitialized: false,
+    store: sessionStore,
+    cookie: { secure: false, httpOnly: true, sameSite: 'Lax' }
+}));
+
+// Login endpoint
+app.post('/api/login', async (req, res) => {
+    const { email, password } = req.body;
+    console.log('Received login request:', req.body);
+
+    // Check if the user exists
+    db.query('SELECT * FROM users WHERE email = ?', [email], async (err, results) => {
+        if (err) {
+            console.error('Database query error during login:', err);
+            return res.status(500).json({ message: 'Server error during login' });
+        }
+        if (results.length === 0) {
+            console.log('User not found:', email);
+            return res.status(400).json({ message: 'Incorrect email or password' });
+        }
+
+        const user = results[0];
+
+        if (user.status !== 'approved') {
+            console.log('User not approved:', email);
+            return res.status(403).json({ message: 'User not approved yet. Please wait for admin approval.' });
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.user_password);
+        if (!isPasswordValid) {
+            console.log('Invalid password for user:', email);
+            return res.status(400).json({ message: 'Incorrect email or password' });
+        }
+
+        // Store user_id in session
+        req.session.user_id = user.id;
+
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error:', err);
+                return res.status(500).json({ message: 'Server error during login' });
+            }
+            console.log('User logged in:', email, 'User ID:', req.session.user_id);
+            res.status(200).json({ user: { email: user.email, position: user.position } });
+        });
+    });
+});
+
+// Route to fetch user data
+app.get('/api/user', (req, res) => {
+    // Retrieve the user ID from the session
+    //const userId = req.session.user_id;
+    const userId = 20;
+
+    // Debugging log to check if session user_id is retrieved
+    console.log('Session user_id retrieved:', userId);
+
+    if (!userId) {
+        console.error('User not logged in');
+        return res.status(401).json({ error: 'User not logged in' });
+    }
+
+    const sql = 'SELECT first_name, last_name, email, user_password, position FROM users WHERE id = ?';
+    db.query(sql, [userId], (err, results) => {
+        if (err) {
+            console.error('Error fetching user data:', err);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+
+        if (results.length === 0) {
+            console.error('User not found');
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        console.log('User data fetched:', results[0]);
+        res.json(results[0]);
+    });
+});
+
+// Logout endpoint
+app.post('/api/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            return res.status(500).send('Failed to log out');
+        }
+        res.status(200).send('Logged out');
+    });
+});
 
 // Function to create transporter dynamically
 const createTransporter = (user, pass) => {
@@ -315,39 +418,6 @@ app.put('/api/approve-user/:id', async (req, res) => {
     }
 });
 
-// Login endpoint
-app.post('/api/login', async (req, res) => {
-    const { email, password } = req.body;
-    console.log('Received login request:', req.body);
-
-    // Check if the user exists
-    db.query('SELECT * FROM users WHERE email = ?', [email], async (err, results) => {
-        if (err) {
-            console.error('Database query error during login:', err);
-            return res.status(500).json({ message: 'Server error during login' });
-        }
-        if (results.length === 0) {
-            console.log('User not found:', email);
-            return res.status(400).json({ message: 'Incorrect email or password' });
-        }
-
-        const user = results[0];
-
-        if (user.status !== 'approved') {
-            console.log('User not approved:', email);
-            return res.status(403).json({ message: 'User not approved yet. Please wait for admin approval.' });
-        }
-
-        const isPasswordValid = await bcrypt.compare(password, user.user_password);
-        if (!isPasswordValid) {
-            console.log('Invalid password for user:', email);
-            return res.status(400).json({ message: 'Incorrect email or password' });
-        }
-
-        // Return user details including position
-        res.status(200).json({ user: { email: user.email, position: user.position } });
-    });
-});
 
 // Create project endpoint
 app.post('/api/create_project', (req, res) => {
@@ -678,24 +748,6 @@ app.post('/api/proj_groups', (req, res) => {
         });
     });
 
-
-// Fetch user profile endpoint
-app.get('/api/user/profile', (req, res) => {
-    const userEmail = req.query.email; // Assume email is passed as a query parameter
-    if (!userEmail) {
-        return res.status(400).json({ message: 'Email is required' });
-    }
-    const query = 'SELECT first_name, last_name, email, position FROM users WHERE email = ?';
-    db.query(query, [userEmail], (err, results) => {
-        if (err) {
-            return res.status(500).json({ message: 'Server error during user profile fetch', error: err });
-        }
-        if (results.length === 0) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        res.status(200).json(results[0]);
-    });
-});
 // Endpoint to delete a column
 app.delete('/api/group_column/:columnId', (req, res) => {
     const columnId = req.params.columnId;
