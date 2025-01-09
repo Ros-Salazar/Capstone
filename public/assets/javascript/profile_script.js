@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function() {
-    // Fetch user data and populate form fields
+    /** Fetch user data and populate form fields
     fetch('http://localhost:3000/api/user', { 
         method: 'GET',
         credentials: 'include' // Ensure credentials are included
@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", function() {
             document.getElementById('position').value = data.position;
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => console.error('Error:', error));*/
 
     // Ensure elements exist before adding event listeners
     const editButton = document.getElementById('editButton');
