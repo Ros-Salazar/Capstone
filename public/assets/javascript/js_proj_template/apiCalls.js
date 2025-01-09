@@ -1,4 +1,4 @@
-import { createTable, createAddRowButton, createHeaderCell, createCell, addRow} from './domManipulation.js';
+import { createTable, createAddRowButton, createHeaderCell, createCell, addRow, addColumn} from './domManipulation.js';
 
 
 export async function fetchProjectDetails(projectId) {
@@ -38,10 +38,12 @@ export async function fetchGroupDataWithTimeline(projectId) {
         return null;
     }
 }
+
 export async function addGroup(projectId, groupContainer) {
     try {
-        const groupName = prompt("Enter group name:");
+        const groupName = prompt("Enter name:");
         if (!groupName) return;
+        
         const response = await fetch('http://127.0.0.1:3000/api/proj_groups', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -50,22 +52,36 @@ export async function addGroup(projectId, groupContainer) {
                 name: groupName,
             }),
         });
+        
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
         const group = await response.json();
         const groupId = group.id;
         const table = createTable(groupId, groupName);
         groupContainer.appendChild(table);
         createAddRowButton(table, groupId, groupContainer);
 
-        // Add three rows to the table as template
+        // Add three rows to the table as a template
         for (let i = 0; i < 3; i++) {
             await addRow(table, table.rows[0]);
         }
 
+        // Select the header row and add the "Status" column
+        const headerRow = table.querySelector('thead tr');
+        if (headerRow) {
+            await addColumn('Text', table, headerRow);
+            await addColumn('Status', table, headerRow);
+            await addColumn('Timeline', table, headerRow);
+            await addColumn('Key Persons', table, headerRow);
+        } else {
+            throw new Error('Header row not found');
+        }
+        
     } catch (error) {
         console.error('Error creating group:', error);
     }
 }
+
 export async function saveProjectDetails(projectId) {
     const projectNameElement = document.getElementById('projectName');
     const projectDescriptionElement = document.getElementById('projectDescription');
