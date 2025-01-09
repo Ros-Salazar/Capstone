@@ -1,4 +1,4 @@
-import { createTable, createAddRowButton, createHeaderCell, createCell, createActionCell, addRow} from './domManipulation.js';
+import { createTable, createAddRowButton, createHeaderCell, createCell, addRow} from './domManipulation.js';
 
 
 export async function fetchProjectDetails(projectId) {
@@ -16,52 +16,56 @@ export async function fetchProjectDetails(projectId) {
         console.error('Fetch error:', error);
     }
 }
-
-export async function fetchAndRenderGroups(projectId) {
+export async function fetchProjectData(projectId) {
     try {
-        const groupContainer = document.querySelector('.group-container');
-        groupContainer.innerHTML = ''; // Clear existing groups to prevent duplication
-
-        const groupsResponse = await fetch(`http://127.0.0.1:3000/api/project/${projectId}/groups`);
-        if (!groupsResponse.ok) {
-            throw new Error(`HTTP error! status: ${groupsResponse.status}`);
-        }
-        const groups = await groupsResponse.json();
-
-        for (const group of groups) {
-            const table = createTable(group.id, group.name); // Pass group name to createTable
-            groupContainer.appendChild(table);
-            createAddRowButton(table, group.id, groupContainer); // Ensure groupContainer is passed
-
-            // Fetch and render rows for each group
-            try {
-                const rowsResponse = await fetch(`http://127.0.0.1:3000/api/group/${group.id}/rows`);
-                if (!rowsResponse.ok) {
-                    throw new Error(`HTTP error! status: ${rowsResponse.status}`);
-                }
-                const rows = await rowsResponse.json();
-                console.log('Fetched rows for group: ', group.id, rows);
-                for (const row of rows) {
-                    const headerRow = table.rows[0];
-                    const tr = document.createElement('tr');
-                    tr.dataset.rowId = row.id; // Set the row ID
-
-                    Array.from(headerRow.cells).forEach((header, index) => {
-                        const cell = index === 0 ? createActionCell(tr) : createCell(header.textContent);
-                        tr.appendChild(cell);
-                    });
-
-                    table.appendChild(tr);
-                }
-            } catch (error) {
-                console.error('Error fetching rows:', error);
-            }
-        }
+        const response = await fetch(`http://127.0.0.1:3000/api/project/${projectId}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const projectData = await response.json();
+        return projectData;
     } catch (error) {
-        console.error('Error fetching groups:', error);
+        console.error('Error fetching project data:', error);
+        return null;
     }
 }
+export async function fetchGroupDataWithTimeline(projectId) {
+    try {
+        const response = await fetch(`http://127.0.0.1:3000/api/project/${projectId}/groups_with_timeline`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const groupData = await response.json();
+        return groupData;
+    } catch (error) {
+        console.error('Error fetching group data:', error);
+        return null;
+    }
+}
+export async function addGroup(projectId, groupContainer) {
+    try {
+        const groupName = prompt("Enter group name:");
+        if (!groupName) return;
+        const response = await fetch('http://127.0.0.1:3000/api/proj_groups', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                project_id: projectId,
+                name: groupName,
+            }),
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const group = await response.json();
+        const groupId = group.id;
+        const table = createTable(groupId, groupName);
+        groupContainer.appendChild(table);
+        createAddRowButton(table, groupId, groupContainer);
 
+        // Add three rows to the table as template
+        for (let i = 0; i < 3; i++) {
+            await addRow(table, table.rows[0]);
+        }
+
+    } catch (error) {
+        console.error('Error creating group:', error);
+    }
+}
 export async function saveProjectDetails(projectId) {
     const projectNameElement = document.getElementById('projectName');
     const projectDescriptionElement = document.getElementById('projectDescription');
@@ -92,40 +96,31 @@ export async function saveProjectDetails(projectId) {
         alert(`Error updating project details: ${error.message}`);
     }
 }
-
-export async function addGroup(projectId, groupContainer) {
+export async function fetchAndRenderGroups(projectId) {
     try {
-        const groupName = prompt("Enter name:");
-        if (!groupName) return;
-        const response = await fetch('http://127.0.0.1:3000/api/proj_groups', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                project_id: projectId,
-                name: groupName,
-            }),
-        });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const group = await response.json();
-        const groupId = group.id;
-        const table = createTable(groupId, groupName);
-        groupContainer.appendChild(table);
-        createAddRowButton(table, groupId, groupContainer);
+        const groupContainer = document.querySelector('.group-container');
+        groupContainer.innerHTML = ''; // Clear existing groups to prevent duplication
 
-
-        // Add three rows to the table as a template
-        for (let i = 0; i < 3; i++) {
-            await addRow(table, table.rows[0]);
+        const groupsResponse = await fetch(`http://127.0.0.1:3000/api/project/${projectId}/groups`);
+        if (!groupsResponse.ok) {
+            throw new Error(`HTTP error! status: ${groupsResponse.status}`);
         }
+        const groups = await groupsResponse.json();
 
-        // Fetch and render cell data for the group
-        await fetchCellDataAndRender(groupId, table);
+        for (const group of groups) {
+            const table = createTable(group.id, group.name); // Pass group name to createTable
+            groupContainer.appendChild(table);
+            createAddRowButton(table, group.id, groupContainer); // Ensure groupContainer is passed
+
+            // Fetch and render rows for each group
+            await fetchAndRenderRows(group.id, table); // Move fetching rows to dedicated function
+        }
     } catch (error) {
-        console.error('Error creating group:', error);
+        console.error('Error fetching groups:', error);
     }
 }
 
-export async function fetchAndRenderRows(groupId, table) {
+export async function fetchAndRenderRows(groupId, table) { // fetch and display
     try {
         const rowsResponse = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/rows`);
         if (!rowsResponse.ok) {
@@ -136,20 +131,24 @@ export async function fetchAndRenderRows(groupId, table) {
         const headerRow = table.rows[0];
         for (const row of rows) {
             const tr = document.createElement('tr');
-            tr.dataset.rowId = row.id;
+            tr.dataset.rowId = row.id; // Set the row ID
 
             Array.from(headerRow.cells).forEach((header, index) => {
-                const cell = index === 0 ? createActionCell(tr) : createCell(header.textContent);
+                const cell = createCell(header.textContent);
+                cell.dataset.columnId = header.dataset.columnId; // Ensure cell has correct data-column-id
                 tr.appendChild(cell);
             });
 
             table.appendChild(tr);
         }
+
+        // Fetch and render cell data
+        await fetchCellDataAndRender(groupId, table); // Move fetching cell data to dedicated function
     } catch (error) {
         console.error('Error fetching rows:', error);
     }
 }
-export async function fetchColumnsAndRender(groupId, table, headerRow) {
+export async function fetchColumnsAndRender(groupId, table, headerRow) { //fetch and display
     try {
         const response = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/columns`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -158,23 +157,22 @@ export async function fetchColumnsAndRender(groupId, table, headerRow) {
 
         columns.forEach(column => {
             const newHeader = createHeaderCell(column.name, '', true, column.id, column.field); // Pass column.id and column.field
-            newHeader.dataset.columnId = column.id;
+            newHeader.dataset.columnId = column.id; // Ensure header has correct data-column-id
             headerRow.insertBefore(newHeader, headerRow.lastChild);
 
             Array.from(table.rows).forEach((row, index) => {
                 if (index === 0) return; // Skip header row
-                const newCell = createCell(column.id, column.name, column.field === 'Upload'); // Determine if it's the upload field
+                const newCell = createCell(column.name);
+                newCell.dataset.columnId = column.id; // Ensure cell has correct data-column-id
                 row.insertBefore(newCell, row.lastChild);
             });
         });
-
-        // Fetch and render cell data
-        await fetchCellDataAndRender(groupId, table);
     } catch (error) {
         console.error('Error fetching columns:', error);
     }
 }
 
+//function to fetch all cell data
 export async function fetchCellDataAndRender(groupId, table) {
     try {
         const response = await fetch(`http://127.0.0.1:3000/api/group/${groupId}/cell_data`);
@@ -201,26 +199,3 @@ export async function fetchCellDataAndRender(groupId, table) {
     }
 }
 
-export async function fetchProjectData(projectId) {
-    try {
-        const response = await fetch(`http://127.0.0.1:3000/api/project/${projectId}`);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const projectData = await response.json();
-        return projectData;
-    } catch (error) {
-        console.error('Error fetching project data:', error);
-        return null;
-    }
-}
-// function to fetch group data
-export async function fetchGroupDataWithTimeline(projectId) {
-    try {
-        const response = await fetch(`http://127.0.0.1:3000/api/project/${projectId}/groups_with_timeline`);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const groupData = await response.json();
-        return groupData;
-    } catch (error) {
-        console.error('Error fetching group data:', error);
-        return null;
-    }
-}

@@ -44,8 +44,8 @@ body {
 
 /* Project Overview */
 .project-overview {
-  padding: 3em 2em;
-  margin-top: 2em;
+  padding: 4em 2em;
+  margin-top: 1%;
   background-color: #f1f1f1;
   text-align: left;
   display: flex;
@@ -64,7 +64,7 @@ body {
 .group-section {
   margin: 20px 0;
   padding: 20px;
-  background-color: #f9f9f9;
+  background-color: white;
 }
 
 .add-group-btn, .add-item-btn, .prevMonth, .nextMonth {
@@ -316,6 +316,7 @@ body {
   border-radius: 4px;
   font-size: 1em;
   cursor: pointer;
+  margin-top: 15px;
 }
 
 .main-table-btn.active,

@@ -594,29 +594,33 @@ app.post('/api/proj_groups', (req, res) => {
     });
 
  // Endpoint for saving cell data and sending notification emails
-    app.post('/api/cell_data', (req, res) => {
-        const { row_id, column_id, field, value, start_date, due_date } = req.body;
-        console.log('Received cell data save request:', { row_id, column_id, field, value, start_date, due_date }); // Debug log
+ app.post('/api/cell_data', (req, res) => {
+    const { row_id, column_id, field, value, start_date, due_date } = req.body;
+    console.log('Received cell data save request:', { row_id, column_id, field, value, start_date, due_date }); // Debug log
 
-        if (!row_id || !column_id || !field || value === undefined) {
-            console.error('Missing parameters:', { row_id, column_id, field, value, start_date, due_date }); // Debug log
-            return res.status(400).json({ message: 'Row ID, column ID, field, and value are required' });
+    if (!row_id || !column_id || !field || value === undefined) {
+        console.error('Missing parameters:', { row_id, column_id, field, value, start_date, due_date }); // Debug log
+        return res.status(400).json({ message: 'Row ID, column ID, field, and value are required' });
+    }
+
+    const query = `
+        INSERT INTO cell_data (row_id, column_id, field, value, start_date, due_date)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE value = VALUES(value), field = VALUES(field), start_date = VALUES(start_date), due_date = VALUES(due_date)
+    `;
+    const queryParams = [row_id, column_id, field, value, start_date, due_date];
+    console.log('SQL Query:', query, queryParams); // Log the query
+
+    db.query(query, queryParams, (err, results) => {
+        if (err) {
+            console.error('Database insert/update error:', err); // Debug log
+            return res.status(500).json({ message: 'Server error during cell data save', error: err });
         }
-
-        const query = `
-            INSERT INTO cell_data (row_id, column_id, field, value, start_date, due_date)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE value = VALUES(value), field = VALUES(field), start_date = VALUES(start_date), due_date = VALUES(due_date)
-        `;
-        db.query(query, [row_id, column_id, field, value, start_date, due_date], (err, results) => {
-            if (err) {
-                console.error('Database insert/update error:', err); // Debug log
-                return res.status(500).json({ message: 'Server error during cell data save', error: err });
-            }
-            console.log('Cell data saved successfully:', results); // Debug log
-            res.status(200).json({ message: 'Cell data saved successfully' });
-        });
+        console.log('Cell data saved successfully:', results); // Debug log
+        res.status(200).json({ message: 'Cell data saved successfully' });
     });
+});
+
 
 
 

@@ -173,6 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Add click event for editing project
                 projectBox.querySelector('.edit-icon').addEventListener('click', (e) => {
                     e.stopPropagation();
+                    e.preventDefault();
                     currentProjectBox = projectBox;
                     document.getElementById('edit-project-name').value = project.name;
                     document.getElementById('edit-location').value = project.location;

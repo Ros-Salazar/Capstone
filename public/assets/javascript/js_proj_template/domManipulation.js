@@ -21,7 +21,7 @@ export function createTable(groupId, groupName) { //creation of table
     return table;
 }
 
-export async function addRow(table, headerRow) { // creation rows
+export async function addRow(table, headerRow) {
     const groupId = table.dataset.id;
 
     try {
@@ -33,8 +33,8 @@ export async function addRow(table, headerRow) { // creation rows
 
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const row = await response.json();
-
         const rowId = row.id;
+
         const tr = document.createElement('tr');
         tr.dataset.rowId = rowId;
 
@@ -42,13 +42,14 @@ export async function addRow(table, headerRow) { // creation rows
             let newCell;
             const columnId = header.dataset.columnId;
             const field = header.dataset.field;
+            const cellId = `${rowId}-${columnId}`; // Generate unique ID for the cell
 
             if (header.id === 'fixedColumnHeader') {
                 newCell = createActionCell(tr);
-                newCell.className = 'fixed-column'; // Assign class for the fixed column
+                newCell.className = 'fixed-column';
             } else if (header.id === 'plusHeader') {
                 newCell = document.createElement('td');
-                newCell.className = 'plus-header'; // Assign class for the plus header
+                newCell.className = 'plus-header';
                 newCell.dataset.columnId = 'plusHeader';
                 newCell.contentEditable = false;
             } else {
@@ -76,6 +77,7 @@ export async function addRow(table, headerRow) { // creation rows
                 }
             }
 
+            newCell.id = cellId; // Assign the unique ID to the cell
             tr.appendChild(newCell);
         });
 
@@ -148,7 +150,7 @@ export function createAddRowButton(table, groupId, groupContainer) { // Assign t
     return addRowBtn;
 }
 
-export function createHeaderRow(table, groupId, groupName) { //headers in the table with the plus header and fixed column header
+export function createHeaderRow(table, groupId, groupName) { 
     const headerRow = document.createElement('tr');
 
     // Fixed Column Header
@@ -195,11 +197,15 @@ export function createHeaderRow(table, groupId, groupName) { //headers in the ta
     headerRow.appendChild(fixedColumnHeader);
 
     // Group Name Header
-    headerRow.appendChild(createHeaderCell(groupName, '', true));
+    const groupNameHeader = createHeaderCell(groupName, 'groupTask', true);
+    //groupNameHeader.dataset.columnId = group; // Set a unique column ID
+    headerRow.appendChild(groupNameHeader);
 
     // Plus Header for Adding Columns
     const plusHeader = createHeaderCell('+', 'plus-header');
-    plusHeader.id = 'plusHeader'; // Assigning a dedicated ID
+    plusHeader.id = 'plusHeader'; 
+    plusHeader.classList.add('task-columns'); // Adding class directly
+    plusHeader.dataset.columnId = 2; // Set a unique column ID
     plusHeader.style.cursor = 'pointer';
 
     const columnDropdownMenu = createDropdownMenu(
@@ -314,7 +320,7 @@ export function createHeaderCell(text, className = '', editable = false, columnI
         textNode.contentEditable = true; // Make the textNode itself editable
         textNode.dataset.columnId = columnId;
 
-        textNode.addEventListener('blur', async function () {
+        textNode.addEventListener('blu  r', async function () {
             const newName = textNode.textContent.trim();
 
             if (columnId) {
@@ -394,7 +400,7 @@ export async function addColumn(option, table, headerRow) { //dynamically adds t
             body: JSON.stringify({
                 group_id: groupId,
                 name: option,
-                type: option, // Assuming type and field are the same for simplicity
+                type: option,
                 field: option
             }),
         });
@@ -444,10 +450,6 @@ export async function addColumn(option, table, headerRow) { //dynamically adds t
 }
 
 
-
-
-
-
 export function createDropdownMenu(options, onSelect) {
     const menu = document.createElement('div');
     menu.className = 'dropdown-menu';
@@ -475,9 +477,25 @@ export function createCell(columnId, isNonEditable = false) {
         cell.contentEditable = true;
         cell.addEventListener('blur', async function () {
             const value = cell.textContent.trim();
-            const rowId = cell.closest('tr').dataset.rowId;
+            const rowElement = cell.closest('tr');
+            if (!rowElement) {
+                console.error('Row element not found for cell:', cell);
+                return;
+            }
+            const rowId = rowElement.dataset.rowId;
             const cellColumnId = parseInt(cell.dataset.columnId, 10);
-            let field = cell.closest('table').querySelector(`th[data-column-id="${cellColumnId}"]`).dataset.field || 'TEXT';
+
+            const tableElement = cell.closest('table');
+            if (!tableElement) {
+                console.error('Table element not found for cell:', cell);
+                return;
+            }
+            const headerElement = tableElement.querySelector(`th[data-column-id="${cellColumnId}"]`);
+            if (!headerElement) {
+                console.error('Header element not found for column ID:', cellColumnId);
+                return;
+            }
+            let field = headerElement.dataset.field || 'TEXT';
 
             console.log('Saving cell data:', { rowId, columnId: cellColumnId, field, value });
 
@@ -519,6 +537,7 @@ export function createCell(columnId, isNonEditable = false) {
     }
     return cell;
 }
+
 // Create a cell for numeric input, restricted to integers
 export function createNumberCell(columnId) {
     const cell = document.createElement('td');
